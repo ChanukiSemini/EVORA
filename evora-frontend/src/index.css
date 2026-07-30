@@ -7,7 +7,7 @@ html, body, #root {
 }
 
 body {
-  @apply bg-evora-bg text-evora-text font-body antialiased;
+  @apply bg-slate-900 text-white font-body antialiased;
   background-image: radial-gradient(circle at 15% 10%, rgba(61,220,151,0.07), transparent 40%),
     radial-gradient(circle at 85% 90%, rgba(61,220,151,0.06), transparent 40%);
   background-attachment: fixed;
