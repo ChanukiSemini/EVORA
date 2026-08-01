@@ -1,10 +1,10 @@
 // ============================================
 // src/pages/MyReservations.jsx
 // EVORA - My Reservations Page
-// Fully interactive tabs, modals, and responsive layout
+// Interactive Tabs (All, Upcoming, Completed, Cancelled), 3-Button Card Layout & Responsive Modals
 // ============================================
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 
@@ -76,7 +76,8 @@ const INITIAL_RESERVATIONS = {
             duration: '60 min',
             connector: 'CCS2 (DC Fast)',
             cost: 'Rs. 2,450',
-            hasDetailsBtnOnly: true,
+            canModify: true,
+            status: 'upcoming',
         },
         {
             id: '212457',
@@ -87,7 +88,8 @@ const INITIAL_RESERVATIONS = {
             duration: '45 min',
             connector: 'Type 2 AC',
             cost: 'Rs. 1,260',
-            hasDetailsBtnOnly: false,
+            canModify: true,
+            status: 'upcoming',
         },
         {
             id: '212458',
@@ -98,7 +100,8 @@ const INITIAL_RESERVATIONS = {
             duration: '60 min',
             connector: 'CCS2 (DC Fast)',
             cost: 'Rs. 3,200',
-            hasDetailsBtnOnly: false,
+            canModify: false, // < 1 hr to session start
+            status: 'upcoming',
         },
     ],
     completed: [
@@ -111,6 +114,7 @@ const INITIAL_RESERVATIONS = {
             duration: '60 min',
             cost: 'Rs. 2,450',
             energy: '28.4 kWh',
+            status: 'completed',
         },
         {
             id: '212449',
@@ -121,6 +125,7 @@ const INITIAL_RESERVATIONS = {
             duration: '45 min',
             cost: 'Rs. 1,260',
             energy: '14.2 kWh',
+            status: 'completed',
         },
     ],
     cancelled: [
@@ -131,6 +136,7 @@ const INITIAL_RESERVATIONS = {
             date: 'Oct 26, 2026',
             time: '02:15 PM',
             cancelledDate: 'Oct 24, 2026',
+            status: 'cancelled',
         },
     ],
 };
@@ -148,9 +154,51 @@ const CancelledEmptyNotice = () => (
     </div>
 );
 
+/* ---------- Upcoming Card Actions ---------- */
+const UpcomingCardActions = ({ booking, onDetails, onCancel, onReschedule }) => {
+    const canModify = booking.canModify !== false;
+
+    return (
+        <div className="res-upcoming-actions-wrap">
+            <button
+                className="res-btn-primary-green"
+                onClick={() => onDetails(booking)}
+            >
+                Booking Details
+            </button>
+
+            <div className="res-secondary-actions-row">
+                <button
+                    className={`res-btn-secondary-action res-btn-cancel-sub ${!canModify ? 'disabled' : ''}`}
+                    onClick={() => canModify && onCancel(booking)}
+                    disabled={!canModify}
+                    title={!canModify ? "Cancellation is only allowed > 1 hr before session start" : "Cancel reservation"}
+                >
+                    Cancel
+                </button>
+
+                <button
+                    className={`res-btn-secondary-action res-btn-reschedule-sub ${!canModify ? 'disabled' : ''}`}
+                    onClick={() => canModify && onReschedule(booking)}
+                    disabled={!canModify}
+                    title={!canModify ? "Rescheduling is only allowed > 1 hr before session start" : "Reschedule session"}
+                >
+                    Reschedule
+                </button>
+            </div>
+
+            {!canModify && (
+                <div className="res-policy-notice">
+                    <IconAlertCircle /> Reschedule / Cancel locked (&lt; 1 hr to session)
+                </div>
+            )}
+        </div>
+    );
+};
+
 const MyReservations = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'completed' | 'cancelled'
+    const [activeTab, setActiveTab] = useState('all'); // 'all' | 'upcoming' | 'completed' | 'cancelled'
     const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -158,6 +206,15 @@ const MyReservations = () => {
     /* Modal states */
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [modalType, setModalType] = useState(null); // 'details' | 'cancel' | 'reschedule' | 'receipt'
+
+    /* Calculate total all items */
+    const allReservationsList = useMemo(() => {
+        return [
+            ...reservations.upcoming.map(item => ({ ...item, status: 'upcoming' })),
+            ...reservations.completed.map(item => ({ ...item, status: 'completed' })),
+            ...reservations.cancelled.map(item => ({ ...item, status: 'cancelled' })),
+        ];
+    }, [reservations]);
 
     /* Cancel handler */
     const handleCancelBooking = (bookingId) => {
@@ -170,6 +227,7 @@ const MyReservations = () => {
             cancelled: [
                 {
                     ...itemToCancel,
+                    status: 'cancelled',
                     cancelledDate: 'Today',
                 },
                 ...prev.cancelled,
@@ -187,11 +245,87 @@ const MyReservations = () => {
         setModalType(null);
     };
 
+    /* Items list depending on activeTab */
+    const rawItems = useMemo(() => {
+        if (activeTab === 'all') return allReservationsList;
+        return reservations[activeTab] || [];
+    }, [activeTab, reservations, allReservationsList]);
+
     /* Search filter */
-    const filteredItems = reservations[activeTab].filter(item =>
-        item.station.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.id.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredItems = useMemo(() => {
+        return rawItems.filter(item =>
+            item.station.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.id.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [rawItems, searchQuery]);
+
+    /* Card Renderer helper */
+    const renderCard = (b) => {
+        const currentStatus = b.status || activeTab;
+
+        return (
+            <div key={b.id} className="res-card card dt-res-card">
+                <div className="res-card-header">
+                    <div className="res-booking-id-tag">
+                        <span className="res-id-label">BOOKING ID</span>
+                        <span className="res-id-value">#{b.id}</span>
+                    </div>
+                    <span className={`res-status-badge ${currentStatus}`}>
+                        <span className="res-badge-dot" />
+                        {currentStatus.toUpperCase()}
+                    </span>
+                </div>
+
+                <div className="res-card-body">
+                    <div className="res-station-row">
+                        <span className="res-station-icon">
+                            <IconMapPin />
+                        </span>
+                        <div className="res-station-text">
+                            <h3 className="res-station-name">{b.station}</h3>
+                            <p className="res-station-type">{b.type}</p>
+                        </div>
+                    </div>
+
+                    <div className="res-datetime-box">
+                        <span className="res-datetime-item">
+                            <IconCalendar /> {b.date}
+                        </span>
+                        <span className="res-datetime-divider">|</span>
+                        <span className="res-datetime-item">
+                            <IconClock /> {b.time}
+                        </span>
+                    </div>
+
+                    {currentStatus === 'cancelled' && b.cancelledDate && (
+                        <div className="res-cancelled-alert">
+                            <IconAlertCircle /> Cancelled on {b.cancelledDate}
+                        </div>
+                    )}
+                </div>
+
+                <div className="res-card-actions">
+                    {currentStatus === 'upcoming' && (
+                        <UpcomingCardActions
+                            booking={b}
+                            onDetails={(item) => { setSelectedBooking(item); setModalType('details'); }}
+                            onCancel={(item) => { setSelectedBooking(item); setModalType('cancel'); }}
+                            onReschedule={(item) => { setSelectedBooking(item); setModalType('reschedule'); }}
+                        />
+                    )}
+
+                    {currentStatus === 'completed' && (
+                        <button
+                            className="res-btn-receipt"
+                            onClick={() => { setSelectedBooking(b); setModalType('receipt'); }}
+                        >
+                            View Receipt <IconArrowRight />
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <>
@@ -214,8 +348,14 @@ const MyReservations = () => {
                     </button>
                 </div>
 
-                {/* Tabs Row */}
-                <div className="res-tabs-pill-row">
+                {/* Filter Tabs Row */}
+                <div className="res-tabs-pill-row res-tabs-four">
+                    <button
+                        className={`res-tab-pill ${activeTab === 'all' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('all')}
+                    >
+                        All ({allReservationsList.length})
+                    </button>
                     <button
                         className={`res-tab-pill ${activeTab === 'upcoming' ? 'active' : ''}`}
                         onClick={() => setActiveTab('upcoming')}
@@ -251,92 +391,7 @@ const MyReservations = () => {
                             </div>
                         )
                     ) : (
-                        <>
-                            {filteredItems.map(b => (
-                                <div key={b.id} className="res-card">
-                                    {/* Top Header */}
-                                    <div className="res-card-header">
-                                        <div className="res-booking-id-tag">
-                                            <span className="res-id-label">BOOKING ID</span>
-                                            <span className="res-id-value">#{b.id}</span>
-                                        </div>
-                                        <span className={`res-status-badge ${activeTab}`}>
-                                            <span className="res-badge-dot" />
-                                            {activeTab.toUpperCase()}
-                                        </span>
-                                    </div>
-
-                                {/* Station Info */}
-                                <div className="res-card-body">
-                                    <div className="res-station-row">
-                                        <span className="res-station-icon">
-                                            <IconMapPin />
-                                        </span>
-                                        <div className="res-station-text">
-                                            <h3 className="res-station-name">{b.station}</h3>
-                                            <p className="res-station-type">{b.type}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Date & Time pill box */}
-                                    <div className="res-datetime-box">
-                                        <span className="res-datetime-item">
-                                            <IconCalendar /> {b.date}
-                                        </span>
-                                        <span className="res-datetime-divider">|</span>
-                                        <span className="res-datetime-item">
-                                            <IconClock /> {b.time}
-                                        </span>
-                                    </div>
-
-                                    {activeTab === 'cancelled' && b.cancelledDate && (
-                                        <div className="res-cancelled-alert">
-                                            <IconAlertCircle /> Cancelled on {b.cancelledDate}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="res-card-actions">
-                                    {activeTab === 'upcoming' && (
-                                        b.hasDetailsBtnOnly ? (
-                                            <button
-                                                className="res-btn-primary-green"
-                                                onClick={() => { setSelectedBooking(b); setModalType('details'); }}
-                                            >
-                                                Booking Details
-                                            </button>
-                                        ) : (
-                                            <div className="res-dual-actions">
-                                                <button
-                                                    className="res-btn-cancel"
-                                                    onClick={() => { setSelectedBooking(b); setModalType('cancel'); }}
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    className="res-btn-reschedule"
-                                                    onClick={() => { setSelectedBooking(b); setModalType('reschedule'); }}
-                                                >
-                                                    Reschedule
-                                                </button>
-                                            </div>
-                                        )
-                                    )}
-
-                                    {activeTab === 'completed' && (
-                                        <button
-                                            className="res-btn-receipt"
-                                            onClick={() => { setSelectedBooking(b); setModalType('receipt'); }}
-                                        >
-                                            View Receipt <IconArrowRight />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                        {activeTab === 'cancelled' && <CancelledEmptyNotice />}
-                    </>
+                        filteredItems.map(renderCard)
                     )}
                 </div>
 
@@ -401,6 +456,12 @@ const MyReservations = () => {
                     <div className="dt-res-header-bar card">
                         <div className="dt-res-tabs">
                             <button
+                                className={`dt-res-tab ${activeTab === 'all' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('all')}
+                            >
+                                All <span className="tab-count">{allReservationsList.length}</span>
+                            </button>
+                            <button
                                 className={`dt-res-tab ${activeTab === 'upcoming' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('upcoming')}
                             >
@@ -448,92 +509,7 @@ const MyReservations = () => {
                                 </div>
                             )
                         ) : (
-                            <>
-                                {filteredItems.map(b => (
-                                    <div key={b.id} className="res-card card dt-res-card">
-                                        <div className="res-card-header">
-                                            <div className="res-booking-id-tag">
-                                                <span className="res-id-label">BOOKING ID</span>
-                                                <span className="res-id-value">#{b.id}</span>
-                                            </div>
-                                            <span className={`res-status-badge ${activeTab}`}>
-                                                <span className="res-badge-dot" />
-                                                {activeTab.toUpperCase()}
-                                            </span>
-                                        </div>
-
-                                        <div className="res-card-body">
-                                            <div className="res-station-row">
-                                                <span className="res-station-icon">
-                                                    <IconMapPin />
-                                                </span>
-                                                <div className="res-station-text">
-                                                    <h3 className="res-station-name">{b.station}</h3>
-                                                    <p className="res-station-type">{b.type}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="res-datetime-box">
-                                                <span className="res-datetime-item">
-                                                    <IconCalendar /> {b.date}
-                                                </span>
-                                                <span className="res-datetime-divider">|</span>
-                                                <span className="res-datetime-item">
-                                                    <IconClock /> {b.time}
-                                                </span>
-                                            </div>
-
-                                            {activeTab === 'cancelled' && b.cancelledDate && (
-                                                <div className="res-cancelled-alert">
-                                                    <IconAlertCircle /> Cancelled on {b.cancelledDate}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="res-card-actions">
-                                            {activeTab === 'upcoming' && (
-                                                b.hasDetailsBtnOnly ? (
-                                                    <button
-                                                        className="res-btn-primary-green"
-                                                        onClick={() => { setSelectedBooking(b); setModalType('details'); }}
-                                                    >
-                                                        Booking Details
-                                                    </button>
-                                                ) : (
-                                                    <div className="res-dual-actions">
-                                                        <button
-                                                            className="res-btn-cancel"
-                                                            onClick={() => { setSelectedBooking(b); setModalType('cancel'); }}
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        <button
-                                                            className="res-btn-reschedule"
-                                                            onClick={() => { setSelectedBooking(b); setModalType('reschedule'); }}
-                                                        >
-                                                            Reschedule
-                                                        </button>
-                                                    </div>
-                                                )
-                                            )}
-
-                                            {activeTab === 'completed' && (
-                                                <button
-                                                    className="res-btn-receipt"
-                                                    onClick={() => { setSelectedBooking(b); setModalType('receipt'); }}
-                                                >
-                                                    View Receipt <IconArrowRight />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                                {activeTab === 'cancelled' && (
-                                    <div className="card dt-empty-state-card" style={{ gridColumn: '1 / -1', marginTop: 12 }}>
-                                        <CancelledEmptyNotice />
-                                    </div>
-                                )}
-                            </>
+                            filteredItems.map(renderCard)
                         )}
                     </div>
                 </main>
