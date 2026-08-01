@@ -1,7 +1,16 @@
-import { useEffect, useState, useCallback, useRef, memo } from 'react';
+// ============================================
+// src/pages/Review.jsx
+// EVORA - Rate Your Charging Session Page
+// ============================================
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import IconSprite from '../components/IconSprite';
 import Icon from '../components/Icon.jsx';
 import chargingStationImg from '../assets/charging-station.png';
 
+/* ---------- Mock Data ---------- */
 const STATION = {
     name: 'Voltex Supercharge Hub',
     rating: '4.8',
@@ -14,118 +23,73 @@ const STATION = {
     ],
 };
 
-const DEFAULT_STATION_IMAGE_URL = chargingStationImg;
-const STATION_IMAGE_FALLBACK_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400"><rect width="800" height="400" fill="%2302141C"/><path d="M400 150 L430 210 L370 210 Z" fill="%233DDC97"/><text x="400" y="260" font-family="sans-serif" font-size="20" fill="%2390AFB7" text-anchor="middle">Station Charger Details</text></svg>';
 const AVAILABLE_CHIPS = ['Fast Charging', 'Easy to Find', 'Clean Station', 'Friendly Staff', 'Faulty Charger'];
 
-function generatePhotoId() {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-        return crypto.randomUUID();
-    }
-    return Math.random().toString(36).slice(2, 11);
-}
+const STATION_IMAGE_FALLBACK_SVG =
+    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400"><rect width="800" height="400" fill="%2302141C"/><path d="M400 150 L430 210 L370 210 Z" fill="%233DDC97"/><text x="400" y="260" font-family="sans-serif" font-size="20" fill="%2390AFB7" text-anchor="middle">Station Charger Details</text></svg>';
 
-const StarButton = memo(function StarButton({ index, isActive, isSelected, onSelect, onHoverStart, onHoverEnd }) {
-    return (
-        <button
-            type="button"
-            className={isActive ? 'star-interactive filled' : 'star-interactive'}
-            onClick={() => onSelect(index)}
-            onMouseEnter={() => onHoverStart(index)}
-            onMouseLeave={onHoverEnd}
-            aria-label={`Rate ${index} out of 5 stars`}
-            role="radio"
-            aria-checked={isSelected}
-        >
-            <Icon
-                name="icon-star-act"
-                size={36}
-                style={{
-                    color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                    fill: isActive ? 'currentColor' : 'none',
-                    transition: 'color 0.15s, fill 0.15s',
-                }}
-            />
-        </button>
-    );
-});
+const USER = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.com' };
 
-const ChipButton = memo(function ChipButton({ chip, isActive, onToggle }) {
-    return (
-        <button
-            type="button"
-            className={isActive ? 'chip active' : 'chip'}
-            onClick={() => onToggle(chip)}
-            aria-pressed={isActive}
-        >
-            {chip}
-        </button>
-    );
-});
+const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
-export default function ReviewSection() {
-    const [hostImageUrl, setHostImageUrl] = useState(null);
+export default function Review() {
+    const navigate = useNavigate();
 
-    useEffect(() => {
-        window.setHostImage = (url) => setHostImageUrl(url);
-        return () => { delete window.setHostImage; };
-    }, []);
+    // ── Layout state ──
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const hasHostImage = Boolean(hostImageUrl && hostImageUrl.trim() !== '');
-    const [imgSrc, setImgSrc] = useState(hasHostImage ? hostImageUrl : DEFAULT_STATION_IMAGE_URL);
-
-    useEffect(() => {
-        setImgSrc(hasHostImage ? hostImageUrl : DEFAULT_STATION_IMAGE_URL);
-    }, [hostImageUrl, hasHostImage]);
-
+    // ── Station image state ──
+    const [imgSrc, setImgSrc] = useState(chargingStationImg);
     const handleImageError = () => setImgSrc(STATION_IMAGE_FALLBACK_SVG);
 
+    // ── Review form state ──
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
     const [selectedChips, setSelectedChips] = useState([]);
     const [comment, setComment] = useState('');
     const [photos, setPhotos] = useState([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [errors, setErrors] = useState({});
+    const [ratingError, setRatingError] = useState(null);
 
-    const photosRef = useRef(photos);
-    useEffect(() => { photosRef.current = photos; }, [photos]);
+    // Revoke object URLs on unmount
     useEffect(() => {
         return () => {
-            photosRef.current.forEach((item) => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
+            photos.forEach((item) => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
         };
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleStarClick = useCallback((value) => {
+    const handleStarClick = (value) => {
         setRating(value);
-        setErrors((prev) => (prev.rating ? { ...prev, rating: null } : prev));
-    }, []);
-    const handleHoverStart = useCallback((value) => setHoverRating(value), []);
-    const handleHoverEnd = useCallback(() => setHoverRating(0), []);
+        setRatingError(null);
+    };
 
-    const handleChipToggle = useCallback((chip) => {
+    const handleChipToggle = (chip) => {
         setSelectedChips((prev) =>
             prev.includes(chip) ? prev.filter((c) => c !== chip) : [...prev, chip]
         );
-    }, []);
+    };
 
-    const handlePhotoChange = useCallback((e) => {
+    const handlePhotoChange = (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
-        const newPhotos = files.map((file) => ({ id: generatePhotoId(), file, previewUrl: URL.createObjectURL(file) }));
+        const newPhotos = files.map((file) => ({
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+            file,
+            previewUrl: URL.createObjectURL(file),
+        }));
         setPhotos((prev) => [...prev, ...newPhotos]);
         e.target.value = '';
-    }, []);
+    };
 
-    const handleRemovePhoto = useCallback((id, previewUrl) => {
+    const handleRemovePhoto = (id, previewUrl) => {
         URL.revokeObjectURL(previewUrl);
         setPhotos((prev) => prev.filter((p) => p.id !== id));
-    }, []);
+    };
 
-    const handleSubmit = useCallback((e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         if (rating === 0) {
-            setErrors({ rating: 'Please select a star rating before submitting.' });
+            setRatingError('Please select a star rating before submitting.');
             return;
         }
         const payload = {
@@ -143,23 +107,23 @@ export default function ReviewSection() {
         console.log('Full JSON Payload: ', JSON.stringify(payload, null, 2));
         console.log('-----------------------------------------------------------');
         setIsSubmitted(true);
-    }, [rating, selectedChips, comment, photos]);
+    };
 
-    const handleReset = useCallback(() => {
-        photosRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+    const handleReset = () => {
+        photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
         setRating(0);
         setHoverRating(0);
         setSelectedChips([]);
         setComment('');
         setPhotos([]);
         setIsSubmitted(false);
-        setErrors({});
-    }, []);
+        setRatingError(null);
+    };
 
     const activeRating = hoverRating || rating;
-    const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
-    return (
+    /* ---------- Shared sub-components ---------- */
+    const ReviewContent = () => (
         <div className="review-page-layout">
             {/* ── Station Summary Card ── */}
             <section className="card station-card animate-card">
@@ -167,11 +131,10 @@ export default function ReviewSection() {
                     <img
                         id="station-hero-image"
                         src={imgSrc}
-                        alt={hasHostImage ? 'EV Charging Station - Host Provided' : 'EV Charging Station'}
+                        alt="EV Charging Station"
                         onError={handleImageError}
                     />
                 </div>
-
                 <div className="station-details">
                     <div>
                         <div className="station-header">
@@ -183,7 +146,6 @@ export default function ReviewSection() {
                         </div>
                         <p className="station-address">{STATION.address}</p>
                     </div>
-
                     <div className="booking-summary-grid">
                         {STATION.summary.map((item) => (
                             <div className="summary-item" key={item.label}>
@@ -230,31 +192,41 @@ export default function ReviewSection() {
                     <form onSubmit={handleSubmit} noValidate>
                         {/* Star Rating */}
                         <div className="review-section-block">
-                            <label className="review-section-label" id="star-rating-label">
-                                Overall Rating
-                            </label>
+                            <label className="review-section-label" id="star-rating-label">Overall Rating</label>
                             <div className="stars-container" role="radiogroup" aria-labelledby="star-rating-label">
                                 {[1, 2, 3, 4, 5].map((index) => (
-                                    <StarButton
+                                    <button
                                         key={index}
-                                        index={index}
-                                        isActive={index <= activeRating}
-                                        isSelected={rating === index}
-                                        onSelect={handleStarClick}
-                                        onHoverStart={handleHoverStart}
-                                        onHoverEnd={handleHoverEnd}
-                                    />
+                                        type="button"
+                                        className={index <= activeRating ? 'star-interactive filled' : 'star-interactive'}
+                                        onClick={() => handleStarClick(index)}
+                                        onMouseEnter={() => setHoverRating(index)}
+                                        onMouseLeave={() => setHoverRating(0)}
+                                        aria-label={`Rate ${index} out of 5 stars`}
+                                        role="radio"
+                                        aria-checked={rating === index}
+                                    >
+                                        <Icon
+                                            name="icon-star-act"
+                                            size={36}
+                                            style={{
+                                                color: index <= activeRating ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                                fill: index <= activeRating ? 'currentColor' : 'none',
+                                                transition: 'color 0.15s, fill 0.15s',
+                                            }}
+                                        />
+                                    </button>
                                 ))}
                             </div>
                             {activeRating > 0 && (
-                                <span className="rating-label-text">{ratingLabels[activeRating]}</span>
+                                <span className="rating-label-text">{RATING_LABELS[activeRating]}</span>
                             )}
-                            {errors.rating && (
+                            {ratingError && (
                                 <div className="error-message" role="alert">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                                     </svg>
-                                    <span>{errors.rating}</span>
+                                    <span>{ratingError}</span>
                                 </div>
                             )}
                         </div>
@@ -266,12 +238,15 @@ export default function ReviewSection() {
                             <label className="review-section-label">What went well or could be improved?</label>
                             <div className="review-chips-container">
                                 {AVAILABLE_CHIPS.map((chip) => (
-                                    <ChipButton
+                                    <button
                                         key={chip}
-                                        chip={chip}
-                                        isActive={selectedChips.includes(chip)}
-                                        onToggle={handleChipToggle}
-                                    />
+                                        type="button"
+                                        className={selectedChips.includes(chip) ? 'chip active' : 'chip'}
+                                        onClick={() => handleChipToggle(chip)}
+                                        aria-pressed={selectedChips.includes(chip)}
+                                    >
+                                        {chip}
+                                    </button>
                                 ))}
                             </div>
                         </div>
@@ -296,7 +271,9 @@ export default function ReviewSection() {
 
                         {/* Photo Upload */}
                         <div className="review-section-block">
-                            <label className="review-section-label">Upload Photos <span className="review-section-label--optional">(optional)</span></label>
+                            <label className="review-section-label">
+                                Upload Photos <span className="review-section-label--optional">(optional)</span>
+                            </label>
                             <div className="photo-upload-wrapper">
                                 <div className="photo-upload-btn-container">
                                     <input
@@ -316,7 +293,6 @@ export default function ReviewSection() {
                                         <span>Add Photo</span>
                                     </div>
                                 </div>
-
                                 {photos.map((item) => (
                                     <div key={item.id} className="thumbnail-preview">
                                         <img src={item.previewUrl} alt="Thumbnail preview" />
@@ -342,5 +318,99 @@ export default function ReviewSection() {
                 </div>
             )}
         </div>
+    );
+
+    return (
+        <>
+            <IconSprite />
+
+            {/* ════════════════════════════════
+                MOBILE LAYOUT (hidden ≥ 768px)
+                ════════════════════════════════ */}
+            <div className="evora-screen mobile-only">
+                <div className="nav-bar">
+                    <button className="nav-back" onClick={() => navigate(-1)} title="Back">←</button>
+                    <span className="nav-title">Rate Your Session</span>
+                    <button className="nav-hamburger" onClick={() => setIsMobileMenuOpen(true)} title="Menu">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                            <line x1="4" y1="6" x2="20" y2="6" />
+                            <line x1="4" y1="12" x2="20" y2="12" />
+                            <line x1="4" y1="18" x2="20" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <ReviewContent />
+
+                {/* Mobile Navigation Drawer Overlay */}
+                {isMobileMenuOpen && (
+                    <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}>
+                        <div className="mobile-menu-drawer" onClick={(e) => e.stopPropagation()}>
+                            <div className="mobile-menu-header">
+                                <div className="mobile-menu-logo">
+                                    <span className="logo-icon">⚡</span>
+                                    <span className="logo-text">Evora</span>
+                                </div>
+                                <button className="mobile-menu-close" onClick={() => setIsMobileMenuOpen(false)}>✕</button>
+                            </div>
+                            <nav className="mobile-menu-nav">
+                                <div className="mobile-menu-item" onClick={() => { navigate('/dashboard'); setIsMobileMenuOpen(false); }}>
+                                    <span>📊</span> Dashboard / Home
+                                </div>
+                                <div className="mobile-menu-item" onClick={() => { navigate('/find'); setIsMobileMenuOpen(false); }}>
+                                    <span>🔍</span> Find Charging Stations
+                                </div>
+                                <div className="mobile-menu-item" onClick={() => { navigate('/book-charger'); setIsMobileMenuOpen(false); }}>
+                                    <span>⚡</span> Book a Charger
+                                </div>
+                                <div className="mobile-menu-item" onClick={() => { navigate('/bookings'); setIsMobileMenuOpen(false); }}>
+                                    <span>📅</span> My Bookings
+                                </div>
+                                <div className="mobile-menu-item active" onClick={() => { navigate('/'); setIsMobileMenuOpen(false); }}>
+                                    <span>⭐</span> Rate Your Session
+                                </div>
+                                <div className="mobile-menu-item" onClick={() => { navigate('/vehicles'); setIsMobileMenuOpen(false); }}>
+                                    <span>🚗</span> My Vehicles
+                                </div>
+                                <div className="mobile-menu-item" onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}>
+                                    <span>⚙️</span> Settings
+                                </div>
+                            </nav>
+                            <div className="mobile-menu-footer">
+                                <div className="mobile-user-card">
+                                    <div className="mobile-user-avatar">SJ</div>
+                                    <div className="mobile-user-info">
+                                        <span className="mobile-user-name">{USER.name}</span>
+                                        <span className="mobile-user-email">{USER.email}</span>
+                                    </div>
+                                </div>
+                                <button className="mobile-logout-btn" onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}>
+                                    Log Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ════════════════════════════════
+                DESKTOP LAYOUT (hidden < 768px)
+                ════════════════════════════════ */}
+            <div className="app-shell desktop-only">
+                <Sidebar />
+                <main className="app-main">
+                    <div className="dt-topbar">
+                        <button className="dt-back-btn" onClick={() => navigate(-1)}>←</button>
+                        <div>
+                            <h1 className="dt-page-title">Rate Your Charging Session</h1>
+                            <p className="dt-page-subtitle">Share your experience at {STATION.name}</p>
+                        </div>
+                    </div>
+                    <div className="dt-content">
+                        <ReviewContent />
+                    </div>
+                </main>
+            </div>
+        </>
     );
 }

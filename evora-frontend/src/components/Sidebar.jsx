@@ -81,16 +81,13 @@ const IconLogout = () => (
 );
 
 const NAV_ITEMS = [
-    { label: 'Dashboard / Home', to: '/dashboard', icon: IconGrid },
-    { label: 'Find Charging Stations', to: '/find', icon: IconSearch },
-    { label: 'My Bookings', to: '/bookings', icon: IconCalendar },
-    { label: 'Rate Your Charging Session', to: '/', icon: IconStar },
+    { label: 'Home', to: '/dashboard', icon: IconGrid },
+    { label: 'Book a Charger', to: '/book-charger', icon: IconBolt },
+    { label: 'My Reservations', to: '/bookings', icon: IconCalendar },
+    { label: 'Rate Your Charging Session', to: '/rate-session', icon: IconStar },
     { label: 'My Vehicles', to: '/vehicles', icon: IconCar },
     { label: 'Settings', to: '/settings', icon: IconGear },
 ];
-
-// Re-export for MobileDrawer to share the same nav items
-export { NAV_ITEMS, IconBolt, IconLogout };
 
 const Sidebar = ({ user = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.com' } }) => {
     const navigate = useNavigate();
@@ -98,7 +95,7 @@ const Sidebar = ({ user = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.
 
     return (
         <aside className="app-sidebar">
-            <div className="sidebar-logo" onClick={() => navigate('/')} role="button" tabIndex={0}>
+            <div className="sidebar-logo" onClick={() => navigate('/dashboard')} role="button" tabIndex={0}>
                 <span className="sidebar-logo-icon"><IconBolt filled /></span>
                 <span className="sidebar-logo-text">Evora</span>
             </div>
@@ -117,7 +114,7 @@ const Sidebar = ({ user = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.
             </nav>
 
             <div className="sidebar-bottom">
-                <div className="sidebar-user-card" onClick={() => navigate('/profile')} role="button" tabIndex={0}>
+                <div className="sidebar-user-card" label="Profile" onClick={() => navigate('/profile')}>
                     <div className="sidebar-user-avatar">{initials}</div>
                     <div className="sidebar-user-info">
                         <span className="sidebar-user-name">{user.name}</span>
