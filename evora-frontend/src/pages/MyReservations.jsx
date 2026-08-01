@@ -8,6 +8,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import CancelBookingModal from '../components/CancelBookingModal';
+import RescheduleBookingModal from '../components/RescheduleBookingModal';
 
 /* ---------- SVG Icons ---------- */
 const IconBack = () => (
@@ -516,16 +517,15 @@ const MyReservations = () => {
                 </main>
             </div>
 
-            {/* Action Modals */}
-            {modalType === 'cancel' && selectedBooking && (
-                <CancelBookingModal
+            {modalType === 'reschedule' && selectedBooking && (
+                <RescheduleBookingModal
                     booking={selectedBooking}
                     onClose={() => setModalType(null)}
-                    onConfirmCancel={() => handleCancelBooking(selectedBooking.id)}
+                    onConfirmReschedule={handleRescheduleBooking}
                 />
             )}
 
-            {modalType && modalType !== 'cancel' && selectedBooking && (
+            {modalType && modalType !== 'cancel' && modalType !== 'reschedule' && selectedBooking && (
                 <div className="bc-modal-backdrop" onClick={() => setModalType(null)}>
                     <div className="bc-modal-card res-modal-card" onClick={(e) => e.stopPropagation()}>
                         <button className="bc-close-btn" onClick={() => setModalType(null)}>✕</button>

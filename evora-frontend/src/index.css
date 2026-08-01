@@ -4330,4 +4330,289 @@ body {
   background: #dc2626;
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
   transform: translateY(-1px);
-}
+}
+
+/* ============================================
+   ENHANCED RESCHEDULE SESSION MODAL (.reschedule-*)
+   ============================================ */
+
+.reschedule-modal-card {
+  position: relative;
+  width: 92%;
+  max-width: 520px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent-mid);
+  border-radius: 28px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+  animation: bcModalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.reschedule-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.reschedule-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.reschedule-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.reschedule-icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(61, 220, 151, 0.12);
+  border: 1.5px solid rgba(61, 220, 151, 0.3);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(61, 220, 151, 0.2);
+}
+
+.reschedule-title {
+  font-family: var(--font-family);
+  font-size: 20px;
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0 0 2px 0;
+}
+
+.reschedule-subtitle {
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.reschedule-id {
+  color: var(--accent-cyan);
+  font-weight: var(--font-semibold);
+}
+
+/* Sections */
+.reschedule-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reschedule-section-title {
+  font-family: var(--font-family);
+  font-size: 11px;
+  font-weight: var(--font-bold);
+  color: var(--accent-primary);
+  letter-spacing: 0.08em;
+}
+
+/* Date Chips Row */
+.reschedule-dates-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.reschedule-dates-row::-webkit-scrollbar {
+  display: none;
+}
+
+.reschedule-date-chip {
+  position: relative;
+  flex: 1;
+  min-width: 72px;
+  padding: 10px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border-accent-mid);
+  background: rgba(10, 42, 53, 0.7);
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reschedule-chip-day {
+  font-family: var(--font-family);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reschedule-chip-date {
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.reschedule-date-chip.active {
+  border-color: var(--accent-primary);
+  background: rgba(61, 220, 151, 0.15);
+  box-shadow: 0 0 12px rgba(61, 220, 151, 0.25);
+  color: var(--accent-primary);
+}
+
+.reschedule-chip-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  color: var(--accent-primary);
+}
+
+/* Time Slot Grid */
+.reschedule-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.reschedule-slot-pill {
+  padding: 10px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border-accent-mid);
+  background: rgba(10, 42, 53, 0.7);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.reschedule-slot-pill.active {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+  font-weight: var(--font-bold);
+  box-shadow: 0 0 14px rgba(61, 220, 151, 0.35);
+}
+
+.reschedule-slot-pill.occupied {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.reschedule-slot-busy {
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+
+/* Schedule Comparison Box */
+.reschedule-comparison-box {
+  width: 100%;
+  background: rgba(4, 24, 33, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reschedule-comp-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reschedule-comp-label {
+  font-family: var(--font-family);
+  font-size: 10px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.reschedule-comp-val.old {
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+.reschedule-comp-val.new {
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: var(--font-bold);
+  color: var(--accent-primary);
+}
+
+.reschedule-comp-arrow {
+  color: var(--accent-primary);
+}
+
+/* Action Buttons */
+.reschedule-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.reschedule-btn-secondary {
+  flex: 1;
+  padding: 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-accent-mid);
+  background: rgba(10, 42, 53, 0.7);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.reschedule-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.reschedule-btn-primary {
+  flex: 1.3;
+  padding: 14px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(61, 220, 151, 0.35);
+  transition: all 0.2s ease;
+}
+.reschedule-btn-primary:hover {
+  background: #34c787;
+  box-shadow: 0 6px 20px rgba(61, 220, 151, 0.5);
+  transform: translateY(-1px);
+}

@@ -9,6 +9,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import evHero from '../assets/ev-hero.jpg';
 import CancelBookingModal from '../components/CancelBookingModal';
+import RescheduleBookingModal from '../components/RescheduleBookingModal';
 
 /* ---------- SVG Icons ---------- */
 const IconBack = () => (
@@ -374,40 +375,11 @@ const BookingDetails = () => {
 
             {/* Reschedule Modal */}
             {showRescheduleModal && (
-                <div className="bc-modal-backdrop" onClick={() => setShowRescheduleModal(false)}>
-                    <div className="bc-modal-card res-modal-card" onClick={(e) => e.stopPropagation()}>
-                        <button className="bc-close-btn" onClick={() => setShowRescheduleModal(false)}>✕</button>
-                        <div className="res-modal-body">
-                            <h3 className="res-modal-title">Reschedule Booking</h3>
-                            <p className="res-modal-subtitle">Select a new date and time for #{booking.id}</p>
-
-                            <div className="res-reschedule-inputs">
-                                <label className="res-input-group">
-                                    <span>New Date</span>
-                                    <input type="date" className="res-date-input" defaultValue="2026-11-01" />
-                                </label>
-                                <label className="res-input-group">
-                                    <span>New Time Slot</span>
-                                    <select className="res-select-input" defaultValue="11:00 AM">
-                                        <option value="09:00 AM">09:00 AM</option>
-                                        <option value="11:00 AM">11:00 AM</option>
-                                        <option value="01:30 PM">01:30 PM</option>
-                                        <option value="04:00 PM">04:00 PM</option>
-                                    </select>
-                                </label>
-                            </div>
-
-                            <div className="res-modal-button-row" style={{ marginTop: 20 }}>
-                                <button className="btn-secondary" onClick={() => setShowRescheduleModal(false)}>
-                                    Back
-                                </button>
-                                <button className="btn-primary" onClick={handleRescheduleConfirm}>
-                                    Confirm Reschedule
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <RescheduleBookingModal
+                    booking={booking}
+                    onClose={() => setShowRescheduleModal(false)}
+                    onConfirmReschedule={handleRescheduleConfirm}
+                />
             )}
         </>
     );
