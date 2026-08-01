@@ -114,7 +114,7 @@ const Sidebar = ({ user = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.
             </nav>
 
             <div className="sidebar-bottom">
-                <div className="sidebar-user-card" label="Profile" onClick={() => navigate('/profile')}>
+                <div className="sidebar-user-card" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }} role="button" tabIndex={0}>
                     <div className="sidebar-user-avatar">{initials}</div>
                     <div className="sidebar-user-info">
                         <span className="sidebar-user-name">{user.name}</span>
