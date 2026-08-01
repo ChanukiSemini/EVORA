@@ -7,6 +7,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import CancelBookingModal from '../components/CancelBookingModal';
 
 /* ---------- SVG Icons ---------- */
 const IconBack = () => (
@@ -308,7 +309,7 @@ const MyReservations = () => {
                     {currentStatus === 'upcoming' && (
                         <UpcomingCardActions
                             booking={b}
-                            onDetails={(item) => { setSelectedBooking(item); setModalType('details'); }}
+                            onDetails={(item) => navigate(`/booking-details/${item.id}`)}
                             onCancel={(item) => { setSelectedBooking(item); setModalType('cancel'); }}
                             onReschedule={(item) => { setSelectedBooking(item); setModalType('reschedule'); }}
                         />
@@ -515,10 +516,16 @@ const MyReservations = () => {
                 </main>
             </div>
 
-            {/* ════════════════════════════════
-                ACTION MODALS (Details, Cancel, Reschedule, Receipt)
-                ════════════════════════════════ */}
-            {modalType && selectedBooking && (
+            {/* Action Modals */}
+            {modalType === 'cancel' && selectedBooking && (
+                <CancelBookingModal
+                    booking={selectedBooking}
+                    onClose={() => setModalType(null)}
+                    onConfirmCancel={() => handleCancelBooking(selectedBooking.id)}
+                />
+            )}
+
+            {modalType && modalType !== 'cancel' && selectedBooking && (
                 <div className="bc-modal-backdrop" onClick={() => setModalType(null)}>
                     <div className="bc-modal-card res-modal-card" onClick={(e) => e.stopPropagation()}>
                         <button className="bc-close-btn" onClick={() => setModalType(null)}>✕</button>
