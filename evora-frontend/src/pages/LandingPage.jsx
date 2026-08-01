@@ -18,7 +18,7 @@ const LandingPage = () => {
     const navigate = useNavigate();
 
     const goToBooking = () => navigate('/book-charger');
-    const goToLogin = () => navigate('/login');
+    const goToLogin = () => navigate('/dashboard');
 
     return (
         <div className="landing-wrapper">
