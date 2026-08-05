@@ -94,9 +94,43 @@ export function CompanyProvider({ children }) {
     }))
   }
 
+  function addBranch(newBranchData) {
+    const slug = newBranchData.name.toLowerCase().trim().replace(/\s+/g, '-')
+    const newBranch = {
+      id: `branch-${slug}-${Date.now()}`,
+      name: newBranchData.name,
+      openHours: newBranchData.openHours || '24/7',
+      address: newBranchData.address || '',
+      phone: newBranchData.phone || '',
+      chargers: [],
+    }
+    setCompany((prev) => ({
+      ...prev,
+      branches: [...prev.branches, newBranch],
+    }))
+  }
+
+  function updateBranch(branchId, updatedData) {
+    setCompany((prev) => ({
+      ...prev,
+      branches: prev.branches.map((branch) =>
+        branch.id === branchId ? { ...branch, ...updatedData } : branch
+      ),
+    }))
+  }
+
   return (
     <CompanyContext.Provider
-      value={{ company, updatePort, removePort, addChargersToBranch, setChargerStatus, setBranchStatus }}
+      value={{
+        company,
+        updatePort,
+        removePort,
+        addChargersToBranch,
+        setChargerStatus,
+        setBranchStatus,
+        addBranch,
+        updateBranch,
+      }}
     >
       {children}
     </CompanyContext.Provider>

@@ -6,6 +6,8 @@ export const company = {
       id: 'branch-colombo',
       name: 'Colombo',
       openHours: '24/7',
+      address: '100 Galle Road, Colombo 03',
+      phone: '+94 11 212 3456',
       chargers: [
         {
           id: 'charger-1',
@@ -32,6 +34,8 @@ export const company = {
       id: 'branch-kandy',
       name: 'Kandy',
       openHours: '6 AM - 11 PM',
+      address: '45 Peradeniya Road, Kandy',
+      phone: '+94 81 223 4567',
       chargers: [
         {
           id: 'charger-1',
@@ -65,6 +69,8 @@ export const company = {
       id: 'branch-galle',
       name: 'Galle',
       openHours: '24/7',
+      address: '88 Matara Road, Galle',
+      phone: '+94 91 224 5678',
       chargers: [
         {
           id: 'charger-1',

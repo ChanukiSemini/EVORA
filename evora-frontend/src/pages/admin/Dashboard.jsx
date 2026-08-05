@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChargerCard from '../../components/admin/ChargerCard'
+import BranchModal from '../../components/admin/BranchModal'
 import { useCompany } from '../../context/admin/CompanyContext'
 import { getBranchAvailability, isBranchOpen, getCompanyTotals } from '../../utils/admin/branchHelpers'
 
 
 function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [showAddBranchModal, setShowAddBranchModal] = useState(false)
   const navigate = useNavigate()
   const { company } = useCompany()
 
@@ -19,18 +21,38 @@ function Dashboard() {
   return (
     <div className="dashboard-container page-wrapper">
       <div className="dashboard-card">
-        <div className="dashboard-top-row">
+        <div className="dashboard-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h2 style={{ color: '#22e584', fontSize: '22px' }}>{company.name}</h2>
             <p style={{ color: '#9ca3af', fontSize: '13px' }}>Station Admin Dashboard</p>
           </div>
-          <input
-            className="search-input-small"
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              className="search-input-small"
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button
+              className="action-btn-green"
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                marginBottom: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontWeight: 'bold',
+              }}
+              onClick={() => setShowAddBranchModal(true)}
+            >
+              ➕ Add Branch
+            </button>
+          </div>
         </div>
 
         <div className="quick-summary-row">
@@ -54,9 +76,11 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="legend-cluster" style={{ justifyContent: 'flex-start', marginTop: '20px' }}>
-          <span><span className="stat-dot" style={{ backgroundColor: '#22e584' }}></span> Open</span>
-          <span><span className="stat-dot" style={{ backgroundColor: '#ff4d6d' }}></span> Closed</span>
+        <div className="legend-cluster" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <span><span className="stat-dot" style={{ backgroundColor: '#22e584' }}></span> Open</span>
+            <span><span className="stat-dot" style={{ backgroundColor: '#ff4d6d' }}></span> Closed</span>
+          </div>
         </div>
 
         <div className="charger-grid" style={{ marginTop: '16px' }}>
@@ -65,7 +89,7 @@ function Dashboard() {
             const { availablePorts, totalPorts } = getBranchAvailability(branch)
 
             return (
-              <div key={branch.id} onClick={() => navigate(`/admin/charger/${branch.id}`)}>
+              <div key={branch.id} onClick={() => navigate(`/admin/charger/${branch.id}`)} style={{ cursor: 'pointer' }}>
                 <ChargerCard
                   name={`${company.name} ${branch.name}`}
                   location={branch.name}
@@ -78,6 +102,10 @@ function Dashboard() {
           })}
         </div>
       </div>
+
+      {showAddBranchModal && (
+        <BranchModal onClose={() => setShowAddBranchModal(false)} />
+      )}
     </div>
   )
 }
