@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, Mail, Phone, CheckCircle2 } from 'lucide-react'
+import { Camera, Mail, Phone, CheckCircle2, User } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout.jsx'
 import { useAccountType } from '../context/AccountTypeContext.jsx'
 
@@ -11,9 +11,9 @@ export default function CompleteProfile() {
   const [photo, setPhoto] = useState(null)
   const fileInputRef = useRef(null)
 
-  const [fullName, setFullName] = useState('Alexander Thompson')
-  const [email, setEmail] = useState('alex.thompson@gmail.com')
-  const [phone, setPhone] = useState('77 123 4567')
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [error, setError] = useState('')
 
   const handlePickPhoto = () => {
@@ -71,10 +71,12 @@ export default function CompleteProfile() {
             <div className="w-24 h-24 rounded-full bg-evora-card border-2 border-evora-green/40 flex items-center justify-center text-evora-muted overflow-hidden">
               {photo ? (
                 <img src={photo} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
+              ) : fullName.trim() ? (
                 <span className="text-3xl font-display text-evora-green">
-                  {fullName.trim() ? fullName.trim()[0].toUpperCase() : 'A'}
+                  {fullName.trim()[0].toUpperCase()}
                 </span>
+              ) : (
+                <User size={36} className="text-evora-green" />
               )}
             </div>
             <input
@@ -99,6 +101,7 @@ export default function CompleteProfile() {
             label="Full Name"
             value={fullName}
             onChange={setFullName}
+            placeholder="Enter your full name"
             icon={<GoogleG />}
           />
           <ProfileField
@@ -106,6 +109,7 @@ export default function CompleteProfile() {
             value={email}
             onChange={setEmail}
             type="email"
+            placeholder="Enter your email address"
             icon={<Mail size={16} className="text-evora-muted" />}
           />
           <div>
@@ -115,6 +119,7 @@ export default function CompleteProfile() {
               <input
                 type="tel"
                 value={phone}
+                placeholder="77 123 4567"
                 onChange={(e) => setPhone(e.target.value.replace(/[^0-9\s]/g, ''))}
                 className="bg-transparent outline-none flex-1 text-sm text-evora-text/90 min-w-0"
               />
@@ -147,7 +152,7 @@ export default function CompleteProfile() {
   )
 }
 
-function ProfileField({ label, value, onChange, icon, type = 'text' }) {
+function ProfileField({ label, value, onChange, icon, placeholder, type = 'text' }) {
   return (
     <div className="flex items-center gap-3 bg-evora-card border border-evora-border rounded-xl px-4 py-3.5 focus-within:border-evora-green/70">
       <span className="shrink-0">{icon}</span>
@@ -156,6 +161,7 @@ function ProfileField({ label, value, onChange, icon, type = 'text' }) {
         <input
           type={type}
           value={value}
+          placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
           className="bg-transparent outline-none w-full text-evora-text text-sm"
         />

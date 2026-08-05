@@ -107,8 +107,15 @@
   --radius-full: 999px;
 
   --screen-width: 402px;
-  --screen-height: 874px;
-  --screen-padding: 16px;
+  /* Evora Auth Palette Variables */
+  --evora-bg: #031C26;
+  --evora-panel: #052a37;
+  --evora-card: #063242;
+  --evora-border: #0e4356;
+  --evora-green: #10b981;
+  --evora-green-dark: #059669;
+  --evora-text: #eafff5;
+  --evora-muted: #8fb6c2;
 }
 
 /* ============================================
@@ -120,6 +127,61 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+button {
+  background: transparent;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  outline: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input, select, textarea {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  outline: none;
+}
+
+input:focus, input:active,
+select:focus, select:active,
+textarea:focus, textarea:active {
+  outline: none !important;
+}
+
+/* Fix Browser Autofill White Box Issue */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #063242 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+select {
+  background-color: var(--evora-card, #063242);
+  color: var(--evora-text, #eafff5);
+  border: 1px solid var(--evora-border, #0e4356);
+  border-radius: 12px;
+  padding: 12px 16px;
+  outline: none;
+}
+
+select option {
+  background-color: #052a37;
+  color: #eafff5;
+  padding: 8px;
 }
 
 html,
@@ -2855,3 +2917,108 @@ body {
     position: static;
   }
 }
+
+/* ============================================
+   EVORA — Pure Custom CSS UI & Contrast Fixes
+   ============================================ */
+
+/* Remove default browser button background highlight boxes across auth pages */
+.evora-auth button {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+}
+
+.evora-auth button.btn-primary {
+  background-color: #10b981;
+  color: #031C26;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: filter 0.2s, box-shadow 0.2s, transform 0.15s;
+  cursor: pointer;
+  width: 100%;
+}
+
+.evora-auth button.btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.35);
+}
+
+.evora-auth button.btn-primary:active {
+  transform: scale(0.99);
+}
+
+.evora-auth button.btn-secondary {
+  background-color: transparent;
+  border: 1px solid #0e4356;
+  color: #eafff5;
+  font-weight: 500;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: border-color 0.2s, background-color 0.2s;
+  cursor: pointer;
+  width: 100%;
+}
+
+.evora-auth button.btn-secondary:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  background-color: #063242;
+}
+
+/* Fix OTP Verification 6-digit input boxes contrast & visibility */
+.evora-auth input[inputmode="numeric"] {
+  background-color: #063242 !important;
+  color: #10b981 !important;
+  border-color: #0e4356;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.evora-auth input[inputmode="numeric"]:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Fix Dropdown options contrast in native <select> and custom lists */
+.evora-auth select,
+.evora-auth [role="listbox"] {
+  background-color: #052a37 !important;
+  color: #eafff5 !important;
+}
+
+.evora-auth select option,
+.evora-auth [role="option"] button {
+  background-color: #052a37 !important;
+  color: #eafff5 !important;
+}
+
+.evora-auth [role="option"] button:hover {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+}
+
+input {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+div:has(> input) {
+  border: 1px solid transparent !important;
+}
+
+div:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
