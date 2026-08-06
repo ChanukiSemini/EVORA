@@ -10,11 +10,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import MobileNav from '../components/MobileNav';
+import StationGallery from '../components/StationGallery';
 import { getStationById, STATIONS } from '../data/stations';
 import {
     IconBack, IconMenu, IconPin, IconStarFilled, IconPlug, IconClock,
-    IconNav, IconCheck,
+    IconNav, IconCheck, IconCard, IconBolt, IconParkingP, IconCarModel,
 } from '../components/Icons';
+import { AMENITY_ICONS, AMENITY_LABELS } from '../data/amenities';
 
 const directionsUrl = (station) =>
     `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`;
@@ -29,14 +31,15 @@ const StatusBar = ({ station }) => {
     return <div className="sd-avail-bar"><span className="fs-map-legend-dot available" /> Available Now · {station.openHours}</div>;
 };
 
-const DetailsContent = ({ station, onBook, onDirections }) => (
+const DetailsContent = ({ station, onBook, onDirections, navigate }) => (
     <>
-        <div className="sd-breadcrumb">
-            <Link to="/dashboard">Find Stations</Link> &nbsp;›&nbsp; <span className="current">{station.name}</span>
+        <div className="dt-topbar" style={{ marginBottom: '16px' }}>
+            <button className="dt-back-btn" onClick={() => navigate ? navigate(-1) : window.history.back()} title="Back">←</button>
+            <div>
+                <h1 className="sd-title" style={{ margin: 0 }}>{station.name}</h1>
+                <div className="sd-subtitle" style={{ margin: '4px 0 0 0' }}>{station.network}</div>
+            </div>
         </div>
-
-        <h1 className="sd-title">{station.name}</h1>
-        <div className="sd-subtitle">{station.network}</div>
 
         <StatusBar station={station} />
 
@@ -44,10 +47,12 @@ const DetailsContent = ({ station, onBook, onDirections }) => (
 
         <div className="sd-grid">
             <div>
-                <div className="sd-banner">
-                    <img src={station.image} alt={station.name} />
-                    <div className="sd-banner-badge"><IconPlug /></div>
-                </div>
+                <StationGallery
+                    key={station.id}
+                    images={station.images && station.images.length ? station.images : [station.image]}
+                    alt={station.name}
+                    badge={<div className="sd-banner-badge"><IconPlug /></div>}
+                />
 
                 <div className="sd-section-title">Charging Connectors</div>
                 <div className="sd-connectors-grid">
@@ -64,41 +69,8 @@ const DetailsContent = ({ station, onBook, onDirections }) => (
                         </div>
                     ))}
                 </div>
-            </div>
 
-            <div>
-                <div className="sd-info-grid">
-                    <div className="sd-info-card">
-                        <div className="sd-info-label"><IconNav /> Distance</div>
-                        <div className="sd-info-value">{station.distanceKm} km</div>
-                    </div>
-                    <div className="sd-info-card">
-                        <div className="sd-info-label"><IconClock /> ETA</div>
-                        <div className="sd-info-value">{station.distanceMins} mins away</div>
-                    </div>
-                    <div className="sd-info-card">
-                        <div className="sd-info-label"><IconPlug /> Availability</div>
-                        <div className="sd-info-value">{station.pluggedAvailable}/{station.pluggedTotal} Plugs</div>
-                    </div>
-                    <div className="sd-info-card">
-                        <div className="sd-info-label">💳 Price</div>
-                        <div className="sd-info-value">{station.priceHeadline}</div>
-                    </div>
-                    <div className="sd-info-card">
-                        <div className="sd-info-label"><IconClock /> Open Hours</div>
-                        <div className="sd-info-value">{station.openHours}</div>
-                    </div>
-                    <div className="sd-info-card">
-                        <div className="sd-info-label"><IconStarFilled /> Rating</div>
-                        <div className="sd-info-value">{station.rating.toFixed(1)} ★ ({station.reviews})</div>
-                    </div>
-                    <div className="sd-info-card full">
-                        <div className="sd-info-label">🅿️ Access Type</div>
-                        <div className="sd-info-value">{station.accessType}</div>
-                    </div>
-                </div>
-
-                <div className="sd-rates-card">
+                <div className="sd-rates-card" style={{ marginTop: 20 }}>
                     <div className="sd-rates-title">Price Rates</div>
                     <div className="sd-rate-row">
                         <span className="sd-rate-label">Fast Charging</span>
@@ -113,6 +85,94 @@ const DetailsContent = ({ station, onBook, onDirections }) => (
                     <div className="sd-book-caption">🔒 Secure Booking · Instant Confirmation</div>
 
                     <button className="btn-ghost" style={{ marginTop: 10 }} onClick={onDirections}>Get Directions</button>
+                </div>
+            </div>
+
+            <div>
+                <div className="sd-info-grid">
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconNav /> Distance</div>
+                            <div className="sd-info-badge"><IconNav /></div>
+                        </div>
+                        <div className="sd-info-value">{station.distanceKm} km</div>
+                    </div>
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconClock /> ETA</div>
+                            <div className="sd-info-badge"><IconClock /></div>
+                        </div>
+                        <div className="sd-info-value">{station.distanceMins} min away</div>
+                    </div>
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconPlug /> Availability</div>
+                            <div className="sd-info-badge"><IconPlug /></div>
+                        </div>
+                        <div className="sd-info-value">{station.pluggedAvailable}/{station.pluggedTotal} Plugs</div>
+                    </div>
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconCard /> Price</div>
+                            <div className="sd-info-badge"><IconCard /></div>
+                        </div>
+                        <div className="sd-info-value">{station.priceHeadline}</div>
+                    </div>
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconBolt /> Max Speed</div>
+                            <div className="sd-info-badge"><IconBolt /></div>
+                        </div>
+                        <div className="sd-info-value">{station.maxChargingSpeedKw} kW</div>
+                    </div>
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconPlug /> Power</div>
+                            <div className="sd-info-badge"><IconPlug /></div>
+                        </div>
+                        <div className="sd-info-value">{station.portsCount} total</div>
+                    </div>
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconClock /> Open Hours</div>
+                            <div className="sd-info-badge"><IconClock /></div>
+                        </div>
+                        <div className="sd-info-value">{station.openHours}</div>
+                    </div>
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconStarFilled /> Rating</div>
+                            <div className="sd-info-badge"><IconStarFilled /></div>
+                        </div>
+                        <div className="sd-info-value">{station.rating.toFixed(1)} ★ ({station.reviews})</div>
+                    </div>
+                    <div className="sd-info-card">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconParkingP /> Access Type</div>
+                            <div className="sd-info-badge"><IconParkingP /></div>
+                        </div>
+                        <div className="sd-info-value">{station.accessType}</div>
+                    </div>
+                    <div className="sd-info-card full">
+                        <div className="sd-info-top">
+                            <div className="sd-info-label"><IconCarModel /> Supported Vehicle Models</div>
+                            <div className="sd-info-badge"><IconCarModel /></div>
+                        </div>
+                        <div className="sd-info-value">{station.supportedModels.join(', ')}</div>
+                    </div>
+                </div>
+
+                <div className="sd-section-title">Amenities</div>
+                <div className="sd-amenities-row">
+                    {station.amenities.map((a) => {
+                        const Icon = AMENITY_ICONS[a];
+                        return (
+                            <div key={a} className="sd-amenity-chip">
+                                <span className="sd-amenity-icon">{Icon ? <Icon /> : null}</span>
+                                {AMENITY_LABELS[a] || a}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
@@ -132,7 +192,7 @@ const StationDetails = () => {
         return () => clearTimeout(t);
     }, [toast]);
 
-    const onBook = () => setToast(true);
+    const onBook = () => navigate('/book-charger');
     const onDirections = () => window.open(directionsUrl(station), '_blank', 'noopener,noreferrer');
 
     return (
@@ -141,7 +201,7 @@ const StationDetails = () => {
             <div className="app-shell">
                 <Sidebar />
                 <main className="app-main">
-                    <DetailsContent station={station} onBook={onBook} onDirections={onDirections} />
+                    <DetailsContent station={station} onBook={onBook} onDirections={onDirections} navigate={navigate} />
                 </main>
             </div>
 
@@ -156,7 +216,7 @@ const StationDetails = () => {
                         </button>
                     </div>
                     <div style={{ marginTop: 12 }}>
-                        <DetailsContent station={station} onBook={onBook} onDirections={onDirections} />
+                        <DetailsContent station={station} onBook={onBook} onDirections={onDirections} navigate={navigate} />
                     </div>
                 </div>
                 <MobileNav open={menuOpen} onClose={() => setMenuOpen(false)} active="/dashboard" />
