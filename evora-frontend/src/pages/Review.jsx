@@ -58,7 +58,9 @@ export default function Review() {
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleStarClick = (value) => {
+    const handleStarClick = (e, value) => {
+        e.preventDefault();
+        e.stopPropagation();
         setRating(value);
         setRatingError(null);
     };
@@ -123,7 +125,7 @@ export default function Review() {
     const activeRating = hoverRating || rating;
 
     /* ---------- Shared sub-components ---------- */
-    const ReviewContent = () => (
+    const reviewContentBlock = (
         <div className="review-page-layout">
             {/* ── Station Summary Card ── */}
             <section className="card station-card animate-card">
@@ -199,7 +201,7 @@ export default function Review() {
                                         key={index}
                                         type="button"
                                         className={index <= activeRating ? 'star-interactive filled' : 'star-interactive'}
-                                        onClick={() => handleStarClick(index)}
+                                        onClick={(e) => handleStarClick(e, index)}  // ← Pass event
                                         onMouseEnter={() => setHoverRating(index)}
                                         onMouseLeave={() => setHoverRating(0)}
                                         aria-label={`Rate ${index} out of 5 stars`}
@@ -340,7 +342,7 @@ export default function Review() {
                     </button>
                 </div>
 
-                <ReviewContent />
+                {reviewContentBlock}
 
                 {/* Mobile Navigation Drawer Overlay */}
                 {isMobileMenuOpen && (
@@ -378,7 +380,7 @@ export default function Review() {
                             </nav>
                             <div className="mobile-menu-footer">
                                 <div className="mobile-user-card">
-                                    <div className="mobile-user-avatar">SJ</div>
+                                    <div className="mobile-user-avatar" onClick={() => { navigate('/profile'); setIsMobileMenuOpen(false); }} role="button" tabIndex={0}>SJ</div>
                                     <div className="mobile-user-info">
                                         <span className="mobile-user-name">{USER.name}</span>
                                         <span className="mobile-user-email">{USER.email}</span>
@@ -407,7 +409,7 @@ export default function Review() {
                         </div>
                     </div>
                     <div className="dt-content">
-                        <ReviewContent />
+                        {reviewContentBlock}
                     </div>
                 </main>
             </div>

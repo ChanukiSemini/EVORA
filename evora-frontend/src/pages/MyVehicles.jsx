@@ -449,7 +449,7 @@ export default function MyVehicles() {
                             </nav>
                             <div className="mobile-menu-footer">
                                 <div className="mobile-user-card">
-                                    <div className="mobile-user-avatar">SJ</div>
+                                    <div className="mobile-user-avatar" onClick={() => navigate('/profile')} role="button" tabIndex={0}>SJ</div>
                                     <div className="mobile-user-info">
                                         <span className="mobile-user-name">Sarah Jenkins</span>
                                         <span className="mobile-user-email">sarah.j@evora-charge.com</span>
