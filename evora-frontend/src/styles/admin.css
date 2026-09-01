@@ -39,7 +39,19 @@ body {
    background-color: var(--bg-card, #0a2a35);
    border: 1px solid var(--border-accent-low, rgba(61, 220, 151, 0.25));
    border-radius: 16px;
-   padding: 20px;
+   padding: 24px;
+   width: 100%;
+   min-height: calc(100vh - 80px);
+   flex: 1;
+   display: flex;
+   flex-direction: column;
+   box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+   .dashboard-card {
+      padding: 32px;
+   }
 }
 
 .search-input {
@@ -385,6 +397,12 @@ select.search-input {
    padding: 24px;
    max-width: 340px;
    width: 100%;
+}
+
+.modal-box-wide {
+   max-width: 480px;
+   max-height: 88vh;
+   overflow-y: auto;
 }
 
 .modal-icon {
@@ -874,21 +892,24 @@ select.search-input {
 }
 
 .dashboard-container {
-   max-width: 1100px;
+   width: 100%;
+   max-width: 100%;
+   flex: 1;
+   display: flex;
+   flex-direction: column;
 }
 
 .charger-grid {
-   grid-template-columns: 1fr 1fr 1fr 1fr;
+   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+   gap: 20px;
 }
 
 .page-wrapper {
    min-height: auto;
-   padding-bottom: 40px;
-   padding-top: 20px;
-}
-
-.dashboard-card {
-   padding: 32px;
+   padding-bottom: 20px;
+   flex: 1;
+   display: flex;
+   flex-direction: column;
 }
 
 .action-card {
@@ -982,8 +1003,65 @@ select.search-input {
    margin-bottom: 10px;
 }
 
-.admin-shell-simple {
+.admin-app-shell {
+   display: flex;
    min-height: 100vh;
+   background-color: var(--bg-primary, #031C26);
+}
+
+.admin-main-content {
+   flex: 1;
+   min-width: 0;
+   padding: 24px 32px 32px;
+   display: flex;
+   flex-direction: column;
+}
+
+.admin-sidebar-desktop {
+   width: 264px;
+   flex-shrink: 0;
+   min-height: 100vh;
+   background-color: var(--bg-primary, #031C26);
+   border-right: 1px solid var(--border-accent-low, rgba(61, 220, 151, 0.25));
+   display: flex;
+   flex-direction: column;
+   padding: 24px 16px;
+   position: sticky;
+   top: 0;
+   align-self: flex-start;
+   height: 100vh;
+}
+
+.admin-badge {
+   font-size: 10px;
+   color: #22e584;
+   background-color: rgba(34, 229, 132, 0.15);
+   padding: 2px 8px;
+   border-radius: 12px;
+   font-weight: bold;
+   margin-left: auto;
+}
+
+/* Hide Hamburger button on desktop, show only on mobile */
+@media (min-width: 768px) {
+   .hamburger-btn {
+      display: none !important;
+   }
+}
+
+/* Hide desktop sidebar on mobile, show hamburger button */
+@media (max-width: 767px) {
+   .admin-sidebar-desktop {
+      display: none !important;
+   }
+
+   .admin-main-content {
+      padding: 70px 16px 30px;
+   }
+
+   .hamburger-btn {
+      display: flex;
+   }
 }
 
 .hamburger-btn {
@@ -996,7 +1074,6 @@ select.search-input {
    border-radius: 10px;
    width: 42px;
    height: 42px;
-   display: flex;
    flex-direction: column;
    align-items: center;
    justify-content: center;

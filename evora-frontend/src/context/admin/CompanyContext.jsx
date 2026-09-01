@@ -96,13 +96,28 @@ export function CompanyProvider({ children }) {
 
   function addBranch(newBranchData) {
     const slug = newBranchData.name.toLowerCase().trim().replace(/\s+/g, '-')
+    const formattedChargers = (newBranchData.chargers || []).map((c, index) => {
+      if (c.ports) return c
+      const portCount = Number(c.portCount) || 1
+      const ports = Array.from({ length: portCount }, (_, i) => ({
+        id: `port-${i + 1}`,
+        status: c.status || 'available',
+      }))
+      return {
+        id: `charger-${index + 1}`,
+        type: c.type || 'CCS2',
+        power: c.power ? (c.power.toString().endsWith('kW') ? c.power : `${c.power}kW`) : '50kW',
+        ports,
+      }
+    })
+
     const newBranch = {
       id: `branch-${slug}-${Date.now()}`,
       name: newBranchData.name,
       openHours: newBranchData.openHours || '24/7',
       address: newBranchData.address || '',
       phone: newBranchData.phone || '',
-      chargers: [],
+      chargers: formattedChargers,
     }
     setCompany((prev) => ({
       ...prev,

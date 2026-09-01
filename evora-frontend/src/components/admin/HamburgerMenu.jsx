@@ -8,7 +8,8 @@ function HamburgerMenu() {
 
   const isDashboardActive =
     location.pathname === '/admin' || location.pathname.startsWith('/admin/charger')
-  const isManageActive = location.pathname.startsWith('/admin/manage-infrastructure') ||
+  const isManageActive =
+    location.pathname.startsWith('/admin/manage-infrastructure') ||
     location.pathname.startsWith('/admin/register-hardware')
 
   function handleNavigate(path) {

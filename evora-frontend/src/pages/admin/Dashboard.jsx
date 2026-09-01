@@ -5,7 +5,6 @@ import BranchModal from '../../components/admin/BranchModal'
 import { useCompany } from '../../context/admin/CompanyContext'
 import { getBranchAvailability, isBranchOpen, getCompanyTotals } from '../../utils/admin/branchHelpers'
 
-
 function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddBranchModal, setShowAddBranchModal] = useState(false)
@@ -21,41 +20,26 @@ function Dashboard() {
   return (
     <div className="dashboard-container page-wrapper">
       <div className="dashboard-card">
-        <div className="dashboard-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        {/* Top Header Row */}
+        <div className="dashboard-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
           <div>
-            <h2 style={{ color: '#22e584', fontSize: '22px' }}>{company.name}</h2>
-            <p style={{ color: '#9ca3af', fontSize: '13px' }}>Station Admin Dashboard</p>
+            <h2 style={{ color: '#ffffff', fontSize: '26px' }}>{company.name} Admin Dashboard</h2>
+            <p style={{ color: '#8A9EA8', fontSize: '13px', marginTop: '2px' }}>Station branch network overview</p>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
             <input
               className="search-input-small"
               type="text"
-              placeholder="Search..."
+              placeholder="Search branch..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ margin: 0, padding: '10px 16px', width: '240px', borderRadius: '10px', backgroundColor: 'var(--bg-elevated, #0d3040)', border: '1px solid var(--border-accent-low, rgba(61, 220, 151, 0.25))', color: '#ffffff' }}
             />
-            <button
-              className="action-btn-green"
-              style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                whiteSpace: 'nowrap',
-                cursor: 'pointer',
-                marginBottom: 0,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontWeight: 'bold',
-              }}
-              onClick={() => setShowAddBranchModal(true)}
-            >
-              ➕ Add Branch
-            </button>
           </div>
         </div>
 
-        <div className="quick-summary-row">
+        {/* Top 4 KPI Metrics */}
+        <div className="quick-summary-row" style={{ marginBottom: '28px' }}>
           <div className="quick-summary-item">
             <span className="overview-label">BRANCHES</span>
             <strong>{totals.totalBranches}</strong>
@@ -76,14 +60,17 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="legend-cluster" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <span><span className="stat-dot" style={{ backgroundColor: '#22e584' }}></span> Open</span>
-            <span><span className="stat-dot" style={{ backgroundColor: '#ff4d6d' }}></span> Closed</span>
+        {/* Branch Section Header & Status Legend */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '18px', alignItems: 'center', fontSize: '12px', color: '#8A9EA8', marginBottom: '22px' }}>
+            <span><span style={{ backgroundColor: '#22e584', display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px' }}></span> Open</span>
+            <span><span style={{ backgroundColor: '#ff4d6d', display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px' }}></span> Closed</span>
           </div>
+          <h3 style={{ color: '#ffffff', fontSize: '18px' }}>Station Branches</h3>
         </div>
 
-        <div className="charger-grid" style={{ marginTop: '16px' }}>
+        {/* Stations Grid */}
+        <div className="charger-grid" style={{ marginBottom: '20px' }}>
           {filteredBranches.map((branch) => {
             const open = isBranchOpen(branch)
             const { availablePorts, totalPorts } = getBranchAvailability(branch)
@@ -92,7 +79,7 @@ function Dashboard() {
               <div key={branch.id} onClick={() => navigate(`/admin/charger/${branch.id}`)} style={{ cursor: 'pointer' }}>
                 <ChargerCard
                   name={`${company.name} ${branch.name}`}
-                  location={branch.name}
+                  location={branch.address || branch.name}
                   status={open ? 'open' : 'closed'}
                   availablePlugs={availablePorts}
                   totalPlugs={totalPorts}
@@ -100,6 +87,34 @@ function Dashboard() {
               </div>
             )
           })}
+        </div>
+
+        {/* Centered Dashed Add New Branch Button */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+          <div
+            onClick={() => setShowAddBranchModal(true)}
+            style={{
+              backgroundColor: 'rgba(61, 220, 151, 0.05)',
+              border: '1.5px dashed rgba(61, 220, 151, 0.35)',
+              borderRadius: '12px',
+              padding: '14px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              cursor: 'pointer',
+              maxWidth: '320px',
+              width: '100%',
+              textAlign: 'center',
+              transition: 'border-color 0.2s, background-color 0.2s',
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>➕</span>
+            <div>
+              <strong style={{ fontSize: '13px', color: '#22e584', display: 'block' }}>Add New Branch</strong>
+              <span style={{ fontSize: '11px', color: '#8A9EA8' }}>Configure new station node</span>
+            </div>
+          </div>
         </div>
       </div>
 
