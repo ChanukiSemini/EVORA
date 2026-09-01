@@ -21,25 +21,48 @@ function Dashboard() {
     <div className="dashboard-container page-wrapper">
       <div className="dashboard-card">
         {/* Top Header Row */}
-        <div className="dashboard-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+        <div className="dashboard-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '28px' }}>
           <div>
-            <h2 style={{ color: '#ffffff', fontSize: '26px' }}>{company.name} Admin Dashboard</h2>
-            <p style={{ color: '#8A9EA8', fontSize: '13px', marginTop: '2px' }}>Station branch network overview</p>
+            <h2 style={{ color: '#ffffff', fontSize: '26px', margin: 0 }}>{company.name} Admin Dashboard</h2>
+            <p style={{ color: '#8A9EA8', fontSize: '13px', marginTop: '4px', margin: 0 }}>Station branch network overview</p>
           </div>
-          <div>
+
+          {/* Search bar + Add New Branch Button placed in Top Right Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <input
               className="search-input-small"
               type="text"
               placeholder="Search branch..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ margin: 0, padding: '10px 16px', width: '240px', borderRadius: '10px', backgroundColor: 'var(--bg-elevated, #0d3040)', border: '1px solid var(--border-accent-low, rgba(61, 220, 151, 0.25))', color: '#ffffff' }}
+              style={{ margin: 0, padding: '10px 16px', width: '220px', borderRadius: '10px', backgroundColor: 'var(--bg-elevated, #0d3040)', border: '1px solid var(--border-accent-low, rgba(61, 220, 151, 0.25))', color: '#ffffff' }}
             />
+
+            <button
+              onClick={() => setShowAddBranchModal(true)}
+              style={{
+                backgroundColor: '#3DDC97',
+                color: '#031C26',
+                fontWeight: 'bold',
+                padding: '10px 18px',
+                borderRadius: '10px',
+                border: 'none',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(61, 220, 151, 0.2)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <span style={{ fontSize: '14px' }}>➕</span> Add New Branch
+            </button>
           </div>
         </div>
 
         {/* Top 4 KPI Metrics */}
-        <div className="quick-summary-row" style={{ marginBottom: '28px' }}>
+        <div className="quick-summary-row" style={{ marginBottom: '36px' }}>
           <div className="quick-summary-item">
             <span className="overview-label">BRANCHES</span>
             <strong>{totals.totalBranches}</strong>
@@ -60,60 +83,34 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Branch Section Header & Status Legend */}
+        {/* Legend stays up near KPI summary row */}
+        <div style={{ display: 'flex', gap: '18px', alignItems: 'center', fontSize: '12px', color: '#8A9EA8', marginTop: '16px', marginBottom: '36px' }}>
+          <span><span style={{ backgroundColor: '#22e584', display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px' }}></span> Open</span>
+          <span><span style={{ backgroundColor: '#ff4d6d', display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px' }}></span> Closed</span>
+        </div>
+
+        {/* Station Branches Title & Grid pushed lower down */}
         <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', gap: '18px', alignItems: 'center', fontSize: '12px', color: '#8A9EA8', marginBottom: '22px' }}>
-            <span><span style={{ backgroundColor: '#22e584', display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px' }}></span> Open</span>
-            <span><span style={{ backgroundColor: '#ff4d6d', display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px' }}></span> Closed</span>
-          </div>
-          <h3 style={{ color: '#ffffff', fontSize: '18px' }}>Station Branches</h3>
-        </div>
+          <h3 style={{ color: '#ffffff', fontSize: '20px', margin: '0 0 18px' }}>Station Branches</h3>
 
-        {/* Stations Grid */}
-        <div className="charger-grid" style={{ marginBottom: '20px' }}>
-          {filteredBranches.map((branch) => {
-            const open = isBranchOpen(branch)
-            const { availablePorts, totalPorts } = getBranchAvailability(branch)
+          {/* Stations Grid */}
+          <div className="charger-grid">
+            {filteredBranches.map((branch) => {
+              const open = isBranchOpen(branch)
+              const { availablePorts, totalPorts } = getBranchAvailability(branch)
 
-            return (
-              <div key={branch.id} onClick={() => navigate(`/admin/charger/${branch.id}`)} style={{ cursor: 'pointer' }}>
-                <ChargerCard
-                  name={`${company.name} ${branch.name}`}
-                  location={branch.address || branch.name}
-                  status={open ? 'open' : 'closed'}
-                  availablePlugs={availablePorts}
-                  totalPlugs={totalPorts}
-                />
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Centered Dashed Add New Branch Button */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-          <div
-            onClick={() => setShowAddBranchModal(true)}
-            style={{
-              backgroundColor: 'rgba(61, 220, 151, 0.05)',
-              border: '1.5px dashed rgba(61, 220, 151, 0.35)',
-              borderRadius: '12px',
-              padding: '14px 24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-              maxWidth: '320px',
-              width: '100%',
-              textAlign: 'center',
-              transition: 'border-color 0.2s, background-color 0.2s',
-            }}
-          >
-            <span style={{ fontSize: '18px' }}>➕</span>
-            <div>
-              <strong style={{ fontSize: '13px', color: '#22e584', display: 'block' }}>Add New Branch</strong>
-              <span style={{ fontSize: '11px', color: '#8A9EA8' }}>Configure new station node</span>
-            </div>
+              return (
+                <div key={branch.id} onClick={() => navigate(`/admin/charger/${branch.id}`)} style={{ cursor: 'pointer' }}>
+                  <ChargerCard
+                    name={`${company.name} ${branch.name}`}
+                    location={branch.address || branch.name}
+                    status={open ? 'open' : 'closed'}
+                    availablePlugs={availablePorts}
+                    totalPlugs={totalPorts}
+                  />
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>

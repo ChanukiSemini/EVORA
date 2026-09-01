@@ -1,13 +1,21 @@
 function ActionCard({ icon, title, description, color, onClick }) {
   return (
-    <div className="action-card" style={{ borderLeftColor: color }} onClick={onClick}>
+    <div className="action-card-tile" onClick={onClick}>
       <div>
-        <strong style={{ color }}>{title}</strong>
+        <div className="action-card-header">
+          <span className="action-card-circle-icon" style={{ backgroundColor: color }}>
+            {icon}
+          </span>
+          <h3 className="action-card-title" style={{ color }}>{title}</h3>
+        </div>
         <p className="action-card-desc">{description}</p>
       </div>
-      <span className="action-card-icon" style={{ backgroundColor: color }}>
-        {icon}
-      </span>
+
+      <div className="action-card-footer">
+        <span className="action-card-arrow" style={{ color, borderColor: `${color}40` }}>
+          Select Action →
+        </span>
+      </div>
     </div>
   )
 }
