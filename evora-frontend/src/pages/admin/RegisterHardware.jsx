@@ -56,17 +56,48 @@ function RegisterHardware() {
 
   if (submitted) {
     return (
-      <div className="dashboard-container page-wrapper">
-        <div className="dashboard-card" style={{ textAlign: 'center' }}>
-          <div className="success-icon">✓</div>
-          <h3>Charger(s) Registered</h3>
-          <p style={{ color: '#9ca3af', fontSize: '13px', margin: '10px 0 20px' }}>
+      <div
+        className="dashboard-container page-wrapper"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 140px)',
+          padding: '20px',
+        }}
+      >
+        <div
+          className="dashboard-card"
+          style={{
+            textAlign: 'center',
+            maxWidth: '460px',
+            width: '100%',
+            minHeight: 'auto',
+            height: 'auto',
+            padding: '40px 32px',
+            margin: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
+            borderRadius: '16px',
+          }}
+        >
+          <div className="success-icon" style={{ margin: '0 auto 16px' }}>
+            ✓
+          </div>
+          <h3 style={{ fontSize: '22px', margin: '0 0 10px', fontWeight: 'bold' }}>
+            Charger(s) Registered
+          </h3>
+          <p style={{ color: '#9ca3af', fontSize: '14px', margin: '0 0 24px', lineHeight: '1.5' }}>
             <strong>{chargers.length}</strong> new charger{chargers.length > 1 ? 's' : ''} added to{' '}
             <strong>{company.name} {selectedBranch?.name}</strong>. All ports marked as{' '}
             <strong style={{ color: '#f5c744' }}>Reserved</strong> for initial testing.
           </p>
           <button
             className="manage-btn"
+            style={{ maxWidth: '240px', width: '100%', margin: '0 auto', display: 'block' }}
             onClick={() => navigate('/admin/manage-infrastructure')}
           >
             Back to Menu
