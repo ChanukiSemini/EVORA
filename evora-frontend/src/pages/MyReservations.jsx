@@ -525,6 +525,14 @@ const MyReservations = () => {
                 />
             )}
 
+            {modalType === 'cancel' && selectedBooking && (
+                <CancelBookingModal
+                    booking={selectedBooking}
+                    onClose={() => setModalType(null)}
+                    onConfirmCancel={() => handleCancelBooking(selectedBooking.id)}
+                />
+            )}
+
             {modalType && modalType !== 'cancel' && modalType !== 'reschedule' && selectedBooking && (
                 <div className="bc-modal-backdrop" onClick={() => setModalType(null)}>
                     <div className="bc-modal-card res-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -565,70 +573,6 @@ const MyReservations = () => {
                                 <button className="btn-primary" onClick={() => setModalType(null)} style={{ marginTop: 20 }}>
                                     Done
                                 </button>
-                            </div>
-                        )}
-
-                        {/* Cancel Modal */}
-                        {modalType === 'cancel' && (
-                            <div className="res-modal-body">
-                                <div className="res-cancel-icon-wrap">
-                                    <IconAlertCircle />
-                                </div>
-                                <h3 className="res-modal-title">Cancel Reservation?</h3>
-                                <p className="res-modal-subtitle">
-                                    Are you sure you want to cancel booking <strong>#{selectedBooking.id}</strong> at {selectedBooking.station}?
-                                </p>
-                                <div className="res-modal-button-row">
-                                    <button className="btn-secondary" onClick={() => setModalType(null)}>
-                                        Keep Booking
-                                    </button>
-                                    <button
-                                        className="btn-danger"
-                                        onClick={() => handleCancelBooking(selectedBooking.id)}
-                                    >
-                                        Yes, Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Reschedule Modal */}
-                        {modalType === 'reschedule' && (
-                            <div className="res-modal-body">
-                                <h3 className="res-modal-title">Reschedule Booking</h3>
-                                <p className="res-modal-subtitle">Select a new date and time for #{selectedBooking.id}</p>
-
-                                <div className="res-reschedule-inputs">
-                                    <label className="res-input-group">
-                                        <span>New Date</span>
-                                        <input type="date" className="res-date-input" defaultValue="2026-11-01" id="res-new-date" />
-                                    </label>
-                                    <label className="res-input-group">
-                                        <span>New Time Slot</span>
-                                        <select className="res-select-input" defaultValue="11:00 AM" id="res-new-time">
-                                            <option value="09:00 AM">09:00 AM</option>
-                                            <option value="11:00 AM">11:00 AM</option>
-                                            <option value="01:30 PM">01:30 PM</option>
-                                            <option value="04:00 PM">04:00 PM</option>
-                                        </select>
-                                    </label>
-                                </div>
-
-                                <div className="res-modal-button-row" style={{ marginTop: 20 }}>
-                                    <button className="btn-secondary" onClick={() => setModalType(null)}>
-                                        Back
-                                    </button>
-                                    <button
-                                        className="btn-primary"
-                                        onClick={() => {
-                                            const d = document.getElementById('res-new-date')?.value || 'Nov 01, 2026';
-                                            const t = document.getElementById('res-new-time')?.value || '11:00 AM';
-                                            handleRescheduleBooking(selectedBooking.id, d, t);
-                                        }}
-                                    >
-                                        Confirm Reschedule
-                                    </button>
-                                </div>
                             </div>
                         )}
 

@@ -4,7 +4,7 @@
 // Interactive date chips, time slot grid, schedule comparison & EVORA design system
 // ============================================
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 /* ---------- SVG Icons ---------- */
 const IconCalendarClock = () => (

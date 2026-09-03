@@ -87,6 +87,76 @@ const DEFAULT_BOOKING = {
     canModify: true,
 };
 
+/* Common Information List Component */
+const BookingInformationList = ({ booking }) => (
+    <div className="bd-info-card card">
+        <span className="bd-section-label">BOOKING INFORMATION</span>
+
+        <div className="bd-info-list">
+            <div className="bd-info-item">
+                <span className="bd-info-icon"><IconMapPin /></span>
+                <div className="bd-info-text">
+                    <span className="bd-info-sublabel">Station Location</span>
+                    <span className="bd-info-value">{booking.station}</span>
+                    <span className="bd-info-extra">{booking.address}</span>
+                </div>
+            </div>
+
+            <div className="bd-info-item">
+                <span className="bd-info-icon"><IconCalendar /></span>
+                <div className="bd-info-text">
+                    <span className="bd-info-sublabel">Date</span>
+                    <span className="bd-info-value">{booking.date}</span>
+                </div>
+            </div>
+
+            <div className="bd-info-item">
+                <span className="bd-info-icon"><IconClock /></span>
+                <div className="bd-info-text">
+                    <span className="bd-info-sublabel">Time</span>
+                    <span className="bd-info-value">{booking.time}</span>
+                    <span className="bd-info-extra">Slot: {booking.timeSlot}</span>
+                </div>
+            </div>
+
+            <div className="bd-info-item">
+                <span className="bd-info-icon"><IconHourglass /></span>
+                <div className="bd-info-text">
+                    <span className="bd-info-sublabel">Duration</span>
+                    <span className="bd-info-value">{booking.duration}</span>
+                </div>
+            </div>
+
+            <div className="bd-info-item">
+                <span className="bd-info-icon"><IconBolt /></span>
+                <div className="bd-info-text">
+                    <span className="bd-info-sublabel">Connector Type</span>
+                    <span className="bd-info-value">{booking.connector}</span>
+                </div>
+            </div>
+
+            <div className="bd-info-item">
+                <span className="bd-info-icon"><IconCar /></span>
+                <div className="bd-info-text">
+                    <span className="bd-info-sublabel">Vehicle</span>
+                    <span className="bd-info-value">{booking.vehicle}</span>
+                </div>
+            </div>
+        </div>
+
+        {/* Station Amenities Badges */}
+        <div className="bd-amenities-section">
+            <span className="bd-section-label" style={{ fontSize: 10 }}>STATION AMENITIES</span>
+            <div className="bd-amenities-row">
+                <span className="bd-amenity-badge">☕ Coffee Shop</span>
+                <span className="bd-amenity-badge">📶 Free Wi-Fi</span>
+                <span className="bd-amenity-badge">🏪 24/7 Market</span>
+                <span className="bd-amenity-badge">🚻 Restrooms</span>
+            </div>
+        </div>
+    </div>
+);
+
 const BookingDetails = () => {
     const navigate = useNavigate();
     const { id } = useParams();
@@ -108,76 +178,6 @@ const BookingDetails = () => {
         setShowRescheduleModal(false);
         navigate('/bookings');
     };
-
-    /* Common Information List Component */
-    const BookingInformationList = () => (
-        <div className="bd-info-card card">
-            <span className="bd-section-label">BOOKING INFORMATION</span>
-
-            <div className="bd-info-list">
-                <div className="bd-info-item">
-                    <span className="bd-info-icon"><IconMapPin /></span>
-                    <div className="bd-info-text">
-                        <span className="bd-info-sublabel">Station Location</span>
-                        <span className="bd-info-value">{booking.station}</span>
-                        <span className="bd-info-extra">{booking.address}</span>
-                    </div>
-                </div>
-
-                <div className="bd-info-item">
-                    <span className="bd-info-icon"><IconCalendar /></span>
-                    <div className="bd-info-text">
-                        <span className="bd-info-sublabel">Date</span>
-                        <span className="bd-info-value">{booking.date}</span>
-                    </div>
-                </div>
-
-                <div className="bd-info-item">
-                    <span className="bd-info-icon"><IconClock /></span>
-                    <div className="bd-info-text">
-                        <span className="bd-info-sublabel">Time</span>
-                        <span className="bd-info-value">{booking.time}</span>
-                        <span className="bd-info-extra">Slot: {booking.timeSlot}</span>
-                    </div>
-                </div>
-
-                <div className="bd-info-item">
-                    <span className="bd-info-icon"><IconHourglass /></span>
-                    <div className="bd-info-text">
-                        <span className="bd-info-sublabel">Duration</span>
-                        <span className="bd-info-value">{booking.duration}</span>
-                    </div>
-                </div>
-
-                <div className="bd-info-item">
-                    <span className="bd-info-icon"><IconBolt /></span>
-                    <div className="bd-info-text">
-                        <span className="bd-info-sublabel">Connector Type</span>
-                        <span className="bd-info-value">{booking.connector}</span>
-                    </div>
-                </div>
-
-                <div className="bd-info-item">
-                    <span className="bd-info-icon"><IconCar /></span>
-                    <div className="bd-info-text">
-                        <span className="bd-info-sublabel">Vehicle</span>
-                        <span className="bd-info-value">{booking.vehicle}</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Station Amenities Badges */}
-            <div className="bd-amenities-section">
-                <span className="bd-section-label" style={{ fontSize: 10 }}>STATION AMENITIES</span>
-                <div className="bd-amenities-row">
-                    <span className="bd-amenity-badge">☕ Coffee Shop</span>
-                    <span className="bd-amenity-badge">📶 Free Wi-Fi</span>
-                    <span className="bd-amenity-badge">🏪 24/7 Market</span>
-                    <span className="bd-amenity-badge">🚻 Restrooms</span>
-                </div>
-            </div>
-        </div>
-    );
 
     return (
         <>
@@ -222,7 +222,7 @@ const BookingDetails = () => {
                     </div>
 
                     {/* Booking Information */}
-                    <BookingInformationList />
+                    <BookingInformationList booking={booking} />
 
                     {/* Estimated Cost Card */}
                     <div className="bd-cost-card card">
@@ -358,7 +358,7 @@ const BookingDetails = () => {
 
                         {/* Right Column: Full Specifications */}
                         <div className="dt-bd-col-right">
-                            <BookingInformationList />
+                            <BookingInformationList booking={booking} />
                         </div>
                     </div>
                 </main>

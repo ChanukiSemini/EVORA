@@ -3,7 +3,6 @@
 // EVORA - Cancel Booking Standalone Demo Route Page
 // ============================================
 
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import MyReservations from './MyReservations';
 import CancelBookingModal from '../components/CancelBookingModal';
