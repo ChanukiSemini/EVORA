@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Icon from './Icon.jsx';
 
 /**
@@ -9,12 +9,14 @@ import Icon from './Icon.jsx';
  */
 export default function ProfileCard({ user, isEditing, onSave, onEdit, onPasswordEdit }) {
     const [draft, setDraft] = useState(user);
+    const [prevUser, setPrevUser] = useState(user);
     const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
 
     // Keep draft in sync with user state updates
-    useEffect(() => {
+    if (user !== prevUser) {
+        setPrevUser(user);
         setDraft(user);
-    }, [user]);
+    }
 
     const handleChange = (field, value) => {
         setDraft((current) => ({ ...current, [field]: value }));

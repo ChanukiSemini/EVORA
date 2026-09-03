@@ -19,6 +19,28 @@ const USER = {
     password: 'password123',
 };
 
+/* ---------- Shared page content ---------- */
+function ProfileContent({ user, isEditing, onSave, onEdit, onPasswordEdit }) {
+    return (
+        <section className="profile-page">
+            <div className="profile-shell">
+                <div className="section-heading">
+                    <h3>Personal Details</h3>
+                </div>
+                <div className="profile-stack">
+                    <ProfileCard
+                        user={user}
+                        isEditing={isEditing}
+                        onSave={onSave}
+                        onEdit={onEdit}
+                        onPasswordEdit={onPasswordEdit}
+                    />
+                </div>
+            </div>
+        </section>
+    );
+}
+
 export default function Profile() {
     const navigate = useNavigate();
 
@@ -41,26 +63,6 @@ export default function Profile() {
         alert('Mock action: Redirecting to dedicated Change Password flow.');
     };
 
-    /* ---------- Shared page content ---------- */
-    const ProfileContent = () => (
-        <section className="profile-page">
-            <div className="profile-shell">
-                <div className="section-heading">
-                    <h3>Personal Details</h3>
-                </div>
-                <div className="profile-stack">
-                    <ProfileCard
-                        user={userState}
-                        isEditing={isEditing}
-                        onSave={saveAndExit}
-                        onEdit={enableEdit}
-                        onPasswordEdit={handlePasswordEdit}
-                    />
-                </div>
-            </div>
-        </section>
-    );
-
     return (
         <>
             <IconSprite />
@@ -81,7 +83,13 @@ export default function Profile() {
                     </button>
                 </div>
 
-                <ProfileContent />
+                <ProfileContent
+                    user={userState}
+                    isEditing={isEditing}
+                    onSave={saveAndExit}
+                    onEdit={enableEdit}
+                    onPasswordEdit={handlePasswordEdit}
+                />
 
                 {/* Mobile Navigation Drawer Overlay */}
                 {isMobileMenuOpen && (
@@ -148,7 +156,13 @@ export default function Profile() {
                         </div>
                     </div>
                     <div className="dt-content">
-                        <ProfileContent />
+                        <ProfileContent
+                            user={userState}
+                            isEditing={isEditing}
+                            onSave={saveAndExit}
+                            onEdit={enableEdit}
+                            onPasswordEdit={handlePasswordEdit}
+                        />
                     </div>
                 </main>
             </div>

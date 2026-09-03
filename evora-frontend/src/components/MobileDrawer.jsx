@@ -6,7 +6,8 @@
 // ============================================
 
 import { NavLink, useNavigate } from 'react-router-dom';
-import { NAV_ITEMS, IconLogout } from './Sidebar.jsx';
+import { NAV_ITEMS } from './navigation.js';
+import { IconLogout } from './NavigationIcons.jsx';
 
 const MobileDrawer = ({ isOpen, onClose, user = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.com' } }) => {
     const navigate = useNavigate();
