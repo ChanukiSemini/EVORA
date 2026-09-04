@@ -140,11 +140,44 @@ export function CompanyProvider({ children }) {
     }
   }
 
-  function setChargerStatus(branchId, chargerId, status) {
-    updatePort(branchId, chargerId, 'port-1', { status })
+  async function setChargerStatus(branchId, chargerId, status) {
+    setCompany((prev) => ({
+      ...prev,
+      branches: prev.branches.map((branch) =>
+        branch.id === branchId
+          ? {
+            ...branch,
+            chargers: branch.chargers.map((charger) =>
+              charger.id === chargerId
+                ? {
+                  ...charger,
+                  ports: charger.ports.map((port) => ({ ...port, status })),
+                }
+                : charger
+            ),
+          }
+          : branch
+      ),
+    }))
+
+    try {
+      const branch = company.branches.find((b) => b.id === branchId)
+      const charger = branch?.chargers.find((c) => c.id === chargerId)
+      if (charger) {
+        for (const port of charger.ports) {
+          await fetch(`${API_BASE_URL}/branches/${branchId}/chargers/${chargerId}/ports/${port.id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Failed to sync charger status with backend:', err.message)
+    }
   }
 
-  function setBranchStatus(branchId, status) {
+  async function setBranchStatus(branchId, status) {
     setCompany((prev) => ({
       ...prev,
       branches: prev.branches.map((branch) =>
@@ -159,7 +192,18 @@ export function CompanyProvider({ children }) {
           : branch
       ),
     }))
+
+    try {
+      await fetch(`${API_BASE_URL}/branches/${branchId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+    } catch (err) {
+      console.error('Failed to sync branch status with backend:', err.message)
+    }
   }
+
 
   async function addBranch(newBranchData) {
     const slug = newBranchData.name.toLowerCase().trim().replace(/\s+/g, '-')
@@ -219,13 +263,23 @@ export function CompanyProvider({ children }) {
     }
   }
 
-  function updateBranch(branchId, updatedData) {
+  async function updateBranch(branchId, updatedData) {
     setCompany((prev) => ({
       ...prev,
       branches: prev.branches.map((branch) =>
         branch.id === branchId ? { ...branch, ...updatedData } : branch
       ),
     }))
+
+    try {
+      await fetch(`${API_BASE_URL}/branches/${branchId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData),
+      })
+    } catch (err) {
+      console.error('Failed to update branch on backend:', err.message)
+    }
   }
 
   return (

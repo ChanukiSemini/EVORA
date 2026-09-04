@@ -90,8 +90,8 @@ function ChargerNodeDetails() {
         </h4>
 
         {branch.chargers.length > 0 ? (
-          branch.chargers.map((charger) => (
-            <ChargerUnit key={charger.id} charger={charger} />
+          branch.chargers.map((charger, index) => (
+            <ChargerUnit key={charger.id} charger={charger} index={index} />
           ))
         ) : (
           <div style={{

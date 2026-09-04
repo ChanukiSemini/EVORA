@@ -30,12 +30,21 @@ export function isBranchOpen(branch) {
 
 export function getPortOptions(branch) {
   const options = []
-  branch.chargers.forEach((charger) => {
-    charger.ports.forEach((port, index) => {
+  branch.chargers.forEach((charger, cIdx) => {
+    const powerLabel = charger.power ? ` (${charger.power})` : ''
+    const unitNum = charger.id && charger.id.startsWith('charger-')
+      ? charger.id.replace('charger-', '')
+      : `${cIdx + 1}`
+
+    charger.ports.forEach((port, pIdx) => {
+      const portNum = port.id && port.id.startsWith('port-')
+        ? port.id.replace('port-', '')
+        : `${pIdx + 1}`
+
       options.push({
         chargerId: charger.id,
         portId: port.id,
-        label: `${charger.type} - Port ${index + 1}`,
+        label: `${charger.type}${powerLabel} [Unit ${unitNum}] — Port ${portNum}`,
         status: port.status,
       })
     })
