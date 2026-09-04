@@ -14,10 +14,22 @@ import { STATIONS } from '../data/stations';
 import {
     IconSearch, IconHeart, IconBell, IconMenu, IconChevronDown, IconCheck,
     IconStarFilled, IconPin, IconPlug, IconCarSmall, IconLocate, IconPlus,
-    IconMinus, IconRoute, IconClock, IconFilter, IconChevronRight, IconStarOutline,
+    IconMinus, IconRoute, IconClock, IconFilter, IconChevronRight,
 } from '../components/Icons';
 
 const SORT_OPTIONS = ['Nearby', 'Ratings', 'Charging Speed', 'Vehicle Model', 'Charging Port'];
+const VEHICLE_MODELS = [...new Set(STATIONS.flatMap((station) => station.supportedModels || []))];
+const CHARGING_PORTS = ['CCS2', 'Type 2', 'Tesla NACS', 'CHAdeMO'];
+
+const stationHasPort = (station, port) =>
+    (station.connectors || []).some((connector) => {
+        const name = connector.name.toLowerCase();
+        if (port === 'CCS2') return name.includes('ccs');
+        if (port === 'Type 2') return name.includes('type 2');
+        if (port === 'Tesla NACS') return name.includes('nacs');
+        if (port === 'CHAdeMO') return name.includes('chademo');
+        return false;
+    });
 
 // Fixed layout positions (percent of map card) so the pins line up
 // with the little illustrated "roads" behind them.
@@ -65,6 +77,7 @@ const FindStationContent = ({
     sortBy, setSortBy, favorites, toggleFavorite, goDetails,
     favOpen, setFavOpen, notifOpen, setNotifOpen, zoom, setZoom,
     routeOn, setRouteOn, locating, onLocate, activeTab, setActiveTab,
+    selectedModel, setSelectedModel, selectedPort, setSelectedPort,
 }) => {
     const favBtnRef = useRef(null);
     const notifBtnRef = useRef(null);
@@ -101,9 +114,11 @@ const FindStationContent = ({
         }
         const term = search.trim().toLowerCase();
         return list
+            .filter((s) => !selectedModel || s.supportedModels?.includes(selectedModel))
+            .filter((s) => !selectedPort || stationHasPort(s, selectedPort))
             .filter((s) => !term || s.name.toLowerCase().includes(term) || s.address.toLowerCase().includes(term))
             .sort(sortComparator(sortBy));
-    }, [search, activeTab, favorites, sortBy]);
+    }, [search, activeTab, favorites, sortBy, selectedModel, selectedPort]);
 
     const favoriteStations = useMemo(
         () => STATIONS.filter((s) => favorites[s.id]),
@@ -111,6 +126,9 @@ const FindStationContent = ({
     );
 
     const selectedPos = getPos(safeSelected.id);
+    const highestSpeed = Math.max(...displayedStations.map((station) => station.maxChargingSpeedKw || 0));
+    const showMapMetric = sortBy === 'Ratings' || sortBy === 'Charging Speed';
+    const activeFilterCount = Number(Boolean(selectedModel)) + Number(Boolean(selectedPort));
 
     return (
         <>
@@ -221,16 +239,19 @@ const FindStationContent = ({
 
                             {STATIONS.map((s) => {
                                 const pos = getPos(s.id);
+                                const isHighestSpeed = sortBy === 'Charging Speed' && (s.maxChargingSpeedKw || 0) === highestSpeed;
                                 return (
                                     <div
                                         key={s.id}
-                                        className={`fs-map-pin ${s.status} ${s.id === safeSelected.id ? 'selected' : ''}`}
+                                        className={`fs-map-pin ${s.status} ${s.id === safeSelected.id ? 'selected' : ''} ${isHighestSpeed ? 'highlighted' : ''}`}
                                         style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                                         onClick={() => setSelectedId(s.id)}
                                         title={s.name}
                                     >
-                                        {sortBy === 'Ratings' && (
-                                            <div className="fs-map-pin-rating"><IconStarFilled /> {(s.rating || 4).toFixed(1)}</div>
+                                        {showMapMetric && (
+                                            <div className="fs-map-pin-rating">
+                                                {sortBy === 'Ratings' ? <><IconStarFilled /> {(s.rating || 4).toFixed(1)}</> : `${s.maxChargingSpeedKw || 0} kW`}
+                                            </div>
                                         )}
                                         <div className="fs-map-pin-dot"><IconPlug /></div>
                                     </div>
@@ -284,7 +305,7 @@ const FindStationContent = ({
                                 className={`fs-tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('favorites')}
                             >
-                                <IconStarFilled /> Favorites
+                                <IconHeart /> Favorites
                             </button>
                             <button
                                 className={`fs-tab-btn ${activeTab === 'recent' ? 'active' : ''}`}
@@ -296,23 +317,57 @@ const FindStationContent = ({
 
                         <div className="fs-filter-wrap">
                             <button
-                                className={`fs-filter-btn ${sortOpen ? 'active' : ''}`}
+                                className={`fs-filter-btn ${sortOpen || selectedModel || selectedPort ? 'active' : ''}`}
                                 onClick={() => setSortOpen((o) => !o)}
                             >
-                                <IconFilter /> Filter
+                                <IconFilter /> Filter{activeFilterCount ? ` · ${activeFilterCount}` : ''}
                             </button>
                             {sortOpen && (
                                 <div className="fs-filter-dropdown">
+                                    <div className="fs-filter-section-label">Sort stations by</div>
                                     {SORT_OPTIONS.map((opt) => (
-                                        <div
+                                        <button
+                                            type="button"
                                             key={opt}
                                             className={`fs-filter-item ${opt === sortBy ? 'active' : ''}`}
-                                            onClick={() => { setSortBy(opt); setSortOpen(false); }}
+                                            onClick={() => setSortBy(opt)}
                                         >
                                             <span>{opt}</span>
                                             {opt === sortBy ? <IconCheck /> : <span style={{ color: 'var(--text-secondary)' }}>›</span>}
-                                        </div>
+                                        </button>
                                     ))}
+                                    <div className="fs-filter-divider" />
+                                    <div className="fs-filter-section-label">Vehicle model</div>
+                                    <div className="fs-filter-options">
+                                        {VEHICLE_MODELS.map((model) => (
+                                            <button
+                                                type="button"
+                                                key={model}
+                                                className={`fs-filter-chip ${selectedModel === model ? 'active' : ''}`}
+                                                onClick={() => setSelectedModel(selectedModel === model ? '' : model)}
+                                            >
+                                                {model}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="fs-filter-section-label">Charging port</div>
+                                    <div className="fs-filter-options">
+                                        {CHARGING_PORTS.map((port) => (
+                                            <button
+                                                type="button"
+                                                key={port}
+                                                className={`fs-filter-chip ${selectedPort === port ? 'active' : ''}`}
+                                                onClick={() => setSelectedPort(selectedPort === port ? '' : port)}
+                                            >
+                                                {port}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {(selectedModel || selectedPort) && (
+                                        <button type="button" className="fs-filter-clear" onClick={() => { setSelectedModel(''); setSelectedPort(''); }}>
+                                            Clear selections
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -338,7 +393,7 @@ const FindStationContent = ({
                                     <div className="fs-list-info">
                                         <div className="fs-list-title-row">
                                             <span className="fs-list-name">{s.name}</span>
-                                            {isFav && <span className="fs-fav-star">★</span>}
+                                            {isFav && <span className="fs-fav-heart"><IconHeart filled /></span>}
                                         </div>
                                         <div className="fs-list-address">{s.address}</div>
                                     </div>
@@ -357,7 +412,7 @@ const FindStationContent = ({
                                             {isSelected ? (
                                                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M7.5 4l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                             ) : (
-                                                <IconStarOutline />
+                                                <IconHeart filled={isFav} />
                                             )}
                                         </button>
                                     </div>
@@ -504,6 +559,8 @@ const FindStation = () => {
     const [search, setSearch] = useState('');
     const [sortOpen, setSortOpen] = useState(false);
     const [sortBy, setSortBy] = useState('Nearby');
+    const [selectedModel, setSelectedModel] = useState('');
+    const [selectedPort, setSelectedPort] = useState('');
     const [activeTab, setActiveTab] = useState('nearby');
     const [favorites, setFavorites] = useState({ 'volt-charge-cod': true, 'one-galle-face': true });
     const [menuOpen, setMenuOpen] = useState(false);
@@ -538,6 +595,7 @@ const FindStation = () => {
         sortBy, setSortBy, favorites, toggleFavorite, goDetails,
         favOpen, setFavOpen, notifOpen, setNotifOpen, zoom, setZoom,
         routeOn, setRouteOn, locating, onLocate, activeTab, setActiveTab,
+        selectedModel, setSelectedModel, selectedPort, setSelectedPort,
     };
 
     return (
