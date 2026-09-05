@@ -23,6 +23,10 @@ const STATION = {
     ],
 };
 
+// TEMPORARY: hardcoded for backend testing only.
+// Once "My Bookings" is built, this will come from route params/state instead.
+const TEMP_BOOKING_ID = '65f200000000000000000005';
+
 const AVAILABLE_CHIPS = ['Fast Charging', 'Easy to Find', 'Clean Station', 'Friendly Staff', 'Faulty Charger'];
 
 const STATION_IMAGE_FALLBACK_SVG =
@@ -42,6 +46,11 @@ export default function Review() {
     const [imgSrc, setImgSrc] = useState(chargingStationImg);
     const handleImageError = () => setImgSrc(STATION_IMAGE_FALLBACK_SVG);
 
+    // ── Booking details state fetched from backend ──
+    const [bookingData, setBookingData] = useState(null);
+    const [isLoadingBooking, setIsLoadingBooking] = useState(true);
+    const [bookingError, setBookingError] = useState(null);
+
     // ── Review form state ──
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
@@ -50,6 +59,32 @@ export default function Review() {
     const [photos, setPhotos] = useState([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [ratingError, setRatingError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+
+    // Fetch booking & station details on mount using TEMP_BOOKING_ID
+    useEffect(() => {
+        const fetchBookingDetails = async () => {
+            setIsLoadingBooking(true);
+            setBookingError(null);
+            try {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                const response = await fetch(`${apiUrl}/api/bookings/${TEMP_BOOKING_ID}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load booking');
+                }
+                const data = await response.json();
+                setBookingData(data);
+            } catch (err) {
+                console.error('Error fetching booking details:', err);
+                setBookingError('Failed to load booking');
+            } finally {
+                setIsLoadingBooking(false);
+            }
+        };
+
+        fetchBookingDetails();
+    }, []);
 
     // Revoke object URLs on unmount
     useEffect(() => {
@@ -88,27 +123,47 @@ export default function Review() {
         setPhotos((prev) => prev.filter((p) => p.id !== id));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (rating === 0) {
             setRatingError('Please select a star rating before submitting.');
             return;
         }
+        setIsSubmitting(true);
+        setSubmitError(null);
+
+        // TODO: image upload not implemented yet — excluded from payload
         const payload = {
+            booking: TEMP_BOOKING_ID,
+            driver: bookingData?.driver?._id || bookingData?.driver,
+            station: bookingData?.charger?.station?._id || bookingData?.charger?.station,
             rating,
+            ratingLabel: RATING_LABELS[rating] || '',
             chips: selectedChips,
             comment: comment.trim(),
-            photoCount: photos.length,
-            photosList: photos.map((p) => ({ filename: p.file.name, sizeBytes: p.file.size, mimeType: p.file.type })),
         };
-        console.log('---------------- REVIEW SUBMISSION PAYLOAD ----------------');
-        console.log('Star Rating: ', payload.rating);
-        console.log('Selected Chips: ', payload.chips);
-        console.log('Comment: ', payload.comment);
-        console.log('Attached Photos Metadata: ', payload.photosList);
-        console.log('Full JSON Payload: ', JSON.stringify(payload, null, 2));
-        console.log('-----------------------------------------------------------');
-        setIsSubmitted(true);
+
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const response = await fetch(`${apiUrl}/api/reviews`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                setIsSubmitted(true);
+            } else {
+                setSubmitError(data.message || 'Failed to submit review. Please try again.');
+            }
+        } catch (err) {
+            console.error('Error submitting review:', err);
+            setSubmitError('Unable to connect to backend server. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleReset = () => {
@@ -119,10 +174,25 @@ export default function Review() {
         setComment('');
         setPhotos([]);
         setIsSubmitted(false);
+        setIsSubmitting(false);
         setRatingError(null);
+        setSubmitError(null);
     };
 
     const activeRating = hoverRating || rating;
+
+    // Derived station and summary values from fetched bookingData or fallbacks
+    const stationName = bookingData?.charger?.station?.name || 'Charging Station';
+    const stationRating = bookingData?.charger?.station?.rating || '4.8';
+    const stationAddress = bookingData?.charger?.station?.address || 'Address unavailable';
+
+    const summaryItems = bookingData ? [
+        { label: 'Connector', value: `${bookingData.charger?.connector?.connectorType || 'CCS Combo 2'} (${bookingData.charger?.connector?.powerKW || 150} kW)` },
+        { label: 'Date & Time', value: `${bookingData.date || ''} • ${bookingData.time || ''}` },
+        { label: 'Vehicle', value: bookingData.vehicle?.name || 'EV Vehicle' },
+        { label: 'Energy Delivered', value: `${bookingData.energyDeliveredKWh ? bookingData.energyDeliveredKWh + ' kWh' : '14.2 kWh'}` },
+        { label: 'Cost', value: `Rs. ${bookingData.estimatedTotalCost ? bookingData.estimatedTotalCost.toLocaleString() : '0'}` },
+    ] : [];
 
     /* ---------- Shared sub-components ---------- */
     const reviewContentBlock = (
@@ -138,24 +208,32 @@ export default function Review() {
                     />
                 </div>
                 <div className="station-details">
-                    <div>
-                        <div className="station-header">
-                            <h2 className="station-name">{STATION.name}</h2>
-                            <span className="rating-badge">
-                                <Icon name="icon-star-act" size={12} style={{ fill: 'currentColor', verticalAlign: 'middle', marginRight: 3 }} />
-                                {STATION.rating}
-                            </span>
-                        </div>
-                        <p className="station-address">{STATION.address}</p>
-                    </div>
-                    <div className="booking-summary-grid">
-                        {STATION.summary.map((item) => (
-                            <div className="summary-item" key={item.label}>
-                                <span className="summary-label">{item.label}</span>
-                                <span className="summary-value">{item.value}</span>
+                    {isLoadingBooking ? (
+                        <div style={{ padding: '20px', color: 'var(--text-secondary)' }}>Loading booking details...</div>
+                    ) : bookingError ? (
+                        <div style={{ padding: '20px', color: '#ff6b6b' }}>Failed to load booking details</div>
+                    ) : (
+                        <>
+                            <div>
+                                <div className="station-header">
+                                    <h2 className="station-name">{stationName}</h2>
+                                    <span className="rating-badge">
+                                        <Icon name="icon-star-act" size={12} style={{ fill: 'currentColor', verticalAlign: 'middle', marginRight: 3 }} />
+                                        {stationRating}
+                                    </span>
+                                </div>
+                                <p className="station-address">{stationAddress}</p>
                             </div>
-                        ))}
-                    </div>
+                            <div className="booking-summary-grid">
+                                {summaryItems.map((item) => (
+                                    <div className="summary-item" key={item.label}>
+                                        <span className="summary-label">{item.label}</span>
+                                        <span className="summary-value">{item.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             </section>
 
@@ -313,8 +391,22 @@ export default function Review() {
                             </div>
                         </div>
 
-                        <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
-                            Submit Review
+                        {submitError && (
+                            <div className="error-message" role="alert" style={{ marginTop: '12px' }}>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span>{submitError}</span>
+                            </div>
+                        )}
+
+                        <button 
+                            type="submit" 
+                            className="btn-primary" 
+                            style={{ marginTop: '12px' }}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? 'Submitting...' : 'Submit Review'}
                         </button>
                     </form>
                 </div>
