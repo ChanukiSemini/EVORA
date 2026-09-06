@@ -17,8 +17,8 @@ const features = [
 const LandingPage = () => {
     const navigate = useNavigate();
 
-    const goToBooking = () => navigate('/book-charger');
-    const goToLogin = () => navigate('/dashboard');
+    const goToGetStarted = () => navigate('/account-type');
+    const goToLogin = () => navigate('/login');
 
     return (
         <div className="landing-wrapper">
@@ -49,7 +49,7 @@ const LandingPage = () => {
 
                 {/* Buttons */}
                 <div className="landing-buttons">
-                    <button className="btn-get-started" onClick={goToBooking}>
+                    <button className="btn-get-started" onClick={goToGetStarted}>
                         Get Started <span className="btn-arrow">→</span>
                     </button>
                     <button className="btn-login" onClick={goToLogin}>
@@ -105,7 +105,7 @@ const LandingPage = () => {
                     </ul>
 
                     <div className="landing-buttons">
-                        <button className="btn-get-started" onClick={goToBooking}>
+                        <button className="btn-get-started" onClick={goToGetStarted}>
                             Get Started <span className="btn-arrow">→</span>
                         </button>
                         <button className="btn-login" onClick={goToLogin}>
