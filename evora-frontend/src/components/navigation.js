@@ -8,6 +8,7 @@ import {
     IconBolt,
     IconCalendar,
     IconCar,
+
 } from './NavigationIcons.jsx';
 
 export const NAV_ITEMS = [
@@ -15,6 +16,7 @@ export const NAV_ITEMS = [
     { label: 'Book a Charger', to: '/book-charger', icon: IconBolt },
     { label: 'My Reservations', to: '/bookings', icon: IconCalendar },
     { label: 'My Vehicles', to: '/vehicles', icon: IconCar },
+
 ];
 
 

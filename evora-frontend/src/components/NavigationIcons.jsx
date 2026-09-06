@@ -73,3 +73,66 @@ export const IconLogout = () => (
         <path d="M12.5 13.5 17 9l-4.5-4.5M17 9H7.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
+
+
+export const IconReceipt = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+        <path d="M8 7h8" />
+        <path d="M8 11h8" />
+        <path d="M8 15h5" />
+    </svg>
+);
+
+export const IconCCTV = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16.75 12h3.5a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-3.5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2Z" />
+        <path d="m14.75 16-7-5.5V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2.5" />
+        <path d="M2 19h5" />
+        <circle cx="9" cy="9" r="2" />
+    </svg>
+);
+
+export const IconRestroom = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="7" cy="4" r="2" />
+        <path d="M5 8v6a2 2 0 0 0 4 0V8" />
+        <path d="M6 14v6" />
+        <path d="M8 14v6" />
+        <circle cx="17" cy="4" r="2" />
+        <path d="m14 8 2 8h2l2-8h-6Z" />
+        <path d="M16 16v4" />
+        <path d="M18 16v4" />
+    </svg>
+);
+
+export const IconLounge = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 11v8" />
+        <path d="M20 11v8" />
+        <path d="M2 15h20" />
+        <path d="M4 15a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4" />
+        <path d="M6 11V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4" />
+    </svg>
+);
+
+export const IconSupport = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+    </svg>
+);
+
+export const IconShield = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="m9 12 2 2 4-4" />
+    </svg>
+);
+
+export const IconLeaf = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+    </svg>
+);
