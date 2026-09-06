@@ -3,6 +3,8 @@ import './App.css'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import AccountType from './pages/AccountType'
+import FindStation from './pages/FindStation'
+import StationDetails from './pages/StationDetails'
 import BookCharger from './pages/BookCharger'
 import BookingConfirmed from './pages/BookingConfirmed'
 import MyReservations from './pages/MyReservations'
@@ -50,7 +52,9 @@ function App() {
         <Route path="/account-success" element={<AccountCreatedSuccess />} />
         <Route path="/account-created" element={<AccountCreatedSuccess />} />
         <Route path="/registration-success" element={<AccountCreatedSuccess />} />
-        <Route path="/dashboard" element={<LandingPage />} />
+        <Route path="/dashboard" element={<FindStation />} />
+        <Route path="/find-station" element={<FindStation />} />
+        <Route path="/station/:id" element={<StationDetails />} />
         <Route path="/book-charger" element={<BookCharger />} />
         <Route path="/booking-confirmed" element={<BookingConfirmed />} />
         <Route path="/bookings" element={<MyReservations />} />
