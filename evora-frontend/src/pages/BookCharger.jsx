@@ -312,9 +312,6 @@ const BookCharger = () => {
                                 <div className="mobile-menu-item" onClick={() => { navigate('/bookings'); setIsMobileMenuOpen(false); }}>
                                     <span>📅</span> My Bookings
                                 </div>
-                                <div className="mobile-menu-item" onClick={() => { navigate('/rate-session'); setIsMobileMenuOpen(false); }}>
-                                    <span>⭐</span> Rate Your Session
-                                </div>
                                 <div className="mobile-menu-item" onClick={() => { navigate('/vehicles'); setIsMobileMenuOpen(false); }}>
                                     <span>🚗</span> My Vehicles
                                 </div>
