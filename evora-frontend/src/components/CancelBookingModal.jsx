@@ -4,8 +4,6 @@
 // Matches Figma design reference precisely with responsive overlay
 // ============================================
 
-import React from 'react';
-
 const CancelBookingModal = ({ booking, onClose, onConfirmCancel }) => {
     // Default fallback mock if opened without specific props
     const currentBooking = booking || {

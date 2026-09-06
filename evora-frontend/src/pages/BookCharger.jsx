@@ -66,6 +66,122 @@ const MIN_DURATION = 15;
 const MAX_DURATION = 180;
 const DURATION_STEP = 15;
 
+/* ---------- Clean Text Connector Dropdown Menu ---------- */
+const ConnectorDropdownMenu = ({ connector, connectorIdx, setConnectorIdx, dropdownOpen, setDropdownOpen }) => {
+    return (
+        <div className="connector-dropdown-wrap">
+            <button
+                type="button"
+                className={`connector-dropdown-trigger ${dropdownOpen ? 'active' : ''}`}
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+            >
+                <div className="connector-trigger-text">
+                    <span className="connector-title">{connector.label}</span>
+                    <span className="connector-subtitle">{connector.specs}</span>
+                </div>
+                <span className={`connector-arrow ${dropdownOpen ? 'open' : ''}`}>▾</span>
+            </button>
+
+            {dropdownOpen && (
+                <div className="connector-dropdown-menu">
+                    {CONNECTORS.map((c, i) => {
+                        const isSelected = connectorIdx === i;
+                        return (
+                            <div
+                                key={c.id}
+                                className={`connector-dropdown-item ${isSelected ? 'selected' : ''}`}
+                                onClick={() => {
+                                    setConnectorIdx(i);
+                                    setDropdownOpen(false);
+                                }}
+                            >
+                                <div className="connector-item-meta">
+                                    <span className="connector-item-name">{c.label}</span>
+                                    <span className="connector-item-specs">{c.specs}</span>
+                                </div>
+                                <div className="connector-item-right">
+                                    <span className="connector-item-price">Rs. {c.ratePerHour.toLocaleString()}/hr</span>
+                                    {isSelected && <span className="connector-check">✓</span>}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const DateChips = ({ selectedDate, setSelectedDate, className = '' }) => (
+    <div className={`date-chips-row ${className}`}>
+        {DATES.map((d, i) => (
+            <button
+                key={i}
+                type="button"
+                className={`date-chip ${selectedDate === i ? 'active' : ''}`}
+                onClick={() => setSelectedDate(i)}
+            >
+                <span className="date-chip-day">{d.day}</span>
+                <span className="date-chip-num">{d.num}</span>
+                <span className="date-chip-month">{d.shortMonth}</span>
+            </button>
+        ))}
+    </div>
+);
+
+const TimeLegend = () => (
+    <div className="time-legend">
+        <span className="legend-item"><span className="legend-dot booked" />Booked</span>
+        <span className="legend-item"><span className="legend-dot in-use" />In Use</span>
+        <span className="legend-item"><span className="legend-dot available" />Available</span>
+    </div>
+);
+
+const TimeBars = ({ selectedTime, onSelectTime }) => (
+    <div className="time-bars-card">
+        <div className="time-bars-row">
+            {TIME_SLOTS.map((slot, i) => (
+                <div
+                    key={i}
+                    className="time-bar-wrap"
+                    onClick={() => onSelectTime(i)}
+                    role="button"
+                    tabIndex={0}
+                    aria-disabled={slot.status !== 'available'}
+                >
+                    <div className={`time-bar ${slot.status} ${selectedTime === i ? 'selected' : ''}`} />
+                    <span className="time-bar-label">{slot.time}</span>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const DurationStepper = ({ duration, changeDuration }) => (
+    <div className="duration-card">
+        <button
+            type="button"
+            className="stepper-btn"
+            onClick={() => changeDuration(-DURATION_STEP)}
+            disabled={duration <= MIN_DURATION}
+        >
+            −
+        </button>
+        <div className="stepper-display">
+            <span className="stepper-value">{duration}</span>
+            <span className="stepper-unit">min</span>
+        </div>
+        <button
+            type="button"
+            className="stepper-btn"
+            onClick={() => changeDuration(DURATION_STEP)}
+            disabled={duration >= MAX_DURATION}
+        >
+            +
+        </button>
+    </div>
+);
+
 const BookCharger = () => {
     const navigate = useNavigate();
 
@@ -93,122 +209,6 @@ const BookCharger = () => {
     };
 
     const handleConfirm = () => navigate('/booking-confirmed');
-
-    /* ---------- Clean Text Connector Dropdown Menu ---------- */
-    const ConnectorDropdownMenu = () => {
-        return (
-            <div className="connector-dropdown-wrap">
-                <button
-                    type="button"
-                    className={`connector-dropdown-trigger ${dropdownOpen ? 'active' : ''}`}
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                >
-                    <div className="connector-trigger-text">
-                        <span className="connector-title">{connector.label}</span>
-                        <span className="connector-subtitle">{connector.specs}</span>
-                    </div>
-                    <span className={`connector-arrow ${dropdownOpen ? 'open' : ''}`}>▾</span>
-                </button>
-
-                {dropdownOpen && (
-                    <div className="connector-dropdown-menu">
-                        {CONNECTORS.map((c, i) => {
-                            const isSelected = connectorIdx === i;
-                            return (
-                                <div
-                                    key={c.id}
-                                    className={`connector-dropdown-item ${isSelected ? 'selected' : ''}`}
-                                    onClick={() => {
-                                        setConnectorIdx(i);
-                                        setDropdownOpen(false);
-                                    }}
-                                >
-                                    <div className="connector-item-meta">
-                                        <span className="connector-item-name">{c.label}</span>
-                                        <span className="connector-item-specs">{c.specs}</span>
-                                    </div>
-                                    <div className="connector-item-right">
-                                        <span className="connector-item-price">Rs. {c.ratePerHour.toLocaleString()}/hr</span>
-                                        {isSelected && <span className="connector-check">✓</span>}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const DateChips = ({ className = '' }) => (
-        <div className={`date-chips-row ${className}`}>
-            {DATES.map((d, i) => (
-                <button
-                    key={i}
-                    type="button"
-                    className={`date-chip ${selectedDate === i ? 'active' : ''}`}
-                    onClick={() => setSelectedDate(i)}
-                >
-                    <span className="date-chip-day">{d.day}</span>
-                    <span className="date-chip-num">{d.num}</span>
-                    <span className="date-chip-month">{d.shortMonth}</span>
-                </button>
-            ))}
-        </div>
-    );
-
-    const TimeLegend = () => (
-        <div className="time-legend">
-            <span className="legend-item"><span className="legend-dot booked" />Booked</span>
-            <span className="legend-item"><span className="legend-dot in-use" />In Use</span>
-            <span className="legend-item"><span className="legend-dot available" />Available</span>
-        </div>
-    );
-
-    const TimeBars = () => (
-        <div className="time-bars-card">
-            <div className="time-bars-row">
-                {TIME_SLOTS.map((slot, i) => (
-                    <div
-                        key={i}
-                        className="time-bar-wrap"
-                        onClick={() => handleSelectTime(i)}
-                        role="button"
-                        tabIndex={0}
-                        aria-disabled={slot.status !== 'available'}
-                    >
-                        <div className={`time-bar ${slot.status} ${selectedTime === i ? 'selected' : ''}`} />
-                        <span className="time-bar-label">{slot.time}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    const DurationStepper = () => (
-        <div className="duration-card">
-            <button
-                type="button"
-                className="stepper-btn"
-                onClick={() => changeDuration(-DURATION_STEP)}
-                disabled={duration <= MIN_DURATION}
-            >
-                −
-            </button>
-            <div className="stepper-display">
-                <span className="stepper-value">{duration}</span>
-                <span className="stepper-unit">min</span>
-            </div>
-            <button
-                type="button"
-                className="stepper-btn"
-                onClick={() => changeDuration(DURATION_STEP)}
-                disabled={duration >= MAX_DURATION}
-            >
-                +
-            </button>
-        </div>
-    );
 
     return (
         <>
@@ -245,24 +245,30 @@ const BookCharger = () => {
                 <div className="section-label-row">
                     <span className="section-label">Connector Type</span>
                 </div>
-                <ConnectorDropdownMenu />
+                <ConnectorDropdownMenu
+                    connector={connector}
+                    connectorIdx={connectorIdx}
+                    setConnectorIdx={setConnectorIdx}
+                    dropdownOpen={dropdownOpen}
+                    setDropdownOpen={setDropdownOpen}
+                />
 
                 <div className="section-label-row">
                     <span className="section-label">Select Date</span>
                     <span className="section-month-badge">{activeDateObj.month} {activeDateObj.year}</span>
                 </div>
-                <DateChips />
+                <DateChips selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
 
                 <div className="section-label-row">
                     <span className="section-label">Time</span>
                     <TimeLegend />
                 </div>
-                <TimeBars />
+                <TimeBars selectedTime={selectedTime} onSelectTime={handleSelectTime} />
 
                 <div className="section-label-row">
                     <span className="section-label">Duration</span>
                 </div>
-                <DurationStepper />
+                <DurationStepper duration={duration} changeDuration={changeDuration} />
 
                 <div className="bottom-info-row">
                     <div className="info-pill">
@@ -372,7 +378,7 @@ const BookCharger = () => {
                                     <span className="section-label">Select Date</span>
                                     <span className="section-month-badge">{activeDateObj.month} {activeDateObj.year}</span>
                                 </div>
-                                <DateChips className="dt-date-chips" />
+                                <DateChips selectedDate={selectedDate} setSelectedDate={setSelectedDate} className="dt-date-chips" />
                             </div>
 
                             <div className="card dt-section">
@@ -380,12 +386,12 @@ const BookCharger = () => {
                                     <span className="section-label">Select Time Slot</span>
                                     <TimeLegend />
                                 </div>
-                                <TimeBars />
+                                <TimeBars selectedTime={selectedTime} onSelectTime={handleSelectTime} />
                             </div>
 
                             <div className="card dt-section">
                                 <span className="section-label">Charging Duration</span>
-                                <DurationStepper />
+                                <DurationStepper duration={duration} changeDuration={changeDuration} />
                             </div>
 
                         </div>
@@ -404,7 +410,13 @@ const BookCharger = () => {
 
                                 <div className="dt-connector-section">
                                     <span className="section-label">Connector Type</span>
-                                    <ConnectorDropdownMenu />
+                                    <ConnectorDropdownMenu
+                                        connector={connector}
+                                        connectorIdx={connectorIdx}
+                                        setConnectorIdx={setConnectorIdx}
+                                        dropdownOpen={dropdownOpen}
+                                        setDropdownOpen={setDropdownOpen}
+                                    />
                                 </div>
 
                                 <div className="card-divider" />

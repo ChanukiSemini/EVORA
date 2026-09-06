@@ -15,12 +15,16 @@ import RegisterHardware from './pages/admin/RegisterHardware'
 import Chatbot from './pages/admin/Chatbot'
 import CaseDetail from './pages/admin/CaseDetail'
 import Reports from './pages/admin/Reports'
+import Review from './pages/Review'
+import Profile from './pages/Profile'
+import MyVehicles from './pages/MyVehicles'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={<LandingPage />} />
         <Route path="/book-charger" element={<BookCharger />} />
         <Route path="/booking-confirmed" element={<BookingConfirmed />} />
         <Route path="/bookings" element={<MyReservations />} />
@@ -38,6 +42,14 @@ function App() {
           <Route path="case/:caseId" element={<CaseDetail />} />
           <Route path="reports" element={<Reports />} />
         </Route>
+        <Route path="/rate-session" element={<Review />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Profile />} />
+        <Route path="/vehicles" element={<MyVehicles />} />
+        <Route path="/stations" element={<BookCharger />} />
+        <Route path="/find" element={<BookCharger />} />
+        <Route path="/login" element={<LandingPage />} />
+        <Route path="*" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
   )

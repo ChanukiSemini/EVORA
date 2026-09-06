@@ -3,7 +3,6 @@
 // EVORA - Reschedule Booking Demo Page
 // ============================================
 
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import MyReservations from './MyReservations';
 import RescheduleBookingModal from '../components/RescheduleBookingModal';
