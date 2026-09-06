@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
 import LandingPage from './pages/LandingPage'
+import Login from './pages/Login'
+import AccountType from './pages/AccountType'
 import BookCharger from './pages/BookCharger'
 import BookingConfirmed from './pages/BookingConfirmed'
 import MyReservations from './pages/MyReservations'
@@ -18,12 +20,36 @@ import Reports from './pages/admin/Reports'
 import Review from './pages/Review'
 import Profile from './pages/Profile'
 import MyVehicles from './pages/MyVehicles'
+import DriverCreateAccount from './pages/DriverCreateAccount'
+import HostCreateAccount from './pages/HostCreateAccount'
+import OtpVerification from './pages/OtpVerification'
+import AccountCreatedSuccess from './pages/AccountCreatedSuccess'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/account-type" element={<AccountType />} />
+        <Route path="/choose-account-type" element={<AccountType />} />
+        <Route path="/select-role" element={<AccountType />} />
+        <Route path="/register-driver" element={<DriverCreateAccount />} />
+        <Route path="/create-driver-account" element={<DriverCreateAccount />} />
+        <Route path="/driver-register" element={<DriverCreateAccount />} />
+        <Route path="/driver-create-account" element={<DriverCreateAccount />} />
+        <Route path="/driver-signup" element={<DriverCreateAccount />} />
+        <Route path="/signup" element={<DriverCreateAccount />} />
+        <Route path="/register-host" element={<HostCreateAccount />} />
+        <Route path="/create-host-account" element={<HostCreateAccount />} />
+        <Route path="/host-register" element={<HostCreateAccount />} />
+        <Route path="/host-create-account" element={<HostCreateAccount />} />
+        <Route path="/host-signup" element={<HostCreateAccount />} />
+        <Route path="/verify-otp" element={<OtpVerification />} />
+        <Route path="/otp-verification" element={<OtpVerification />} />
+        <Route path="/otp" element={<OtpVerification />} />
+        <Route path="/account-success" element={<AccountCreatedSuccess />} />
+        <Route path="/account-created" element={<AccountCreatedSuccess />} />
+        <Route path="/registration-success" element={<AccountCreatedSuccess />} />
         <Route path="/dashboard" element={<LandingPage />} />
         <Route path="/book-charger" element={<BookCharger />} />
         <Route path="/booking-confirmed" element={<BookingConfirmed />} />
@@ -48,7 +74,7 @@ function App() {
         <Route path="/vehicles" element={<MyVehicles />} />
         <Route path="/stations" element={<BookCharger />} />
         <Route path="/find" element={<BookCharger />} />
-        <Route path="/login" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
         <Route path="*" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
