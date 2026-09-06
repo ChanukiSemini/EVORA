@@ -8,5 +8,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rolldownOptions: {
+      external: ['hls.js']
+    },
+    rollupOptions: {
+      external: ['hls.js']
+    }
   }
 })
