@@ -3610,7 +3610,8 @@ body {
   gap: 12px;
 }
 
-.res-upcoming-actions-wrap {
+.res-upcoming-actions-wrap,
+.res-completed-actions-wrap {
   display: flex;
   flex-direction: column;
   gap: 10px;
