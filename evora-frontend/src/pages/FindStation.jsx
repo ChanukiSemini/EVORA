@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import MobileNav from '../components/MobileNav';
 import { STATIONS } from '../data/stations';
+import { getDirectionsUrl } from '../utils/directions';
 import {
     IconSearch, IconHeart, IconBell, IconMenu, IconChevronDown, IconCheck,
     IconStarFilled, IconPin, IconPlug, IconCarSmall, IconLocate, IconPlus,
@@ -44,9 +45,6 @@ const MAP_POSITIONS = {
 };
 
 const getPos = (id) => MAP_POSITIONS[id] || { x: 50, y: 50 };
-
-const directionsUrl = (station) =>
-    `https://www.google.com/maps/dir/?api=1&destination=${station?.lat || 6.9270},${station?.lng || 79.8612}`;
 
 // Mock notifications feed — swap for a real API later.
 const NOTIFICATIONS = [
@@ -541,7 +539,10 @@ const FindStationContent = ({
                             <button className="btn-details-pill" onClick={() => goDetails(safeSelected.id)}>Details</button>
                             <button
                                 className="btn-directions-pill"
-                                onClick={() => window.open(directionsUrl(safeSelected), '_blank', 'noopener,noreferrer')}
+                                onClick={() => {
+                                    const url = getDirectionsUrl(safeSelected);
+                                    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                                }}
                             >
                                 Directions <span className="arrow-icon">↗</span>
                             </button>
@@ -601,7 +602,7 @@ const FindStation = () => {
     return (
         <>
             {/* ---------- Desktop ---------- */}
-            <div className="app-shell">
+            <div className="app-shell find-station-page">
                 <Sidebar />
                 <main className="app-main">
                     <FindStationContent {...shared} />
@@ -609,7 +610,7 @@ const FindStation = () => {
             </div>
 
             {/* ---------- Mobile ---------- */}
-            <div className="mobile-only" style={{ padding: '16px' }}>
+            <div className="mobile-only find-station-page" style={{ padding: '16px' }}>
                 <div className="nav-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                     <button className="nav-hamburger" onClick={() => setMenuOpen(true)} aria-label="Open menu" style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
                         <IconMenu />

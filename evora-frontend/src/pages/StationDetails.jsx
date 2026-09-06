@@ -12,14 +12,12 @@ import Sidebar from '../components/Sidebar';
 import MobileNav from '../components/MobileNav';
 import StationGallery from '../components/StationGallery';
 import { getStationById, STATIONS } from '../data/stations';
+import { getDirectionsUrl } from '../utils/directions';
 import {
     IconBack, IconMenu, IconPin, IconStarFilled, IconPlug, IconClock,
     IconNav, IconCheck, IconCard, IconBolt, IconParkingP, IconCarModel,
 } from '../components/Icons';
 import { AMENITY_ICONS, AMENITY_LABELS } from '../data/amenities';
-
-const directionsUrl = (station) =>
-    `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`;
 
 const StatusBar = ({ station }) => {
     if (station.status === 'full') {
@@ -193,12 +191,15 @@ const StationDetails = () => {
     }, [toast]);
 
     const onBook = () => navigate('/book-charger');
-    const onDirections = () => window.open(directionsUrl(station), '_blank', 'noopener,noreferrer');
+    const onDirections = () => {
+        const url = getDirectionsUrl(station);
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    };
 
     return (
         <>
             {/* ---------- Desktop ---------- */}
-            <div className="app-shell">
+            <div className="app-shell station-details-page">
                 <Sidebar />
                 <main className="app-main">
                     <DetailsContent station={station} onBook={onBook} onDirections={onDirections} navigate={navigate} />
@@ -206,7 +207,7 @@ const StationDetails = () => {
             </div>
 
             {/* ---------- Mobile ---------- */}
-            <div className="mobile-only">
+            <div className="mobile-only station-details-page">
                 <div className="evora-screen">
                     <div className="nav-bar">
                         <button className="nav-back" onClick={() => navigate(-1)} aria-label="Go back"><IconBack /></button>

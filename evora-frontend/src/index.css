@@ -3057,6 +3057,12 @@ textarea {
 }
 
 @media (min-width: 768px) and (max-width: 900px) {
+.find-station-page,
+.find-station-page *,
+.station-details-page,
+.station-details-page * {
+  font-family: 'Kameron', serif !important;
+}
   .app-sidebar {
     width: 84px;
     padding: var(--space-5) var(--space-3);
@@ -3085,6 +3091,11 @@ textarea {
 /* ============================================
    FIND STATION PAGE  (merged from FindStation.css)
    ============================================ */
+
+.find-station-page,
+.station-details-page {
+  font-family: var(--font-family);
+}
 
 /* ---------- Top bar ---------- */
 .fs-topbar {
@@ -10925,4 +10936,11 @@ body {
     max-width: 1500px;
     margin: 0;
   }
+}
+
+.find-station-page,
+.find-station-page *,
+.station-details-page,
+.station-details-page * {
+  font-family: var(--font-family) !important;
 }
