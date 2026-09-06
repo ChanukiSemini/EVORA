@@ -14,4 +14,4 @@ const chargerHostSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model('ChargerHost', chargerHostSchema);
+export default mongoose.model('ChargerHost', chargerHostSchema, 'charger_host');

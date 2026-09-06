@@ -10,6 +10,7 @@ import connectDB from './config/db.js';
 // Routes
 import reviewRoutes from './routes/reviewRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
+import driverRoutes from './routes/driverRoutes.js';
 
 // Connect to MongoDB before starting the server
 connectDB();
@@ -27,6 +28,7 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/drivers', driverRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

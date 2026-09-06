@@ -5,14 +5,23 @@ import Icon from './Icon.jsx';
  * ProfileCard Component.
  * Renders user avatar and personal fields. In read-only mode, fields are displayed as text.
  * When isEditing is active, fields (Name, Email, Phone) transform into inputs.
- * The Password field's editing behavior stays independent.
+ * The Password field's editing behaviour stays independent.
+ *
+ * Props:
+ *  user           — driver object from backend (name, email, phone, avatarUrl)
+ *  isEditing      — boolean, controls read/edit mode
+ *  isSaving       — boolean, disables Save button while the PATCH request is in flight
+ *  onSave(draft)  — called with the full draft object when Save Changes is submitted
+ *  onEdit()       — called when the Edit Profile button is clicked
+ *  onPasswordEdit()   — called when the password edit icon is clicked
+ *  onDeleteRequest()  — called when the Delete Profile button is clicked
  */
-export default function ProfileCard({ user, isEditing, onSave, onEdit, onPasswordEdit }) {
-    const [draft, setDraft] = useState(user);
-    const [prevUser, setPrevUser] = useState(user);
+export default function ProfileCard({ user, isEditing, isSaving, onSave, onEdit, onPasswordEdit, onDeleteRequest }) {
+    const [draft, setDraft]             = useState(user);
+    const [prevUser, setPrevUser]       = useState(user);
     const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
 
-    // Keep draft in sync with user state updates
+    // Keep draft in sync with any external updates to `user` (e.g. after a successful PATCH)
     if (user !== prevUser) {
         setPrevUser(user);
         setDraft(user);
@@ -53,6 +62,7 @@ export default function ProfileCard({ user, isEditing, onSave, onEdit, onPasswor
             </div>
 
             <div className="profile-info-list grid-layout">
+                {/* Full Name */}
                 <div className="info-row profile-info-row">
                     <div className="profile-input-group">
                         <span className="profile-label">Full Name</span>
@@ -68,6 +78,7 @@ export default function ProfileCard({ user, isEditing, onSave, onEdit, onPasswor
                     </div>
                 </div>
 
+                {/* Email */}
                 <div className="info-row profile-info-row">
                     <div className="profile-input-group">
                         <span className="profile-label">Email</span>
@@ -84,41 +95,57 @@ export default function ProfileCard({ user, isEditing, onSave, onEdit, onPasswor
                     </div>
                 </div>
 
+                {/* Phone */}
                 <div className="info-row profile-info-row">
                     <div className="profile-input-group">
                         <span className="profile-label">Phone</span>
                         {isEditing ? (
                             <input
                                 type="tel"
-                                value={draft.phone}
+                                value={draft.phone ?? ''}
                                 onChange={(e) => handleChange('phone', e.target.value)}
-                                required
                             />
                         ) : (
-                            <div className="profile-value">{draft.phone}</div>
+                            <div className="profile-value">{draft.phone || '—'}</div>
                         )}
                     </div>
                 </div>
 
+                {/* Password — edit stays independent of the profile info toggle */}
                 <div className="info-row profile-info-row">
                     <div className="profile-input-group">
                         <span className="profile-label">Password</span>
                         <div className="profile-value">••••••••••••</div>
                     </div>
-                    {/* Password editing remains separate from the global profile info edit toggle */}
                     <button className="icon-action" type="button" aria-label="Edit password" onClick={onPasswordEdit}>
                         <Icon name="icon-edit" size={16} />
                     </button>
                 </div>
 
+                {/* Action row — Save/Edit toggle */}
                 {isEditing ? (
-                    <button className="submit-btn full-width" type="submit" style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                        Save Changes
+                    <button
+                        className="submit-btn full-width"
+                        type="submit"
+                        disabled={isSaving}
+                        style={{ gridColumn: '1 / -1', marginTop: '1rem' }}
+                    >
+                        {isSaving ? 'Saving…' : 'Save Changes'}
                     </button>
                 ) : (
                     <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
                         <button className="btn-secondary secondary-btn" type="button" onClick={onEdit}>
                             <span>Edit Profile</span>
+                        </button>
+                    </div>
+                )}
+
+                {/* ── Delete Profile — only visible in read mode ── */}
+                {!isEditing && (
+                    <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                        <button className="btn-danger" type="button" onClick={onDeleteRequest}
+                        >
+                            Delete Profile
                         </button>
                     </div>
                 )}

@@ -10,6 +10,10 @@ import IconSprite from '../components/IconSprite';
 import Icon from '../components/Icon.jsx';
 import chargingStationImg from '../assets/charging-station.png';
 
+// ─────────────────────────────────────────────
+// API base URL — falls back to localhost in development
+
+
 /* ---------- Mock Data ---------- */
 const STATION = {
     name: 'Voltex Supercharge Hub',
@@ -32,8 +36,6 @@ const AVAILABLE_CHIPS = ['Fast Charging', 'Easy to Find', 'Clean Station', 'Frie
 const STATION_IMAGE_FALLBACK_SVG =
     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400"><rect width="800" height="400" fill="%2302141C"/><path d="M400 150 L430 210 L370 210 Z" fill="%233DDC97"/><text x="400" y="260" font-family="sans-serif" font-size="20" fill="%2390AFB7" text-anchor="middle">Station Charger Details</text></svg>';
 
-const USER = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.com' };
-
 const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
 export default function Review() {
@@ -41,6 +43,7 @@ export default function Review() {
 
     // ── Layout state ──
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
 
     // ── Station image state ──
     const [imgSrc, setImgSrc] = useState(chargingStationImg);
@@ -472,10 +475,12 @@ export default function Review() {
                             </nav>
                             <div className="mobile-menu-footer">
                                 <div className="mobile-user-card">
-                                    <div className="mobile-user-avatar" onClick={() => { navigate('/profile'); setIsMobileMenuOpen(false); }} role="button" tabIndex={0}>SJ</div>
+                                    <div className="mobile-user-avatar" onClick={() => { navigate('/profile'); setIsMobileMenuOpen(false); }} role="button" tabIndex={0}>
+                                        EV
+                                    </div>
                                     <div className="mobile-user-info">
-                                        <span className="mobile-user-name">{USER.name}</span>
-                                        <span className="mobile-user-email">{USER.email}</span>
+                                        <span className="mobile-user-name">Guest</span>
+                                        <span className="mobile-user-email"></span>
                                     </div>
                                 </div>
                                 <button className="mobile-logout-btn" onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}>

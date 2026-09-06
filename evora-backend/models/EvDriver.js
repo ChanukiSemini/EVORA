@@ -12,4 +12,4 @@ const evDriverSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model('EvDriver', evDriverSchema);
+export default mongoose.model('EvDriver', evDriverSchema, 'ev_driver');
