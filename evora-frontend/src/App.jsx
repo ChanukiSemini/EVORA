@@ -20,6 +20,7 @@ import Reports from './pages/admin/Reports'
 import Review from './pages/Review'
 import Profile from './pages/Profile'
 import MyVehicles from './pages/MyVehicles'
+import DriverCreateAccount from './pages/DriverCreateAccount'
 
 function App() {
   return (
@@ -29,6 +30,12 @@ function App() {
         <Route path="/account-type" element={<AccountType />} />
         <Route path="/choose-account-type" element={<AccountType />} />
         <Route path="/select-role" element={<AccountType />} />
+        <Route path="/register-driver" element={<DriverCreateAccount />} />
+        <Route path="/create-driver-account" element={<DriverCreateAccount />} />
+        <Route path="/driver-register" element={<DriverCreateAccount />} />
+        <Route path="/driver-create-account" element={<DriverCreateAccount />} />
+        <Route path="/driver-signup" element={<DriverCreateAccount />} />
+        <Route path="/signup" element={<DriverCreateAccount />} />
         <Route path="/dashboard" element={<LandingPage />} />
         <Route path="/book-charger" element={<BookCharger />} />
         <Route path="/booking-confirmed" element={<BookingConfirmed />} />

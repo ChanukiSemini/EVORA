@@ -9841,5 +9841,810 @@ body {
   }
 }
 
+/* ============================================
+   DRIVER CREATE ACCOUNT PAGE (Mobile & Desktop)
+   ============================================ */
+.driver-register-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  background-color: #03141d;
+  background-image: url('./assets/chooseAccountTyperesponsive.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.25rem 1rem;
+  box-sizing: border-box;
+  font-family: var(--font-family, 'Kameron', serif);
+  overflow-x: hidden;
+}
+
+.driver-register-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(3, 20, 29, 0.5) 0%,
+    rgba(3, 20, 29, 0.72) 40%,
+    rgba(3, 20, 29, 0.45) 80%,
+    rgba(3, 20, 29, 0.65) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.driver-register-wrapper {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: auto 0;
+}
+
+/* Card Container */
+.driver-register-card {
+  width: 100%;
+  background: rgba(3, 22, 30, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(61, 220, 151, 0.32);
+  border-radius: 24px;
+  padding: 1.5rem 1.35rem;
+  box-sizing: border-box;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Topbar Header */
+.driver-register-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.driver-register-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3DDC97;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.driver-register-back-btn:hover {
+  transform: translateX(-3px);
+  opacity: 0.85;
+}
+
+.driver-register-heading {
+  font-size: 1.28rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+.driver-register-help-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(4, 28, 38, 0.7);
+  border: 1.5px solid rgba(61, 220, 151, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3DDC97;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.driver-register-help-btn:hover {
+  background: rgba(61, 220, 151, 0.2);
+  border-color: #3DDC97;
+}
+
+/* Branding */
+.driver-register-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.driver-brand-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.15rem;
+}
+
+.driver-bolt-icon {
+  fill: #3DDC97;
+}
+
+.driver-brand-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #3DDC97;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.driver-brand-tagline {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.8rem;
+  color: #8A9EA8;
+  font-weight: 400;
+}
+
+/* Divider */
+.driver-form-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(61, 220, 151, 0.15);
+  margin-bottom: 1.1rem;
+}
+
+/* Alerts */
+.driver-alert-error {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #EF4444;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.driver-alert-success {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  background: rgba(61, 220, 151, 0.15);
+  border: 1px solid rgba(61, 220, 151, 0.45);
+  color: #3DDC97;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+/* Form Structure */
+.driver-register-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.driver-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.driver-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-header-icon {
+  flex-shrink: 0;
+}
+
+.section-header-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #3DDC97;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.driver-fields-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Input Styles */
+.driver-input-group {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: rgba(3, 26, 36, 0.85);
+  border: 1.2px solid rgba(61, 220, 151, 0.35);
+  border-radius: 14px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
+}
+
+.driver-input-group:focus-within {
+  border-color: #3DDC97;
+  background: rgba(4, 34, 46, 0.95);
+}
+
+.input-prefix-icon {
+  position: absolute;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.driver-text-input {
+  width: 100%;
+  padding: 0.72rem 1rem 0.72rem 2.75rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+}
+
+.driver-text-input::placeholder {
+  color: #6C828D;
+  font-size: 0.86rem;
+}
+
+/* Phone Field & Country Code Custom Dropdown */
+.phone-field {
+  display: flex;
+  align-items: center;
+}
+
+.phone-country-custom-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-left: 2.75rem;
+}
+
+.custom-country-trigger {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #3DDC97;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+}
+
+.country-code-val {
+  color: #3DDC97;
+}
+
+.phone-divider-bar {
+  width: 1.2px;
+  height: 20px;
+  background: rgba(61, 220, 151, 0.3);
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+.phone-number-input {
+  padding-left: 0.35rem;
+  flex: 1;
+}
+
+/* Password Toggle & Match Suffixes */
+.driver-password-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  margin-right: 10px;
+  color: #8A9EA8;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.driver-password-toggle-btn:hover {
+  color: #3DDC97;
+}
+
+.input-suffix-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 4px;
+}
+
+.password-match-icon {
+  display: flex;
+  align-items: center;
+  color: #3DDC97;
+  padding-right: 4px;
+}
+
+/* Custom Interactive Select Triggers & Dropdowns */
+.custom-select-wrapper {
+  position: relative;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.72rem 1rem 0.72rem 2.75rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.selected-value-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #FFFFFF;
+  margin-right: 8px;
+}
+
+.selected-value-text.is-placeholder {
+  color: #6C828D;
+}
+
+.dropdown-chevron-svg {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dropdown-chevron-svg.open {
+  transform: rotate(180deg);
+}
+
+.model-input-field {
+  padding-right: 2.5rem;
+}
+
+.dropdown-toggle-icon-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+/* Floating Dropdown Menus */
+.custom-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #042430;
+  border: 1.5px solid rgba(61, 220, 151, 0.45);
+  border-radius: 14px;
+  padding: 6px;
+  z-index: 100;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-thumb {
+  background: rgba(61, 220, 151, 0.35);
+  border-radius: 4px;
+}
+
+.country-dropdown-menu {
+  left: 0;
+  right: auto;
+  width: 260px;
+}
+
+.custom-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  color: #D3E0E6;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.custom-dropdown-item:hover {
+  background: rgba(61, 220, 151, 0.15);
+  color: #3DDC97;
+}
+
+.custom-dropdown-item.selected {
+  background: rgba(61, 220, 151, 0.2);
+  color: #3DDC97;
+  font-weight: 600;
+}
+
+.dropdown-opt-code {
+  color: #3DDC97;
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.dropdown-opt-name {
+  color: #8A9EA8;
+  font-size: 0.8rem;
+}
+
+/* Password Strength Indicator */
+.password-strength-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.15rem;
+  width: 100%;
+}
+
+.strength-meter-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  flex: 1;
+  max-width: 220px;
+}
+
+.strength-segment {
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: all 0.3s ease;
+}
+
+.strength-segment.segment-1.active {
+  background: #EF4444;
+}
+
+.strength-segment.segment-2.active {
+  background: #F97316;
+}
+
+.strength-segment.segment-3.active {
+  background: #EAB308;
+}
+
+.strength-segment.segment-4.active {
+  background: #3DDC97;
+}
+
+.strength-label {
+  font-size: 0.74rem;
+  color: #8A9EA8;
+  margin-left: 12px;
+}
+
+/* Terms Row */
+.driver-terms-row {
+  display: flex;
+  align-items: center;
+  margin: 0.15rem 0;
+}
+
+.driver-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.driver-hidden-checkbox {
+  display: none;
+}
+
+.driver-custom-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: #042430;
+  border: 1.5px solid rgba(61, 220, 151, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.driver-hidden-checkbox:checked + .driver-custom-checkbox {
+  background: #3DDC97;
+  border-color: #3DDC97;
+}
+
+.driver-terms-text {
+  font-size: 0.8rem;
+  color: #8A9EA8;
+  line-height: 1.35;
+}
+
+.driver-terms-link {
+  background: none;
+  border: none;
+  color: #3DDC97;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: opacity 0.2s ease;
+}
+
+.driver-terms-link:hover {
+  opacity: 0.85;
+}
+
+/* Submit Button */
+.driver-btn-submit {
+  width: 100%;
+  padding: 0.82rem 1.4rem;
+  background: #3DDC97;
+  color: #031C26;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  margin-top: 0.2rem;
+}
+
+.driver-btn-submit:hover {
+  background: #46DFB1;
+  transform: translateY(-1px);
+}
+
+.driver-btn-submit:active {
+  transform: translateY(0);
+}
+
+.driver-btn-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.submit-arrow-icon {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.driver-btn-submit:hover .submit-arrow-icon {
+  transform: translateX(4px);
+}
+
+/* Footer Link */
+.driver-card-footer {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #8A9EA8;
+  margin-top: 0.25rem;
+}
+
+.footer-login-link {
+  color: #3DDC97;
+  text-decoration: none;
+  font-weight: 700;
+  margin-left: 4px;
+  transition: text-decoration 0.2s ease;
+}
+
+.footer-login-link:hover {
+  text-decoration: underline;
+}
+
+/* Modals */
+.driver-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.driver-modal-card {
+  background: #042430;
+  border: 1.5px solid rgba(61, 220, 151, 0.4);
+  border-radius: 20px;
+  max-width: 440px;
+  width: 100%;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+  animation: modal-fade-in 0.25s ease-out;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.driver-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.modal-title {
+  color: #3DDC97;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.driver-modal-close-icon {
+  background: none;
+  border: none;
+  color: #8A9EA8;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.driver-modal-close-icon:hover {
+  color: #3DDC97;
+}
+
+.driver-modal-body {
+  color: #D3E0E6;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+
+.driver-btn-modal-action {
+  width: 100%;
+  padding: 0.7rem;
+  background: #3DDC97;
+  color: #031C26;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.driver-btn-modal-action:hover {
+  opacity: 0.92;
+}
+
+/* ============================================
+   DESKTOP RESPONSIVE LAYOUT (>= 960px)
+   ============================================ */
+@media (min-width: 960px) {
+  .driver-register-page {
+    background-image: url('./assets/chooseAccountTypebg.png');
+    background-position: center right;
+    background-size: cover;
+    background-repeat: no-repeat;
+    height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: clamp(1rem, 2.5vh, 2.5rem) clamp(2rem, 5vw, 6rem);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .driver-register-bg-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(2, 14, 20, 0.96) 0%,
+      rgba(2, 14, 20, 0.90) 38%,
+      rgba(2, 14, 20, 0.55) 70%,
+      rgba(2, 14, 20, 0.15) 100%
+    );
+  }
+
+  .driver-register-wrapper {
+    max-width: 580px;
+    width: 100%;
+    margin-left: 0;
+    margin-right: auto;
+    justify-content: flex-start;
+  }
+
+  .driver-register-card {
+    padding: clamp(1.2rem, 2vh, 1.8rem) clamp(1.4rem, 2vw, 2.2rem);
+    border-radius: 26px;
+  }
+
+  /* Multi-column Grid for Personal Info */
+  .personal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  .personal-grid .phone-field {
+    grid-column: 1 / -1;
+  }
+
+  /* Multi-column Grid for Security */
+  .security-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  /* Multi-column 2x2 Grid for Vehicle Details */
+  .vehicle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+}
+
 
 

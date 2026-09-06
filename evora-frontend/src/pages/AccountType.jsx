@@ -10,7 +10,7 @@ export default function AccountType({ driverImg, hostImg }) {
     setSelectedRole(role);
     if (role === 'driver') {
       setTimeout(() => {
-        navigate('/book-charger');
+        navigate('/register-driver');
       }, 300);
     } else if (role === 'host') {
       setTimeout(() => {
