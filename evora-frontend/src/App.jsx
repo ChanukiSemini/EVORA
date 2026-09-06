@@ -22,6 +22,8 @@ import Profile from './pages/Profile'
 import MyVehicles from './pages/MyVehicles'
 import DriverCreateAccount from './pages/DriverCreateAccount'
 import HostCreateAccount from './pages/HostCreateAccount'
+import OtpVerification from './pages/OtpVerification'
+import AccountCreatedSuccess from './pages/AccountCreatedSuccess'
 
 function App() {
   return (
@@ -42,6 +44,12 @@ function App() {
         <Route path="/host-register" element={<HostCreateAccount />} />
         <Route path="/host-create-account" element={<HostCreateAccount />} />
         <Route path="/host-signup" element={<HostCreateAccount />} />
+        <Route path="/verify-otp" element={<OtpVerification />} />
+        <Route path="/otp-verification" element={<OtpVerification />} />
+        <Route path="/otp" element={<OtpVerification />} />
+        <Route path="/account-success" element={<AccountCreatedSuccess />} />
+        <Route path="/account-created" element={<AccountCreatedSuccess />} />
+        <Route path="/registration-success" element={<AccountCreatedSuccess />} />
         <Route path="/dashboard" element={<LandingPage />} />
         <Route path="/book-charger" element={<BookCharger />} />
         <Route path="/booking-confirmed" element={<BookingConfirmed />} />

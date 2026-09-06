@@ -162,22 +162,24 @@ export default function HostCreateAccount() {
         return;
       }
     } else {
-      if (!personalData.fullName.trim()) {
-        setError('Please enter your full name');
+      if (!personalData.fullName.trim() || personalData.fullName.trim().length < 2) {
+        setError('Please enter your full name (at least 2 characters)');
         return;
       }
-      if (!personalData.nicPassport.trim()) {
-        setError('Please enter your NIC or Passport number');
+      if (!personalData.nicPassport.trim() || personalData.nicPassport.trim().length < 4) {
+        setError('Please enter a valid NIC or Passport number');
         return;
       }
     }
 
-    if (!currentFormData.email.trim() || !/\S+@\S+\.\S+/.test(currentFormData.email)) {
-      setError('Please enter a valid email address');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!currentFormData.email.trim() || !emailRegex.test(currentFormData.email.trim())) {
+      setError('Please enter a valid email address (e.g. host@evora.lk)');
       return;
     }
-    if (!currentFormData.phone.trim()) {
-      setError('Please enter your phone number');
+    const cleanPhone = currentFormData.phone.replace(/\D/g, '');
+    if (!currentFormData.phone.trim() || cleanPhone.length < 7) {
+      setError('Please enter a valid phone number (at least 7 digits)');
       return;
     }
     if (!currentFormData.password || currentFormData.password.length < 6) {
@@ -215,11 +217,14 @@ export default function HostCreateAccount() {
 
     setTimeout(() => {
       setIsLoading(false);
-      setSuccessMsg('Host account registered successfully! Redirecting to dashboard...');
-      setTimeout(() => {
-        navigate('/admin');
-      }, 1000);
-    }, 750);
+      navigate('/verify-otp', {
+        state: {
+          phone: `${currentFormData.countryCode} ${currentFormData.phone}`,
+          email: currentFormData.email,
+          role: 'host',
+        },
+      });
+    }, 500);
   };
 
   const openModal = (type) => {

@@ -162,16 +162,18 @@ export default function DriverCreateAccount() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!formData.fullName.trim()) {
-      setError('Please enter your full name');
+    if (!formData.fullName.trim() || formData.fullName.trim().length < 2) {
+      setError('Please enter your full name (at least 2 characters)');
       return;
     }
-    if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
-      setError('Please enter a valid email address');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) {
+      setError('Please enter a valid email address (e.g. name@example.com)');
       return;
     }
-    if (!formData.phone.trim()) {
-      setError('Please enter your phone number');
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    if (!formData.phone.trim() || cleanPhone.length < 7) {
+      setError('Please enter a valid phone number (at least 7 digits)');
       return;
     }
     if (!formData.password || formData.password.length < 6) {
@@ -207,11 +209,14 @@ export default function DriverCreateAccount() {
 
     setTimeout(() => {
       setIsLoading(false);
-      setSuccessMsg('Account created successfully! Welcome to Evora.');
-      setTimeout(() => {
-        navigate('/book-charger');
-      }, 1000);
-    }, 700);
+      navigate('/verify-otp', {
+        state: {
+          phone: `${formData.countryCode} ${formData.phone}`,
+          email: formData.email,
+          role: 'driver',
+        },
+      });
+    }, 500);
   };
 
   const openModal = (type) => {
