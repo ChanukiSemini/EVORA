@@ -4,7 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import IconSprite from '../components/IconSprite';
 import Icon from '../components/Icon.jsx';
@@ -34,6 +34,20 @@ const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
 export default function Review() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const passedBooking = location.state?.booking;
+
+    const currentStation = {
+        name: passedBooking?.station || STATION.name,
+        rating: STATION.rating,
+        address: passedBooking?.address || (passedBooking?.station ? 'Keels Supermarket Complex, Kaduwela Rd' : STATION.address),
+        summary: [
+            { label: 'Connector', value: passedBooking?.connector || passedBooking?.type || STATION.summary[0].value },
+            { label: 'Date & Time', value: passedBooking ? `${passedBooking.date} • ${passedBooking.time}` : STATION.summary[1].value },
+            { label: 'Energy Delivered', value: passedBooking?.energy || STATION.summary[2].value },
+            { label: 'Cost', value: passedBooking?.cost || STATION.summary[3].value },
+        ],
+    };
 
     // ── Layout state ──
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -140,16 +154,16 @@ export default function Review() {
                 <div className="station-details">
                     <div>
                         <div className="station-header">
-                            <h2 className="station-name">{STATION.name}</h2>
+                            <h2 className="station-name">{currentStation.name}</h2>
                             <span className="rating-badge">
                                 <Icon name="icon-star-act" size={12} style={{ fill: 'currentColor', verticalAlign: 'middle', marginRight: 3 }} />
-                                {STATION.rating}
+                                {currentStation.rating}
                             </span>
                         </div>
-                        <p className="station-address">{STATION.address}</p>
+                        <p className="station-address">{currentStation.address}</p>
                     </div>
                     <div className="booking-summary-grid">
-                        {STATION.summary.map((item) => (
+                        {currentStation.summary.map((item) => (
                             <div className="summary-item" key={item.label}>
                                 <span className="summary-label">{item.label}</span>
                                 <span className="summary-value">{item.value}</span>
@@ -170,7 +184,7 @@ export default function Review() {
                     <h3 className="success-title">Review Submitted!</h3>
                     <p className="success-subtitle">Thank you for your feedback — it helps improve charging experiences for everyone.</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '280px' }}>
-                        <button className="btn-primary" onClick={handleReset}>Done</button>
+                        <button className="btn-primary" onClick={() => navigate('/bookings')}>Done</button>
                         <button className="btn-secondary" type="button" onClick={handleReset}>Submit Another Review</button>
                     </div>
                 </div>

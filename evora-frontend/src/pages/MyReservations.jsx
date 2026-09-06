@@ -66,6 +66,12 @@ const IconReceipt = () => (
     </svg>
 );
 
+const IconStar = () => (
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M10 2l2.4 5.3 5.8.5-4.4 3.9 1.3 5.7L10 14.4l-5.1 3 1.3-5.7-4.4-3.9 5.8-.5L10 2z" />
+    </svg>
+);
+
 /* ---------- Mock Reservation Data ---------- */
 const INITIAL_RESERVATIONS = {
     upcoming: [
@@ -317,12 +323,20 @@ const MyReservations = () => {
                     )}
 
                     {currentStatus === 'completed' && (
-                        <button
-                            className="res-btn-receipt"
-                            onClick={() => { setSelectedBooking(b); setModalType('receipt'); }}
-                        >
-                            View Receipt <IconArrowRight />
-                        </button>
+                        <div className="res-completed-actions-wrap">
+                            <button
+                                className="res-btn-primary-green"
+                                onClick={() => navigate('/rate-session', { state: { booking: b } })}
+                            >
+                                <IconStar /> Rate Session
+                            </button>
+                            <button
+                                className="res-btn-receipt"
+                                onClick={() => { setSelectedBooking(b); setModalType('receipt'); }}
+                            >
+                                View Receipt <IconArrowRight />
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -606,9 +620,21 @@ const MyReservations = () => {
                                     </div>
                                 </div>
 
-                                <button className="btn-primary" onClick={() => setModalType(null)} style={{ marginTop: 20 }}>
-                                    Close Receipt
-                                </button>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 20 }}>
+                                    <button
+                                        className="btn-primary"
+                                        onClick={() => {
+                                            setModalType(null);
+                                            navigate('/rate-session', { state: { booking: selectedBooking } });
+                                        }}
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    >
+                                        <IconStar /> Rate Session
+                                    </button>
+                                    <button className="res-btn-receipt" onClick={() => setModalType(null)}>
+                                        Close Receipt
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
