@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
 import LandingPage from './pages/LandingPage'
+import Login from './pages/Login'
 import AccountType from './pages/AccountType'
 import BookCharger from './pages/BookCharger'
 import BookingConfirmed from './pages/BookingConfirmed'
@@ -52,7 +53,7 @@ function App() {
         <Route path="/vehicles" element={<MyVehicles />} />
         <Route path="/stations" element={<BookCharger />} />
         <Route path="/find" element={<BookCharger />} />
-        <Route path="/login" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
         <Route path="*" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
