@@ -14,7 +14,7 @@ export default function AccountType({ driverImg, hostImg }) {
       }, 300);
     } else if (role === 'host') {
       setTimeout(() => {
-        navigate('/admin');
+        navigate('/register-host');
       }, 300);
     }
   };

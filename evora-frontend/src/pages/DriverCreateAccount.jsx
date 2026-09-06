@@ -237,46 +237,52 @@ export default function DriverCreateAccount() {
       <div className="driver-register-wrapper">
         {/* Main Glassmorphic Form Card */}
         <div className="driver-register-card">
-          {/* Top Bar Navigation */}
-          <div className="driver-register-topbar">
-            <button
-              type="button"
-              className="driver-register-back-btn"
-              onClick={() => navigate(-1)}
-              aria-label="Go back"
-              title="Back"
-            >
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3DDC97" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
-            </button>
+          {/* Fixed Header */}
+          <div className="driver-card-fixed-header">
+            {/* Top Bar Navigation */}
+            <div className="driver-register-topbar">
+              <button
+                type="button"
+                className="driver-register-back-btn"
+                onClick={() => navigate(-1)}
+                aria-label="Go back"
+                title="Back"
+              >
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3DDC97" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12 19 5 12 12 5" />
+                </svg>
+              </button>
 
-            <h1 className="driver-register-heading">Create Account</h1>
+              <h1 className="driver-register-heading">Create Account</h1>
 
-            <button
-              type="button"
-              className="driver-register-help-btn"
-              onClick={() => setShowHelpModal(true)}
-              aria-label="Registration Help"
-              title="Help & Info"
-            >
-              <span className="help-icon">?</span>
-            </button>
-          </div>
-
-          {/* Evora Branding Badge */}
-          <div className="driver-register-brand">
-            <div className="driver-brand-icon-wrap">
-              <svg className="driver-bolt-icon" viewBox="0 0 24 24" width="30" height="30" fill="#3DDC97">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
+              <button
+                type="button"
+                className="driver-register-help-btn"
+                onClick={() => setShowHelpModal(true)}
+                aria-label="Registration Help"
+                title="Help & Info"
+              >
+                <span className="help-icon">?</span>
+              </button>
             </div>
-            <h2 className="driver-brand-name">Evora</h2>
-            <p className="driver-brand-tagline">Driver Account Registration</p>
+
+            {/* Evora Branding Badge */}
+            <div className="driver-register-brand">
+              <div className="driver-brand-icon-wrap">
+                <svg className="driver-bolt-icon" viewBox="0 0 24 24" width="30" height="30" fill="#3DDC97">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+              </div>
+              <h2 className="driver-brand-name">Evora</h2>
+              <p className="driver-brand-tagline">Driver Account Registration</p>
+            </div>
+
+            <div className="driver-form-divider" />
           </div>
 
-          <div className="driver-form-divider" />
+          {/* Scrollable Form Content */}
+          <div className="driver-card-scrollable-content">
 
           {/* Feedback Alerts */}
           {error && (
@@ -752,6 +758,7 @@ export default function DriverCreateAccount() {
               </Link>
             </div>
           </form>
+          </div>
         </div>
       </div>
 

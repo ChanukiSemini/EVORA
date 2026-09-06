@@ -21,6 +21,7 @@ import Review from './pages/Review'
 import Profile from './pages/Profile'
 import MyVehicles from './pages/MyVehicles'
 import DriverCreateAccount from './pages/DriverCreateAccount'
+import HostCreateAccount from './pages/HostCreateAccount'
 
 function App() {
   return (
@@ -36,6 +37,11 @@ function App() {
         <Route path="/driver-create-account" element={<DriverCreateAccount />} />
         <Route path="/driver-signup" element={<DriverCreateAccount />} />
         <Route path="/signup" element={<DriverCreateAccount />} />
+        <Route path="/register-host" element={<HostCreateAccount />} />
+        <Route path="/create-host-account" element={<HostCreateAccount />} />
+        <Route path="/host-register" element={<HostCreateAccount />} />
+        <Route path="/host-create-account" element={<HostCreateAccount />} />
+        <Route path="/host-signup" element={<HostCreateAccount />} />
         <Route path="/dashboard" element={<LandingPage />} />
         <Route path="/book-charger" element={<BookCharger />} />
         <Route path="/booking-confirmed" element={<BookingConfirmed />} />

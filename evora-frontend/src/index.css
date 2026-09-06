@@ -9845,8 +9845,9 @@ body {
    DRIVER CREATE ACCOUNT PAGE (Mobile & Desktop)
    ============================================ */
 .driver-register-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
   width: 100%;
   background-color: #03141d;
   background-image: url('./assets/chooseAccountTyperesponsive.png');
@@ -9860,7 +9861,7 @@ body {
   padding: 1.25rem 1rem;
   box-sizing: border-box;
   font-family: var(--font-family, 'Kameron', serif);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .driver-register-bg-overlay {
@@ -9882,25 +9883,71 @@ body {
   z-index: 2;
   width: 100%;
   max-width: 480px;
+  height: 100%;
+  max-height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   margin: auto 0;
 }
 
-/* Card Container */
+/* Card Container with Fixed Outer & Internal Scroll */
 .driver-register-card {
   width: 100%;
+  max-height: calc(100vh - 2.5rem);
+  max-height: calc(100dvh - 2.5rem);
   background: rgba(3, 22, 30, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1.5px solid rgba(61, 220, 151, 0.32);
   border-radius: 24px;
-  padding: 1.5rem 1.35rem;
+  padding: 1.4rem 1.35rem 1.25rem 1.35rem;
   box-sizing: border-box;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+/* Fixed Header Area */
+.driver-card-fixed-header {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Scrollable Form Content Area */
+.driver-card-scrollable-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  margin-right: -4px;
+  display: flex;
+  flex-direction: column;
+  /* Firefox Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(61, 220, 151, 0.45) rgba(3, 20, 29, 0.5);
+}
+
+/* Custom Interactive Scrollbar for Webkit */
+.driver-card-scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.driver-card-scrollable-content::-webkit-scrollbar-track {
+  background: rgba(3, 20, 29, 0.4);
+  border-radius: 999px;
+}
+
+.driver-card-scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(61, 220, 151, 0.4);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.driver-card-scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: #3DDC97;
 }
 
 /* Topbar Header */
@@ -10640,6 +10687,602 @@ body {
 
   /* Multi-column 2x2 Grid for Vehicle Details */
   .vehicle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+}
+
+/* ============================================
+   HOST CREATE ACCOUNT PAGE (Mobile & Desktop)
+   ============================================ */
+.host-register-page {
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  width: 100%;
+  background-color: #03141d;
+  background-image: url('./assets/chooseAccountTyperesponsive.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.25rem 1rem;
+  box-sizing: border-box;
+  font-family: var(--font-family, 'Kameron', serif);
+  overflow: hidden;
+}
+
+.host-register-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(3, 20, 29, 0.5) 0%,
+    rgba(3, 20, 29, 0.72) 40%,
+    rgba(3, 20, 29, 0.45) 80%,
+    rgba(3, 20, 29, 0.65) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.host-register-wrapper {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 490px;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: auto 0;
+}
+
+/* Card Container with Fixed Outer & Internal Scroll */
+.host-register-card {
+  width: 100%;
+  max-height: calc(100vh - 2.5rem);
+  max-height: calc(100dvh - 2.5rem);
+  background: rgba(3, 20, 28, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 1.4rem 1.35rem 1.25rem 1.35rem;
+  box-sizing: border-box;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Fixed Header Area */
+.host-card-fixed-header {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Topbar Header */
+.host-register-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.host-register-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3DDC97;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.host-register-back-btn:hover {
+  transform: translateX(-3px);
+  opacity: 0.85;
+}
+
+.host-register-help-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(4, 28, 38, 0.8);
+  border: 1px solid rgba(61, 220, 151, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3DDC97;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.host-register-help-btn:hover {
+  background: rgba(61, 220, 151, 0.15);
+  border-color: #3DDC97;
+}
+
+/* Heading & Subheading */
+.host-register-header-text {
+  margin-bottom: 0.85rem;
+}
+
+.host-register-heading {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.host-register-subheading {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #8A9EA8;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+/* Tab Switcher: Organization vs Personal */
+.host-type-toggle-container {
+  display: flex;
+  background: rgba(4, 24, 32, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.host-toggle-tab {
+  flex: 1;
+  padding: 0.52rem 0.85rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #8A9EA8;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.host-toggle-tab:hover {
+  color: #FFFFFF;
+}
+
+.host-toggle-tab.active {
+  background: #3DDC97;
+  color: #031C26;
+  font-weight: 700;
+}
+
+/* Scrollable Form Content Area */
+.host-card-scrollable-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  margin-right: -4px;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(61, 220, 151, 0.4) rgba(3, 20, 29, 0.5);
+}
+
+/* Custom Interactive Scrollbar */
+.host-card-scrollable-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.host-card-scrollable-content::-webkit-scrollbar-track {
+  background: rgba(3, 20, 29, 0.3);
+  border-radius: 999px;
+}
+
+.host-card-scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(61, 220, 151, 0.35);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.host-card-scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: #3DDC97;
+}
+
+/* Feedback Alerts */
+.host-alert-error {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #EF4444;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.host-alert-success {
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  background: rgba(61, 220, 151, 0.12);
+  border: 1px solid rgba(61, 220, 151, 0.35);
+  color: #3DDC97;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+/* Form Structure */
+.host-register-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  padding-bottom: 0.5rem;
+}
+
+.host-fields-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.host-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.host-field-label {
+  font-size: 0.76rem;
+  color: #D3E0E6;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.field-hint-text {
+  font-size: 0.72rem;
+  color: #6C828D;
+  margin-top: 2px;
+  margin-left: 4px;
+}
+
+/* Input Styles */
+.host-input-group {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: rgba(3, 24, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
+}
+
+.host-input-group:focus-within {
+  border-color: #3DDC97;
+  background: rgba(4, 30, 42, 0.95);
+}
+
+.host-text-input {
+  width: 100%;
+  padding: 0.72rem 1rem 0.72rem 2.75rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+}
+
+.host-text-input::placeholder {
+  color: #6C828D;
+  font-size: 0.86rem;
+}
+
+.host-passwords-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.host-password-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  margin-right: 10px;
+  color: #8A9EA8;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.host-password-toggle-btn:hover {
+  color: #3DDC97;
+}
+
+.host-strength-bar {
+  margin-top: -0.2rem;
+  margin-bottom: 0.2rem;
+}
+
+/* Document Upload Card */
+.host-upload-box {
+  border: 1.5px dashed rgba(61, 220, 151, 0.35);
+  border-radius: 14px;
+  background: rgba(3, 26, 36, 0.45);
+  padding: 1.1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  margin-top: 0.35rem;
+  box-sizing: border-box;
+}
+
+.host-upload-box:hover {
+  background: rgba(4, 32, 44, 0.7);
+  border-color: #3DDC97;
+}
+
+.host-hidden-file-input {
+  display: none;
+}
+
+.upload-cloud-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(61, 220, 151, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.4rem;
+}
+
+.upload-main-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 0.25rem 0;
+}
+
+.upload-sub-text {
+  font-size: 0.76rem;
+  color: #8A9EA8;
+  margin: 0 0 0.55rem 0;
+}
+
+.uploaded-filename {
+  color: #3DDC97;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-remove-uploaded {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #EF4444;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.upload-badge-pill {
+  background: rgba(61, 220, 151, 0.12);
+  border: 1px solid rgba(61, 220, 151, 0.25);
+  color: #3DDC97;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+}
+
+/* Terms Row */
+.host-terms-row {
+  display: flex;
+  align-items: center;
+  margin: 0.15rem 0;
+}
+
+.host-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.host-hidden-checkbox {
+  display: none;
+}
+
+.host-custom-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: #042430;
+  border: 1.2px solid rgba(61, 220, 151, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.host-hidden-checkbox:checked + .host-custom-checkbox {
+  background: #3DDC97;
+  border-color: #3DDC97;
+}
+
+.host-terms-text {
+  font-size: 0.8rem;
+  color: #8A9EA8;
+  line-height: 1.35;
+}
+
+.host-terms-link {
+  background: none;
+  border: none;
+  color: #3DDC97;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: opacity 0.2s ease;
+}
+
+.host-terms-link:hover {
+  opacity: 0.85;
+}
+
+/* Submit Button */
+.host-btn-submit {
+  width: 100%;
+  padding: 0.82rem 1.4rem;
+  background: #3DDC97;
+  color: #031C26;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s ease, transform 0.2s ease;
+  margin-top: 0.2rem;
+}
+
+.host-btn-submit:hover {
+  background: #46DFB1;
+  transform: translateY(-1px);
+}
+
+.host-btn-submit:active {
+  transform: translateY(0);
+}
+
+.host-btn-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.host-btn-submit:hover .submit-arrow-icon {
+  transform: translateX(4px);
+}
+
+/* Footer Link */
+.host-card-footer {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #8A9EA8;
+  margin-top: 0.25rem;
+}
+
+.footer-login-link {
+  color: #3DDC97;
+  text-decoration: none;
+  font-weight: 700;
+  margin-left: 4px;
+  transition: text-decoration 0.2s ease;
+}
+
+.footer-login-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   DESKTOP RESPONSIVE LAYOUT FOR HOST (>= 960px)
+   ============================================ */
+@media (min-width: 960px) {
+  .host-register-page {
+    background-image: url('./assets/chooseAccountTypebg.png');
+    background-position: center right;
+    background-size: cover;
+    background-repeat: no-repeat;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    padding: clamp(1rem, 2.5vh, 2.5rem) clamp(2rem, 5vw, 6rem);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .host-register-bg-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(2, 14, 20, 0.98) 0%,
+      rgba(2, 14, 20, 0.94) 42%,
+      rgba(2, 14, 20, 0.6) 75%,
+      rgba(2, 14, 20, 0.2) 100%
+    );
+  }
+
+  .host-register-wrapper {
+    max-width: 580px;
+    width: 100%;
+    margin-left: 0;
+    margin-right: auto;
+    justify-content: flex-start;
+    height: 100%;
+    align-items: center;
+  }
+
+  .host-register-card {
+    padding: clamp(1.2rem, 2vh, 1.8rem) clamp(1.4rem, 2vw, 2.2rem);
+    border-radius: 24px;
+    max-height: calc(100vh - 3.5rem);
+  }
+
+  .host-passwords-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.65rem;
