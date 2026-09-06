@@ -429,9 +429,6 @@ const MyReservations = () => {
                                 <div className="mobile-menu-item" onClick={() => { navigate('/vehicles'); setIsMobileMenuOpen(false); }}>
                                     <span>🚗</span> My Vehicles
                                 </div>
-                                <div className="mobile-menu-item" onClick={() => { navigate('/settings'); setIsMobileMenuOpen(false); }}>
-                                    <span>⚙️</span> Settings
-                                </div>
                             </nav>
                         </div>
                     </div>
