@@ -12,6 +12,12 @@ import MyVehicles from './pages/MyVehicles'
 
 
 
+// TEMPORARY: simulates a logged-in driver until real login exists.
+// Once login is built, this will be set after a successful sign-in instead.
+if (!localStorage.getItem('driverId')) {
+    localStorage.setItem('driverId', '6a9925827fb2502dd5392d22');
+}
+
 function App() {
   return (
     <BrowserRouter>
