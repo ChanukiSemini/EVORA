@@ -3,8 +3,8 @@
 // Purpose: connects the backend to MongoDB Atlas using Mongoose.
 // server.js just calls connectDB() — all connection details live here.
 
-import dns from 'node:dns';
-import mongoose from 'mongoose';
+const dns = require('node:dns');
+const mongoose = require('mongoose');
 
 // Fix for a common Windows/Node issue: Node can get stuck trying
 // IPv6 DNS lookups first, causing "querySrv ECONNREFUSED" errors
@@ -19,14 +19,21 @@ dns.setDefaultResultOrder('ipv4first');
 // whatever Node was defaulting to.
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
-async function connectDB() {
-    try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI);
-        console.log(`MongoDB connected: ${conn.connection.host}`);
-    } catch (error) {
-        console.error(`MongoDB connection error: ${error.message}`);
-        process.exit(1);
-    }
-}
+const connectDB = async () => {
+  try {
+    const mongoUri =
+      process.env.MONGODB_URI ||
+      process.env.MONGO_URI ||
+      'mongodb://localhost:27017/evora';
+    const conn = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000,
+    });
+    console.log(
+      `✅ MongoDB Connected to database [${conn.connection.name}] on host: ${conn.connection.host}`
+    );
+  } catch (error) {
+    console.error(`❌ MongoDB Connection Error: ${error.message}`);
+  }
+};
 
-export default connectDB;
+module.exports = connectDB;

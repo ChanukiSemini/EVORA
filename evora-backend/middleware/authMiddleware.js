@@ -1,46 +1,63 @@
 const jwt = require('jsonwebtoken');
-const { ApiError } = require('../utils/helper');
+const User = require('../models/User');
+const ChargerHost = require('../models/ChargerHost');
 
-// Verifies a Bearer JWT and attaches the decoded payload to req.user.
-// Use this to protect station create/update/delete routes.
-const protect = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization || '';
+// Protect routes - verify Bearer token
+const protect = async (req, res, next) => {
+  let token;
 
-    if (!authHeader.startsWith('Bearer ')) {
-      throw new ApiError(401, 'Not authorized, no token provided');
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'evora_jwt_super_secret_key_2026'
+      );
+
+      let user = await User.findById(decoded.id).select('-password');
+      if (!user) {
+        user = await ChargerHost.findById(decoded.id).select('-password');
+      }
+
+      req.user = user || decoded;
+
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'User no longer exists',
+        });
+      }
+
+      next();
+    } catch (error) {
+      console.error('Auth verification error:', error.message);
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized, token failed or expired',
+      });
     }
-
-    const token = authHeader.split(' ')[1];
-
-    if (!token) {
-      throw new ApiError(401, 'Not authorized, malformed token');
-    }
-
-    if (!process.env.JWT_SECRET) {
-      throw new ApiError(500, 'Server misconfiguration: JWT_SECRET is not set');
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return next(new ApiError(401, 'Not authorized, token expired'));
-    }
-    if (err.name === 'JsonWebTokenError') {
-      return next(new ApiError(401, 'Not authorized, invalid token'));
-    }
-    next(err);
+  } else {
+    return res.status(401).json({
+      success: false,
+      message: 'Not authorized, no token provided',
+    });
   }
 };
 
-// Optional: restrict a route to specific roles, e.g. authorize('admin')
-const authorize = (...roles) => (req, res, next) => {
-  if (!req.user || !roles.includes(req.user.role)) {
-    return next(new ApiError(403, 'Forbidden: insufficient permissions'));
-  }
-  next();
+// Grant access to specific roles
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `User role '${req.user?.role || 'unknown'}' is not authorized to access this route`,
+      });
+    }
+    next();
+  };
 };
 
 module.exports = { protect, authorize };

@@ -10,8 +10,16 @@ function AdminSidebar() {
     location.pathname.startsWith('/admin/manage-infrastructure') ||
     location.pathname.startsWith('/admin/register-hardware')
 
+  const storedUser = JSON.parse(localStorage.getItem('evora_current_user') || localStorage.getItem('evora_host_user') || '{}');
+  const displayName = storedUser.name || storedUser.company || 'Host Admin';
+  const displayEmail = storedUser.email || 'host@evora.lk';
+  const avatarLetter = (displayName[0] || 'H').toUpperCase();
+
   function handleLogout() {
-    alert('Logged out (this is a placeholder — no real auth is connected yet).')
+    localStorage.removeItem('evora_token');
+    localStorage.removeItem('evora_current_user');
+    localStorage.removeItem('evora_host_user');
+    navigate('/login');
   }
 
   const getLinkClass = (isActive) =>
@@ -22,7 +30,7 @@ function AdminSidebar() {
       <div className="sidebar-logo" onClick={() => navigate('/admin')} role="button" tabIndex={0}>
         <span className="sidebar-logo-icon">⚡</span>
         <span className="sidebar-logo-text">Evora</span>
-        <span className="admin-badge">ADMIN</span>
+        <span className="admin-badge">HOST</span>
       </div>
 
       <nav className="sidebar-nav">
@@ -62,10 +70,10 @@ function AdminSidebar() {
 
       <div className="sidebar-bottom">
         <div className="sidebar-user-card">
-          <div className="sidebar-user-avatar">P</div>
+          <div className="sidebar-user-avatar">{avatarLetter}</div>
           <div className="sidebar-user-info">
-            <span className="sidebar-user-name">Admin Pamod</span>
-            <span className="sidebar-user-email">pamod@greencharge.lk</span>
+            <span className="sidebar-user-name">{displayName}</span>
+            <span className="sidebar-user-email">{displayEmail}</span>
           </div>
         </div>
         <button className="sidebar-logout-btn" onClick={handleLogout}>

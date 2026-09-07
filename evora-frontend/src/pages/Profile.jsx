@@ -48,14 +48,37 @@ export default function Profile() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // ── Profile state ──
-    const [userState, setUserState] = useState({ ...USER });
+    const [userState, setUserState] = useState(() => {
+        try {
+            const stored = JSON.parse(
+                localStorage.getItem('evora_current_user') ||
+                localStorage.getItem('evora_driver_user') ||
+                localStorage.getItem('evora_host_user') ||
+                '{}'
+            );
+            return {
+                name: stored.fullName || stored.name || USER.name,
+                email: stored.email || USER.email,
+                avatarUrl: stored.avatarUrl || USER.avatarUrl,
+                phone: stored.phone || USER.phone,
+                password: '••••••••',
+            };
+        } catch {
+            return { ...USER };
+        }
+    });
     const [isEditing, setIsEditing] = useState(false);
 
     const enableEdit = () => setIsEditing(true);
 
     const saveAndExit = (updatedUser) => {
-        // TODO: send updated profile to backend API
-        if (updatedUser) setUserState(updatedUser);
+        if (updatedUser) {
+            setUserState(updatedUser);
+            try {
+                const stored = JSON.parse(localStorage.getItem('evora_current_user') || '{}');
+                localStorage.setItem('evora_current_user', JSON.stringify({ ...stored, ...updatedUser }));
+            } catch {}
+        }
         setIsEditing(false);
     };
 

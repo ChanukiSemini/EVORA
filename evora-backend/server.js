@@ -1,28 +1,44 @@
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import connectDB from './config/db.js';
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const connectDB = require('./config/db');
+const adminRoutes = require('./routes/adminRoutes');
+const authRoutes = require('./routes/authRoutes');
+const stationRoutes = require('./routes/stationRoutes');
+const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
+// Connect to MongoDB Database
 connectDB();
 
-app.use(
-  cors()
-);
+// Middleware
+app.use(cors());
 app.use(express.json());
 
+// Root & Health check endpoints
 app.get('/', (req, res) => {
-  res.send('EVORA backend is running');
+  res.json({ status: 'OK', message: 'EVORA Backend API running' });
 });
 
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, data: { status: 'ok' } });
+  res.json({ status: 'OK', message: 'EVORA Backend API running' });
 });
 
-const PORT = process.env.PORT || 5001;
+// Mount Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/stations', stationRoutes);
+
+// Error Handling Middleware
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Evora backend running on port ${PORT}`);
 });
-
