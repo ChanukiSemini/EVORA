@@ -96,76 +96,39 @@ export default function Profile() {
     // ── Layout state ──
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // ── Driver data state ──
-    const [driver, setDriver]       = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [loadError, setLoadError] = useState(null);
-
-    // ── Edit state ──
+    // ── Profile state ──
+    const [userState, setUserState] = useState(() => {
+        try {
+            const stored = JSON.parse(
+                localStorage.getItem('evora_current_user') ||
+                localStorage.getItem('evora_driver_user') ||
+                localStorage.getItem('evora_host_user') ||
+                '{}'
+            );
+            return {
+                name: stored.fullName || stored.name || USER.name,
+                email: stored.email || USER.email,
+                avatarUrl: stored.avatarUrl || USER.avatarUrl,
+                phone: stored.phone || USER.phone,
+                password: '••••••••',
+            };
+        } catch {
+            return { ...USER };
+        }
+    });
     const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving]   = useState(false);
-    const [saveError, setSaveError] = useState(null);
 
-    // ── Delete confirmation state ──
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [isDeleting, setIsDeleting]               = useState(false);
-    const [deleteError, setDeleteError]             = useState(null);
-    const [isDeactivated, setIsDeactivated]         = useState(false);
+    const enableEdit = () => setIsEditing(true);
 
-    // ── Fetch driver on mount ──
-    useEffect(() => {
-        setIsLoading(true);
-        getDriver(DRIVER_ID)
-            .then((data) => {
-                setDriver(data);
-                setIsLoading(false);
-            })
-            .catch((err) => {
-                console.error('Failed to fetch driver in Profile:', err);
-                setLoadError(err.message);
-                setIsLoading(false);
-            });
-    }, []);
-
-    // ── Save handler: PATCH updated fields then sync local state ──
-    const handleSave = async (updatedFields) => {
-        setSaveError(null);
-        setIsSaving(true);
-        try {
-            const saved = await updateDriver(DRIVER_ID, {
-                name:     updatedFields.name,
-                email:    updatedFields.email,
-                phone:    updatedFields.phone,
-                avatarUrl: updatedFields.avatarUrl,
-            });
-            setDriver(saved);
-            setIsEditing(false);
-        } catch (err) {
-            console.error('Failed to update driver in Profile:', err);
-            setSaveError(err.message);
-        } finally {
-            setIsSaving(false);
+    const saveAndExit = (updatedUser) => {
+        if (updatedUser) {
+            setUserState(updatedUser);
+            try {
+                const stored = JSON.parse(localStorage.getItem('evora_current_user') || '{}');
+                localStorage.setItem('evora_current_user', JSON.stringify({ ...stored, ...updatedUser }));
+            } catch { }
         }
-    };
-
-    // ── Delete handlers ──
-    const handleDeleteRequest  = () => { setShowDeleteConfirm(true); setDeleteError(null); };
-    const handleDeleteCancel   = () => { setShowDeleteConfirm(false); setDeleteError(null); };
-
-    const handleDeleteConfirm = async () => {
-        setIsDeleting(true);
-        setDeleteError(null);
-        try {
-            await deactivateDriver(DRIVER_ID);
-            setIsDeactivated(true);
-            setShowDeleteConfirm(false);
-            navigate('/');
-        } catch (err) {
-            console.error('Failed to deactivate driver in Profile:', err);
-            setDeleteError(err.message);
-        } finally {
-            setIsDeleting(false);
-        }
+        setIsEditing(false);
     };
 
     const handlePasswordEdit = () => {

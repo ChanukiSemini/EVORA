@@ -10,41 +10,43 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { NAV_ITEMS } from './navigation.js';
 import { IconBolt, IconLogout } from './NavigationIcons.jsx';
 
-// ─────────────────────────────────────────────
-// API base URL — falls back to localhost in development
-// ─────────────────────────────────────────────
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-// TEMPORARY: hardcoded driver ID used to simulate a logged-in user
-// until real login/authentication is built. Every page and the
-// Sidebar use this exact same ID so they all reflect the same driver.
-const DRIVER_ID = '6a9925827fb2502dd5392d22';
-
-/** Fetch the driver's profile for sidebar display. */
-async function getDriver(driverId) {
-    const res = await fetch(`${BASE_URL}/api/drivers/${driverId}`);
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Failed to load profile.');
-    }
-    return res.json();
-}
-
-const Sidebar = () => {
-    const [user, setUser] = useState(null);
+const Sidebar = ({ user }) => {
     const navigate = useNavigate();
 
-    useEffect(() => {
-        getDriver(DRIVER_ID)
-            .then((data) => setUser(data))
-            .catch((err) => {
-                console.error('Failed to fetch driver in Sidebar:', err);
-            });
-    }, []);
+    // Dynamically retrieve authenticated user
+    const getActiveUser = () => {
+        if (user && user.name && user.name !== 'Sarah Jenkins') return user;
+        try {
+            const stored = JSON.parse(
+                localStorage.getItem('evora_current_user') ||
+                localStorage.getItem('evora_driver_user') ||
+                localStorage.getItem('evora_host_user') ||
+                '{}'
+            );
+            const name = stored.fullName || stored.name || (user && user.name) || 'EV Driver';
+            const email = stored.email || (user && user.email) || 'driver@evora.lk';
+            return { name, email, ...stored };
+        } catch {
+            return user || { name: 'EV Driver', email: 'driver@evora.lk' };
+        }
+    };
 
-    const displayName = user?.name || 'Guest';
-    const displayEmail = user?.email || '';
-    const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    const currentUser = getActiveUser();
+    const initials = (currentUser.name || 'EV')
+        .split(' ')
+        .filter(Boolean)
+        .map(n => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'EV';
+
+    const handleLogout = () => {
+        localStorage.removeItem('evora_token');
+        localStorage.removeItem('evora_current_user');
+        localStorage.removeItem('evora_driver_user');
+        localStorage.removeItem('evora_host_user');
+        navigate('/login');
+    };
 
     return (
         <aside className="app-sidebar">
@@ -70,11 +72,11 @@ const Sidebar = () => {
                 <div className="sidebar-user-card" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }} role="button" tabIndex={0}>
                     <div className="sidebar-user-avatar">{initials}</div>
                     <div className="sidebar-user-info">
-                        <span className="sidebar-user-name">{displayName}</span>
-                        <span className="sidebar-user-email">{displayEmail}</span>
+                        <span className="sidebar-user-name">{currentUser.name}</span>
+                        <span className="sidebar-user-email">{currentUser.email}</span>
                     </div>
                 </div>
-                <button className="sidebar-logout-btn" onClick={() => navigate('/login')}>
+                <button className="sidebar-logout-btn" onClick={handleLogout}>
                     <IconLogout /> Log Out
                 </button>
             </div>

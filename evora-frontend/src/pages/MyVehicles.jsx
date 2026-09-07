@@ -448,14 +448,30 @@ export default function MyVehicles() {
                                 </div>
                             </nav>
                             <div className="mobile-menu-footer">
-                                <div className="mobile-user-card">
-                                    <div className="mobile-user-avatar" onClick={() => { navigate('/profile'); setIsMobileMenuOpen(false); }} role="button" tabIndex={0}>SJ</div>
+                                <div className="mobile-user-card" onClick={() => navigate('/profile')} role="button" tabIndex={0} style={{ cursor: 'pointer' }}>
+                                    <div className="mobile-user-avatar">{(() => {
+                                        const u = JSON.parse(localStorage.getItem('evora_current_user') || '{}');
+                                        const n = u.fullName || u.name || 'EV Driver';
+                                        return n.split(' ').filter(Boolean).map(x => x[0]).join('').slice(0, 2).toUpperCase() || 'EV';
+                                    })()}</div>
                                     <div className="mobile-user-info">
-                                        <span className="mobile-user-name">Sarah Jenkins</span>
-                                        <span className="mobile-user-email">sarah.j@evora-charge.com</span>
+                                        <span className="mobile-user-name">{(() => {
+                                            const u = JSON.parse(localStorage.getItem('evora_current_user') || '{}');
+                                            return u.fullName || u.name || 'EV Driver';
+                                        })()}</span>
+                                        <span className="mobile-user-email">{(() => {
+                                            const u = JSON.parse(localStorage.getItem('evora_current_user') || '{}');
+                                            return u.email || 'driver@evora.lk';
+                                        })()}</span>
                                     </div>
                                 </div>
-                                <button className="mobile-logout-btn" onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}>
+                                <button className="mobile-logout-btn" onClick={() => {
+                                    localStorage.removeItem('evora_token');
+                                    localStorage.removeItem('evora_current_user');
+                                    localStorage.removeItem('evora_driver_user');
+                                    navigate('/login');
+                                    setIsMobileMenuOpen(false);
+                                }}>
                                     Log Out
                                 </button>
                             </div>

@@ -1,15 +1,33 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose')
 
 const connectorSchema = new mongoose.Schema(
   {
-    label: { type: String },
-    shortLabel: { type: String },
-    specs: { type: String },
-    maxPower: { type: String },
-    connectorType: { type: String },
-    powerKW: { type: Number }
+    label: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    shortLabel: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    specs: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    maxPower: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
-  { timestamps: true, strict: false, collection: 'connectors' }
-);
+  {
+    collection: 'connectors', // Maps to connectors collection in MongoDB Atlas
+  }
+)
 
-export default mongoose.model('Connector', connectorSchema, 'connectors');
+const Connector = mongoose.model('Connector', connectorSchema, 'connectors')
+
+module.exports = Connector
