@@ -1,6 +1,8 @@
 const mongoose = require('mongoose')
 const User = require('../models/User')
 const ChargerHost = require('../models/ChargerHost')
+const VehicleModel = require('../models/VehicleModel')
+const Connector = require('../models/Connector')
 const generateToken = require('../utils/generateToken')
 
 // @desc    Auth user & get token (Login for Driver and Host)
@@ -274,8 +276,52 @@ const getUserProfile = async (req, res) => {
   }
 }
 
+// @desc    Get all vehicle models for dropdown
+// @route   GET /api/auth/vehicle-models
+// @access  Public
+const getVehicleModels = async (req, res) => {
+  try {
+    const models = await VehicleModel.find({}).sort({ brand: 1, model: 1 }).lean()
+    res.json({
+      success: true,
+      count: models.length,
+      data: models,
+    })
+  } catch (error) {
+    console.error('Error fetching vehicle models:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching vehicle models',
+      error: error.message,
+    })
+  }
+}
+
+// @desc    Get all connector types for dropdown
+// @route   GET /api/auth/connectors
+// @access  Public
+const getConnectors = async (req, res) => {
+  try {
+    const connectors = await Connector.find({}).lean()
+    res.json({
+      success: true,
+      count: connectors.length,
+      data: connectors,
+    })
+  } catch (error) {
+    console.error('Error fetching connectors:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching connectors',
+      error: error.message,
+    })
+  }
+}
+
 module.exports = {
   loginUser,
   registerUser,
   getUserProfile,
+  getVehicleModels,
+  getConnectors,
 }

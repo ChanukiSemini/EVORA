@@ -12,15 +12,13 @@ export default function DriverCreateAccount() {
     phone: '',
     password: '',
     confirmPassword: '',
-    vehicleCategory: 'Sedan',
     connectorType: 'Connector Type (e.g. Type 2, CCS)',
     vehicleModel: '',
-    vehicleRegNumber: '',
     agreeTerms: false,
   });
 
   // Dropdown open states
-  const [openDropdown, setOpenDropdown] = useState(null); // 'country' | 'connector' | 'model' | 'category' | null
+  const [openDropdown, setOpenDropdown] = useState(null); // 'country' | 'connector' | 'model' | null
 
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +35,6 @@ export default function DriverCreateAccount() {
   const countryDropdownRef = useRef(null);
   const connectorDropdownRef = useRef(null);
   const modelDropdownRef = useRef(null);
-  const categoryDropdownRef = useRef(null);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -58,12 +55,6 @@ export default function DriverCreateAccount() {
         openDropdown === 'model' &&
         modelDropdownRef.current &&
         !modelDropdownRef.current.contains(event.target)
-      ) {
-        setOpenDropdown(null);
-      } else if (
-        openDropdown === 'category' &&
-        categoryDropdownRef.current &&
-        !categoryDropdownRef.current.contains(event.target)
       ) {
         setOpenDropdown(null);
       }
@@ -88,42 +79,63 @@ export default function DriverCreateAccount() {
     { code: '+81', name: 'Japan' },
   ];
 
-  const connectorOptions = [
-    { value: 'Type 2 (Mennekes)', label: 'Type 2 (Mennekes - AC Fast)' },
-    { value: 'CCS 2 (Combo 2)', label: 'CCS 2 (Combo 2 - DC Ultra Fast)' },
-    { value: 'CHAdeMO', label: 'CHAdeMO (DC Fast)' },
-    { value: 'GB/T', label: 'GB/T (China Standard)' },
-    { value: 'Tesla / NACS', label: 'Tesla Supercharger / NACS' },
+  const defaultConnectors = [
+    { value: 'CCS2 (DC Fast)', label: 'CCS2 (DC Fast)' },
+    { value: 'Type 2 AC', label: 'Type 2 AC' },
+    { value: 'CHAdeMO (DC)', label: 'CHAdeMO (DC)' },
   ];
 
-  const vehicleModelOptions = [
-    'Nissan Leaf',
-    'Tesla Model 3',
-    'Tesla Model Y',
-    'Hyundai Ioniq 5',
-    'Hyundai Kona Electric',
-    'MG ZS EV',
+  const defaultModels = [
     'BYD Atto 3',
-    'BYD Seal',
-    'BYD Dolphin',
-    'Porsche Taycan',
-    'Audi e-tron',
-    'BMW i4',
-    'BMW iX3',
-    'Kia EV6',
-    'Mercedes-Benz EQB',
-    'Volvo EX30',
+    'BYD E6',
+    'Nissan Leaf',
+    'MG MG4',
+    'Hyundai Kona Electric',
+    'Tesla Model 3',
+    'Bajaj RE Electric',
+    'Ather 450X',
   ];
 
-  const categoryOptions = [
-    'Sedan',
-    'SUV',
-    'Hatchback',
-    'Crossover',
-    'Van / MPV',
-    'Coupe / Sports',
-    'Pickup Truck',
-  ];
+  const [connectorOptions, setConnectorOptions] = useState(defaultConnectors);
+  const [vehicleModelOptions, setVehicleModelOptions] = useState(defaultModels);
+
+  // Fetch connectors and vehicle models from MongoDB database
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [connRes, modelRes] = await Promise.all([
+          fetch('http://localhost:5000/api/auth/connectors'),
+          fetch('http://localhost:5000/api/auth/vehicle-models'),
+        ]);
+
+        if (connRes.ok) {
+          const connData = await connRes.json();
+          if (connData.success && Array.isArray(connData.data) && connData.data.length > 0) {
+            setConnectorOptions(
+              connData.data.map((c) => ({
+                value: c.label || c.shortLabel,
+                label: c.specs ? `${c.label} (${c.specs})` : c.label,
+                shortLabel: c.shortLabel || c.label,
+              }))
+            );
+          }
+        }
+
+        if (modelRes.ok) {
+          const modelData = await modelRes.json();
+          if (modelData.success && Array.isArray(modelData.data) && modelData.data.length > 0) {
+            setVehicleModelOptions(
+              modelData.data.map((m) => `${m.brand} ${m.model}`.trim())
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load vehicle options from database:', err);
+      }
+    };
+
+    fetchOptions();
+  }, []);
 
   // Handle Input Changes
   const handleChange = (e) => {
@@ -198,10 +210,8 @@ export default function DriverCreateAccount() {
       password: formData.password,
       role: 'driver',
       phone: `${formData.countryCode} ${formData.phone}`,
-      vehicleCategory: formData.vehicleCategory,
       connectorType: formData.connectorType === 'Connector Type (e.g. Type 2, CCS)' ? 'Type 2 (Mennekes)' : formData.connectorType,
       vehicleModel: formData.vehicleModel || 'Electric Vehicle',
-      vehicleRegNumber: formData.vehicleRegNumber || 'WP-EV-0001',
     };
 
     try {
@@ -647,66 +657,6 @@ export default function DriverCreateAccount() {
                         >
                           <span>{model}</span>
                           {formData.vehicleModel === model && (
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#3DDC97" strokeWidth="2.5">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Vehicle Registration Number */}
-                <div className="driver-input-group">
-                  <div className="input-prefix-icon">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                      <rect x="2" y="5" width="20" height="14" rx="2" />
-                      <line x1="2" y1="10" x2="22" y2="10" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    name="vehicleRegNumber"
-                    className="driver-text-input"
-                    placeholder="Vehicle Registration Number"
-                    value={formData.vehicleRegNumber}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                {/* Custom Interactive Vehicle Category Dropdown */}
-                <div className="driver-input-group custom-select-wrapper" ref={categoryDropdownRef}>
-                  <div className="input-prefix-icon">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                      <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                      <polyline points="2 17 12 22 22 17" />
-                      <polyline points="2 12 12 17 22 12" />
-                    </svg>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="custom-select-trigger"
-                    onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
-                    aria-expanded={openDropdown === 'category'}
-                  >
-                    <span className="selected-value-text">{formData.vehicleCategory}</span>
-                    <svg className={`dropdown-chevron-svg ${openDropdown === 'category' ? 'open' : ''}`} viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-
-                  {openDropdown === 'category' && (
-                    <div className="custom-dropdown-menu">
-                      {categoryOptions.map((cat) => (
-                        <div
-                          key={cat}
-                          className={`custom-dropdown-item ${formData.vehicleCategory === cat ? 'selected' : ''}`}
-                          onClick={() => handleSelectOption('vehicleCategory', cat)}
-                        >
-                          <span>{cat}</span>
-                          {formData.vehicleCategory === cat && (
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#3DDC97" strokeWidth="2.5">
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
