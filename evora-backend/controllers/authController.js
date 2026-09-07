@@ -1,7 +1,9 @@
+const mongoose = require('mongoose')
 const User = require('../models/User')
+const ChargerHost = require('../models/ChargerHost')
 const generateToken = require('../utils/generateToken')
 
-// @desc    Auth user & get token (Login)
+// @desc    Auth user & get token (Login for Driver and Host)
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
@@ -18,8 +20,15 @@ const loginUser = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim()
 
-    // 2. Check for user
-    const user = await User.findOne({ email: normalizedEmail })
+    // 2. Check for user in ev_driver collection first
+    let user = await User.findOne({ email: normalizedEmail })
+    let userType = 'driver'
+
+    // 3. If not found in ev_driver, check in chargerhost collection
+    if (!user) {
+      user = await ChargerHost.findOne({ email: normalizedEmail })
+      userType = 'host'
+    }
 
     if (!user) {
       return res.status(401).json({
@@ -28,7 +37,7 @@ const loginUser = async (req, res) => {
       })
     }
 
-    // 3. Match password
+    // 4. Match password
     const isMatch = await user.matchPassword(password)
 
     if (!isMatch) {
@@ -38,30 +47,34 @@ const loginUser = async (req, res) => {
       })
     }
 
-    // 4. Token expiration duration based on rememberMe
+    // 5. Token expiration duration based on rememberMe
+    const roleString = user.roleName || (typeof user.role === 'string' ? user.role : userType)
     const expiresIn = rememberMe ? '30d' : '7d'
-    const token = generateToken(user._id, user.role, expiresIn)
+    const token = generateToken(user._id, roleString, expiresIn)
 
-    // 5. Send response
+    // 6. Send response
     res.json({
       success: true,
       message: 'Login successful',
       token,
       user: {
         _id: user._id,
-        fullName: user.fullName,
+        name: user.name || user.fullName,
+        fullName: user.fullName || user.name,
         email: user.email,
-        role: user.role,
+        role: roleString,
         phone: user.phone,
-        vehicleCategory: user.vehicleCategory,
-        connectorType: user.connectorType,
-        vehicleModel: user.vehicleModel,
-        vehicleRegNumber: user.vehicleRegNumber,
-        stationName: user.stationName,
-        stationAddress: user.stationAddress,
-        chargerType: user.chargerType,
-        totalSlots: user.totalSlots,
-        isVerified: user.isVerified,
+        company: user.company || '',
+        brNo: user.brNo || user.nicPassport || '',
+        vehicleCategory: user.vehicleCategory || '',
+        connectorType: user.connectorType || '',
+        vehicleModel: user.vehicleModel || '',
+        vehicleRegNumber: user.vehicleRegNumber || '',
+        stationName: user.stationName || '',
+        stationAddress: user.stationAddress || '',
+        chargerType: user.chargerType || '',
+        totalSlots: user.totalSlots || 1,
+        isVerified: user.isVerified !== undefined ? user.isVerified : true,
         createdAt: user.createdAt,
       },
     })
@@ -82,10 +95,15 @@ const registerUser = async (req, res) => {
   try {
     const {
       fullName,
+      name,
       email,
       password,
       role = 'driver',
       phone,
+      brNo,
+      nicPassport,
+      nicBrNumber,
+      company,
       vehicleCategory,
       connectorType,
       vehicleModel,
@@ -97,7 +115,8 @@ const registerUser = async (req, res) => {
     } = req.body
 
     // 1. Validation
-    if (!fullName || !email || !password) {
+    const displayName = fullName || name
+    if (!displayName || !email || !password) {
       return res.status(400).json({
         success: false,
         message: 'Please provide full name, email, and password',
@@ -112,24 +131,76 @@ const registerUser = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim()
+    const targetRole = (role || 'driver').toLowerCase()
 
-    // 2. Check if user already exists
-    const userExists = await User.findOne({ email: normalizedEmail })
+    // 2. Check if user already exists in either collection
+    const userInDriver = await User.findOne({ email: normalizedEmail })
+    const userInHost = await ChargerHost.findOne({ email: normalizedEmail })
 
-    if (userExists) {
+    if (userInDriver || userInHost) {
       return res.status(400).json({
         success: false,
         message: 'An account with this email already exists',
       })
     }
 
-    // 3. Create user in ev_driver collection
+    // 3. Create Host in chargerhost collection
+    if (targetRole === 'host') {
+      const regNumber = brNo || nicPassport || nicBrNumber || ''
+      const hostCompany = company || displayName.trim()
+      const hostStationName = stationName || `${displayName.trim()}'s Station`
+
+      const newHost = await ChargerHost.create({
+        name: hostStationName || displayName.trim(),
+        fullName: displayName.trim(),
+        company: hostCompany,
+        brNo: regNumber,
+        nicPassport: regNumber,
+        email: normalizedEmail,
+        password,
+        phone: phone || '',
+        role: new mongoose.Types.ObjectId('6a9974ee7fb2587dd5397d20'), // Host role ID from MongoDB screenshot
+        roleName: 'host',
+        stationName: hostStationName,
+        stationAddress: stationAddress || '',
+        chargerType: chargerType || '',
+        totalSlots: totalSlots || 1,
+        active: true,
+        isVerified: true,
+      })
+
+      const token = generateToken(newHost._id, 'host', '30d')
+
+      return res.status(201).json({
+        success: true,
+        message: 'Host account registered successfully in chargerhost',
+        token,
+        user: {
+          _id: newHost._id,
+          name: newHost.name,
+          fullName: newHost.fullName,
+          email: newHost.email,
+          phone: newHost.phone,
+          role: 'host',
+          brNo: newHost.brNo,
+          company: newHost.company,
+          stationName: newHost.stationName,
+          stationAddress: newHost.stationAddress,
+          chargerType: newHost.chargerType,
+          totalSlots: newHost.totalSlots,
+          isVerified: newHost.isVerified,
+          createdAt: newHost.createdAt,
+        },
+      })
+    }
+
+    // 4. Create Driver in ev_driver collection
     const user = await User.create({
-      name: fullName.trim(),
-      fullName: fullName.trim(),
+      name: displayName.trim(),
+      fullName: displayName.trim(),
       email: normalizedEmail,
       password,
-      role: role.toLowerCase(),
+      role: 'driver',
       phone: phone || '',
       vehicleCategory: vehicleCategory || '',
       connectorType: connectorType || '',
@@ -147,7 +218,7 @@ const registerUser = async (req, res) => {
 
       res.status(201).json({
         success: true,
-        message: 'Account registered successfully',
+        message: 'Driver account registered successfully in ev_driver',
         token,
         user: {
           _id: user._id,
@@ -189,7 +260,10 @@ const registerUser = async (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password')
+    let user = await User.findById(req.user._id).select('-password')
+    if (!user) {
+      user = await ChargerHost.findById(req.user._id).select('-password')
+    }
 
     if (user) {
       res.json({

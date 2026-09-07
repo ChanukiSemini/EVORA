@@ -156,13 +156,17 @@ export default function HostCreateAccount() {
 
     const payload = {
       fullName: formData.fullName.trim(),
+      name: stationDisplayName,
+      company: formData.fullName.trim(),
+      brNo: formData.nicBrNumber.trim(),
+      nicPassport: formData.nicBrNumber.trim(),
+      nicBrNumber: formData.nicBrNumber.trim(),
       email: formData.email.trim(),
       password: formData.password,
       role: 'host',
       phone: `${formData.countryCode} ${formData.phone}`,
       stationName: stationDisplayName,
       stationAddress: formData.fullName.trim(),
-      nicPassport: formData.nicBrNumber.trim(),
     };
 
     try {

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const ChargerHost = require('../models/ChargerHost')
 
 // Protect routes - verify Bearer token
 const protect = async (req, res, next) => {
@@ -16,7 +17,12 @@ const protect = async (req, res, next) => {
         process.env.JWT_SECRET || 'evora_jwt_super_secret_key_2026'
       )
 
-      req.user = await User.findById(decoded.id).select('-password')
+      let user = await User.findById(decoded.id).select('-password')
+      if (!user) {
+        user = await ChargerHost.findById(decoded.id).select('-password')
+      }
+
+      req.user = user
 
       if (!req.user) {
         return res.status(401).json({
