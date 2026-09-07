@@ -117,7 +117,33 @@ const findStationByIdOrSlug = async (identifier) => {
 // @access  Public / Admin
 const getBranches = async (req, res) => {
   try {
-    const stations = await Station.find({});
+    let query = {};
+
+    // If authenticated user is a specific Host, scope to their stations
+    if (req.user && (req.user.role === 'host' || req.user.email)) {
+      const userEmail = (req.user.email || '').toLowerCase().trim();
+      const userId = req.user._id || req.user.id;
+
+      const hostStationCount = await Station.countDocuments({
+        $or: [
+          { hostEmail: userEmail },
+          { hostId: userId },
+          { hostId: String(userId) },
+        ],
+      });
+
+      if (hostStationCount > 0) {
+        query = {
+          $or: [
+            { hostEmail: userEmail },
+            { hostId: userId },
+            { hostId: String(userId) },
+          ],
+        };
+      }
+    }
+
+    const stations = await Station.find(query);
 
     const formattedBranches = stations.map((st) => {
       syncStationHardware(st);
@@ -136,6 +162,8 @@ const getBranches = async (req, res) => {
         bays: st.bays,
         pluggedAvailable: st.pluggedAvailable,
         pluggedTotal: st.pluggedTotal,
+        hostId: st.hostId,
+        hostEmail: st.hostEmail,
       };
     });
 
@@ -150,7 +178,7 @@ const getBranches = async (req, res) => {
 // @access  Admin
 const createBranch = async (req, res) => {
   try {
-    const { branchId, name, openHours, address, phone, chargers, baysDetail } = req.body;
+    const { branchId, name, openHours, address, phone, chargers, baysDetail, lat, lng } = req.body;
 
     const slug = (branchId || name || 'station').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const existingStation = await Station.findOne({ $or: [{ slug }, { branchId }] });
@@ -158,13 +186,20 @@ const createBranch = async (req, res) => {
       return res.status(400).json({ message: 'Station / Branch with this ID already exists' });
     }
 
+    const hostId = req.user?._id || req.user?.id || null;
+    const hostEmail = req.user?.email ? req.user.email.toLowerCase().trim() : '';
+
     const station = new Station({
       slug,
       branchId: branchId || slug,
+      hostId,
+      hostEmail,
       name,
       openHours: openHours || '24/7',
       address: address || '',
       phone: phone || '',
+      lat: lat || 6.9271,
+      lng: lng || 79.8612,
       chargers: chargers || [],
       baysDetail: baysDetail || [],
       status: 'available',
@@ -183,6 +218,8 @@ const createBranch = async (req, res) => {
       phone: station.phone,
       chargers: station.chargers,
       baysDetail: station.baysDetail,
+      hostId: station.hostId,
+      hostEmail: station.hostEmail,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

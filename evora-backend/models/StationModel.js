@@ -78,6 +78,8 @@ const StationSchema = new Schema(
       index: true,
     },
     branchId: { type: String, trim: true, index: true },
+    hostId: { type: mongoose.Schema.Types.Mixed, ref: 'ChargerHost', default: null, index: true },
+    hostEmail: { type: String, default: '', trim: true, lowercase: true, index: true },
 
     name: { type: String, required: true, trim: true },
     address: { type: String, default: '', trim: true },
