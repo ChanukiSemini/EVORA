@@ -4,31 +4,35 @@ const bookingSchema = new mongoose.Schema(
   {
     bookingNumber: {
       type: String,
-      required: true,
-      unique: true
+      required: true
     },
     driver: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.Mixed,
       ref: 'EvDriver',
       required: true
     },
     vehicle: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.Mixed,
       ref: 'Vehicle',
       required: true
     },
     charger: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.Mixed,
       ref: 'Charger',
       required: true
     },
+    slot: {
+      type: mongoose.Schema.Types.Mixed,
+      ref: 'TimeSlot',
+      required: false
+    },
     date: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,
       required: true
     },
     time: {
       type: String,
-      required: true
+      required: false
     },
     timeSlot: {
       type: String,
@@ -36,15 +40,23 @@ const bookingSchema = new mongoose.Schema(
     },
     durationMinutes: {
       type: Number,
-      required: true
+      required: false
     },
     energyDeliveredKWh: {
       type: Number,
       required: false
     },
     estimatedTotalCost: {
-      type: Number,
-      required: true
+      type: mongoose.Schema.Types.Mixed,
+      required: false
+    },
+    estimatedTotalcost: {
+      type: mongoose.Schema.Types.Mixed,
+      required: false
+    },
+    canModify: {
+      type: mongoose.Schema.Types.Mixed,
+      required: false
     },
     status: {
       type: String,
@@ -54,10 +66,16 @@ const bookingSchema = new mongoose.Schema(
     cancelledDate: {
       type: String,
       required: false
+    },
+    cancelleddate: {
+      type: String,
+      required: false
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    strict: false,
+    collection: 'booking'
   }
 );
 

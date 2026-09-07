@@ -5,7 +5,7 @@ const stationSchema = new mongoose.Schema(
     host: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ChargerHost',
-      required: true
+      required: false
     },
     name: {
       type: String,
@@ -16,13 +16,21 @@ const stationSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    totalRatingSum: {
+      type: Number,
+      default: 0
+    },
+    numberOfRatings: {
+      type: Number,
+      default: 0
+    },
     rating: {
       type: Number,
       default: 0
     },
     tag: {
       type: String,
-      required: true
+      required: false
     },
     amenities: [
       {
@@ -31,7 +39,9 @@ const stationSchema = new mongoose.Schema(
     ]
   },
   {
-    timestamps: true
+    timestamps: true,
+    strict: false,
+    collection: 'station'
   }
 );
 

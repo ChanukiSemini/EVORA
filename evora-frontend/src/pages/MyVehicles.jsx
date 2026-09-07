@@ -14,6 +14,11 @@ import Icon from '../components/Icon.jsx';
 import teslaModel_3 from '../assets/models/tesla_model_3.glb';
 
 
+// TEMPORARY: hardcoded driver ID used to simulate a logged-in user
+// until real login/authentication is built. Every page and the
+// Sidebar use this exact same ID so they all reflect the same driver.
+const DRIVER_ID = '6a9925827fb2502dd5392d22';
+
 /* ---------- Mock Data ---------- */
 const VEHICLE_DATABASE = {
     brands: ['Tesla', 'BMW', 'Nissan'],

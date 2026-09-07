@@ -15,6 +15,11 @@ import { IconBolt, IconLogout } from './NavigationIcons.jsx';
 // ─────────────────────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+// TEMPORARY: hardcoded driver ID used to simulate a logged-in user
+// until real login/authentication is built. Every page and the
+// Sidebar use this exact same ID so they all reflect the same driver.
+const DRIVER_ID = '6a9925827fb2502dd5392d22';
+
 /** Fetch the driver's profile for sidebar display. */
 async function getDriver(driverId) {
     const res = await fetch(`${BASE_URL}/api/drivers/${driverId}`);
@@ -30,12 +35,11 @@ const Sidebar = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const driverId = localStorage.getItem('driverId') || '6a9925827fb2502dd5392d22';
-        if (driverId) {
-            getDriver(driverId)
-                .then((data) => setUser(data))
-                .catch(() => { /* fallback to Guest if fetch fails */ });
-        }
+        getDriver(DRIVER_ID)
+            .then((data) => setUser(data))
+            .catch((err) => {
+                console.error('Failed to fetch driver in Sidebar:', err);
+            });
     }, []);
 
     const displayName = user?.name || 'Guest';

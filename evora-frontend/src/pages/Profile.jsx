@@ -82,12 +82,16 @@ function ProfileContent({ driver, isEditing, isSaving, onSave, onEdit, onPasswor
     );
 }
 
+// TEMPORARY: hardcoded driver ID used to simulate a logged-in user
+// until real login/authentication is built. Every page and the
+// Sidebar use this exact same ID so they all reflect the same driver.
+const DRIVER_ID = '6a9925827fb2502dd5392d22';
+
 // ─────────────────────────────────────────────
 // Page component
 // ─────────────────────────────────────────────
 export default function Profile() {
     const navigate = useNavigate();
-    const driverId = localStorage.getItem('driverId') || '6a9925827fb2502dd5392d22';
 
     // ── Layout state ──
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -111,12 +115,13 @@ export default function Profile() {
     // ── Fetch driver on mount ──
     useEffect(() => {
         setIsLoading(true);
-        getDriver(driverId)
+        getDriver(DRIVER_ID)
             .then((data) => {
                 setDriver(data);
                 setIsLoading(false);
             })
             .catch((err) => {
+                console.error('Failed to fetch driver in Profile:', err);
                 setLoadError(err.message);
                 setIsLoading(false);
             });
@@ -127,7 +132,7 @@ export default function Profile() {
         setSaveError(null);
         setIsSaving(true);
         try {
-            const saved = await updateDriver(driverId, {
+            const saved = await updateDriver(DRIVER_ID, {
                 name:     updatedFields.name,
                 email:    updatedFields.email,
                 phone:    updatedFields.phone,
@@ -136,6 +141,7 @@ export default function Profile() {
             setDriver(saved);
             setIsEditing(false);
         } catch (err) {
+            console.error('Failed to update driver in Profile:', err);
             setSaveError(err.message);
         } finally {
             setIsSaving(false);
@@ -150,12 +156,12 @@ export default function Profile() {
         setIsDeleting(true);
         setDeleteError(null);
         try {
-            await deactivateDriver(driverId);
+            await deactivateDriver(DRIVER_ID);
             setIsDeactivated(true);
             setShowDeleteConfirm(false);
-            localStorage.removeItem('driverId');
             navigate('/');
         } catch (err) {
+            console.error('Failed to deactivate driver in Profile:', err);
             setDeleteError(err.message);
         } finally {
             setIsDeleting(false);

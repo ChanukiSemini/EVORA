@@ -5,13 +5,16 @@
 // ============================================
 
 const CancelBookingModal = ({ booking, onClose, onConfirmCancel }) => {
-    // Default fallback mock if opened without specific props
     const currentBooking = booking || {
-        id: '212457',
+        bookingNumber: '212457',
         station: 'Softlogic Glomark - Delkanda',
         date: 'Oct 26, 2026',
         time: '02:15 PM',
     };
+
+    const displayId = currentBooking.bookingNumber || currentBooking._id || currentBooking.id;
+    const displayStation = currentBooking.charger?.station?.name || currentBooking.station || currentBooking.location || 'Charging Station';
+    const displayTime = currentBooking.time || currentBooking.timeSlot || '';
 
     return (
         <div className="bc-modal-backdrop cancel-modal-backdrop" onClick={onClose}>
@@ -29,18 +32,18 @@ const CancelBookingModal = ({ booking, onClose, onConfirmCancel }) => {
                 <div className="cancel-summary-box">
                     <div className="cancel-summary-row id-row">
                         <span className="cancel-summary-label">BOOKING ID</span>
-                        <span className="cancel-summary-id">#{currentBooking.id}</span>
+                        <span className="cancel-summary-id">#{displayId}</span>
                     </div>
 
                     <div className="cancel-summary-group">
                         <span className="cancel-summary-label">Location</span>
-                        <span className="cancel-summary-val">{currentBooking.station || currentBooking.location}</span>
+                        <span className="cancel-summary-val">{displayStation}</span>
                     </div>
 
                     <div className="cancel-summary-group">
                         <span className="cancel-summary-label">Time Slot</span>
                         <span className="cancel-summary-val">
-                            {currentBooking.date} · {currentBooking.time}
+                            {currentBooking.date} {displayTime ? `· ${displayTime}` : ''}
                         </span>
                     </div>
                 </div>

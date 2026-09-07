@@ -27,14 +27,6 @@ import HostCreateAccount from './pages/HostCreateAccount'
 import OtpVerification from './pages/OtpVerification'
 import AccountCreatedSuccess from './pages/AccountCreatedSuccess'
 
-
-
-// TEMPORARY: simulates a logged-in driver until real login exists.
-// Once login is built, this will be set after a successful sign-in instead.
-if (!localStorage.getItem('driverId')) {
-    localStorage.setItem('driverId', '6a9925827fb2502dd5392d22');
-}
-
 function App() {
   return (
     <BrowserRouter>
@@ -81,6 +73,7 @@ function App() {
           <Route path="reports" element={<Reports />} />
         </Route>
         <Route path="/rate-session" element={<Review />} />
+        <Route path="/review" element={<Review />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Profile />} />
         <Route path="/vehicles" element={<MyVehicles />} />

@@ -70,6 +70,26 @@ export const createReview = async (req, res) => {
 
     const newReview = await Review.create(reviewData);
 
+    // Update the station's running average rating.
+    // Using $inc keeps this atomic — safe even if multiple
+    // reviews are submitted around the same time.
+    const updatedStation = await Station.findByIdAndUpdate(
+      stationId,
+      {
+        $inc: {
+          totalRatingSum: newReview.rating,
+          numberOfRatings: 1,
+        },
+      },
+      { new: true }
+    );
+
+    // Recalculate and store the actual average rating
+    if (updatedStation && updatedStation.numberOfRatings > 0) {
+      const newAverage = Number((updatedStation.totalRatingSum / updatedStation.numberOfRatings).toFixed(1));
+      await Station.findByIdAndUpdate(stationId, { rating: newAverage });
+    }
+
     return res.status(201).json({
       success: true,
       data: newReview

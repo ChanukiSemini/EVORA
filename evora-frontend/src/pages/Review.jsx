@@ -12,23 +12,18 @@ import chargingStationImg from '../assets/charging-station.png';
 
 // ─────────────────────────────────────────────
 // API base URL — falls back to localhost in development
+// ─────────────────────────────────────────────
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 
-/* ---------- Mock Data ---------- */
-const STATION = {
-    name: 'Voltex Supercharge Hub',
-    rating: '4.8',
-    address: '452 Tesla Parkway, Suite 100, Innovation District, Austin, TX 78701',
-    summary: [
-        { label: 'Connector', value: 'CCS Combo 2 (350 kW)' },
-        { label: 'Date & Time', value: 'Jul 10, 2026 • 11:32 AM' },
-        { label: 'Energy Delivered', value: '48.6 kWh' },
-        { label: 'Cost', value: '$21.87' },
-    ],
-};
+// TEMPORARY: hardcoded driver ID used to simulate a logged-in user
+// until real login/authentication is built. Every page and the
+// Sidebar use this exact same ID so they all reflect the same driver.
+const DRIVER_ID = '6a9925827fb2502dd5392d22';
 
-// TEMPORARY: hardcoded for backend testing only.
-// Once "My Bookings" is built, this will come from route params/state instead.
+// Fallback booking ID used when the Review page is opened directly
+// (not navigated to from My Reservations). Once a real bookingId is
+// passed via location.state, this is not used.
 const TEMP_BOOKING_ID = '65f200000000000000000005';
 
 const AVAILABLE_CHIPS = ['Fast Charging', 'Easy to Find', 'Clean Station', 'Friendly Staff', 'Faulty Charger'];
@@ -41,19 +36,6 @@ const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 export default function Review() {
     const navigate = useNavigate();
     const location = useLocation();
-    const passedBooking = location.state?.booking;
-
-    const currentStation = {
-        name: passedBooking?.station || STATION.name,
-        rating: STATION.rating,
-        address: passedBooking?.address || (passedBooking?.station ? 'Keels Supermarket Complex, Kaduwela Rd' : STATION.address),
-        summary: [
-            { label: 'Connector', value: passedBooking?.connector || passedBooking?.type || STATION.summary[0].value },
-            { label: 'Date & Time', value: passedBooking ? `${passedBooking.date} • ${passedBooking.time}` : STATION.summary[1].value },
-            { label: 'Energy Delivered', value: passedBooking?.energy || STATION.summary[2].value },
-            { label: 'Cost', value: passedBooking?.cost || STATION.summary[3].value },
-        ],
-    };
 
     // ── Layout state ──
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -79,21 +61,23 @@ export default function Review() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
 
-    // Fetch booking & station details on mount using TEMP_BOOKING_ID
+    // Fetch booking & station details on mount.
+    // Uses bookingId from navigation state (passed by MyReservations' "Rate Session" button)
+    // and falls back to TEMP_BOOKING_ID when navigating directly to this page.
     useEffect(() => {
         const fetchBookingDetails = async () => {
             setIsLoadingBooking(true);
             setBookingError(null);
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-                const response = await fetch(`${apiUrl}/api/bookings/${TEMP_BOOKING_ID}`);
+                const bookingId = location.state?.bookingId || TEMP_BOOKING_ID;
+                const response = await fetch(`${BASE_URL}/api/bookings/${bookingId}`);
                 if (!response.ok) {
                     throw new Error('Failed to load booking');
                 }
                 const data = await response.json();
                 setBookingData(data);
             } catch (err) {
-                console.error('Error fetching booking details:', err);
+                console.error('Failed to load booking in Review:', err);
                 setBookingError('Failed to load booking');
             } finally {
                 setIsLoadingBooking(false);
@@ -101,7 +85,7 @@ export default function Review() {
         };
 
         fetchBookingDetails();
-    }, []);
+    }, [location.state?.bookingId]);
 
     // Revoke object URLs on unmount
     useEffect(() => {
@@ -150,9 +134,10 @@ export default function Review() {
         setSubmitError(null);
 
         // TODO: image upload not implemented yet — excluded from payload
+        const bookingId = location.state?.bookingId || TEMP_BOOKING_ID;
         const payload = {
-            booking: TEMP_BOOKING_ID,
-            driver: bookingData?.driver?._id || bookingData?.driver,
+            booking: bookingId,
+            driver: bookingData?.driver?._id || bookingData?.driver || DRIVER_ID,
             station: bookingData?.charger?.station?._id || bookingData?.charger?.station,
             rating,
             ratingLabel: RATING_LABELS[rating] || '',
@@ -161,8 +146,7 @@ export default function Review() {
         };
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-            const response = await fetch(`${apiUrl}/api/reviews`, {
+            const response = await fetch(`${BASE_URL}/api/reviews`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -176,7 +160,7 @@ export default function Review() {
                 setSubmitError(data.message || 'Failed to submit review. Please try again.');
             }
         } catch (err) {
-            console.error('Error submitting review:', err);
+            console.error('Failed to submit review:', err);
             setSubmitError('Unable to connect to backend server. Please try again.');
         } finally {
             setIsSubmitting(false);
@@ -510,7 +494,7 @@ export default function Review() {
                         <button className="dt-back-btn" onClick={() => navigate(-1)}>←</button>
                         <div>
                             <h1 className="dt-page-title">Rate Your Charging Session</h1>
-                            <p className="dt-page-subtitle">Share your experience at {STATION.name}</p>
+                            <p className="dt-page-subtitle">Share your experience at {stationName}</p>
                         </div>
                     </div>
                     <div className="dt-content">
