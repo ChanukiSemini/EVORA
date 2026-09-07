@@ -5,10 +5,10 @@
 // the document — this preserves historical data (bookings, reviews)
 // that reference this driver.
 
-import EvDriver from '../models/EvDriver.js';
+const EvDriver = require('../models/EvDriver');
 
 // GET /api/drivers/:id — fetch one driver's profile details
-export async function getDriver(req, res) {
+async function getDriver(req, res) {
     try {
         const driver = await EvDriver.findById(req.params.id);
 
@@ -23,7 +23,7 @@ export async function getDriver(req, res) {
 }
 
 // PATCH /api/drivers/:id — update editable profile fields
-export async function updateDriver(req, res) {
+async function updateDriver(req, res) {
     try {
         // Only these fields can be changed here — prevents someone from
         // sneaking in changes to fields like `active` or `createdAt`
@@ -56,7 +56,7 @@ export async function updateDriver(req, res) {
 }
 
 // PATCH /api/drivers/:id/deactivate — soft delete: sets active to false
-export async function deactivateDriver(req, res) {
+async function deactivateDriver(req, res) {
     try {
         const deactivatedDriver = await EvDriver.findByIdAndUpdate(
             req.params.id,
@@ -73,3 +73,9 @@ export async function deactivateDriver(req, res) {
         res.status(400).json({ message: error.message });
     }
 }
+
+module.exports = {
+    getDriver,
+    updateDriver,
+    deactivateDriver
+};

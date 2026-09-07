@@ -1,6 +1,6 @@
 // routes/bookingRoutes.js
-import express from 'express';
-import { getBookingForReview, getDriverBookings, cancelBooking } from '../controllers/bookingController.js';
+const express = require('express');
+const { getBookingForReview, getDriverBookings, cancelBooking } = require('../controllers/bookingController');
 
 const router = express.Router();
 
@@ -19,4 +19,4 @@ router.patch('/:id/cancel', cancelBooking);
 // GET /api/bookings/:id — single booking with full populate, used by Review page
 router.get('/:id', getBookingForReview);
 
-export default router;
+module.exports = router;

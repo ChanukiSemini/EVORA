@@ -11,7 +11,8 @@ import Sidebar from '../components/Sidebar';
 import IconSprite from '../components/IconSprite';
 import CarModel from '../components/CarModel.jsx';
 import Icon from '../components/Icon.jsx';
-import teslaModel_3 from '../assets/models/tesla_model_3.glb';
+
+const DEFAULT_MODEL_PATH = '/models/tesla_model_3.glb';
 
 
 // TEMPORARY: hardcoded driver ID used to simulate a logged-in user
@@ -24,17 +25,17 @@ const VEHICLE_DATABASE = {
     brands: ['Tesla', 'BMW', 'Nissan'],
     models: {
         'Tesla': [
-            { name: 'Tesla Model 3', type: 'Sedan', connector: 'Type 2 / CCS', battery: '75 kWh', range: '405 km', modelPath: teslaModel_3 },
-            { name: 'Tesla Model Y', type: 'SUV', connector: 'Type 2 / CCS', battery: '82 kWh', range: '533 km', modelPath: teslaModel_3 },
-            { name: 'Tesla Model S', type: 'Sedan', connector: 'Type 2 / CCS', battery: '100 kWh', range: '634 km', modelPath: teslaModel_3 },
+            { name: 'Tesla Model 3', type: 'Sedan', connector: 'Type 2 / CCS', battery: '75 kWh', range: '405 km', modelPath: DEFAULT_MODEL_PATH },
+            { name: 'Tesla Model Y', type: 'SUV', connector: 'Type 2 / CCS', battery: '82 kWh', range: '533 km', modelPath: DEFAULT_MODEL_PATH },
+            { name: 'Tesla Model S', type: 'Sedan', connector: 'Type 2 / CCS', battery: '100 kWh', range: '634 km', modelPath: DEFAULT_MODEL_PATH },
         ],
         'BMW': [
-            { name: 'BMW i4', type: 'Gran Coupe', connector: 'CCS', battery: '83.9 kWh', range: '590 km', modelPath: teslaModel_3 },
-            { name: 'BMW iX', type: 'SUV', connector: 'CCS', battery: '111.5 kWh', range: '630 km', modelPath: teslaModel_3 },
+            { name: 'BMW i4', type: 'Gran Coupe', connector: 'CCS', battery: '83.9 kWh', range: '590 km', modelPath: DEFAULT_MODEL_PATH },
+            { name: 'BMW iX', type: 'SUV', connector: 'CCS', battery: '111.5 kWh', range: '630 km', modelPath: DEFAULT_MODEL_PATH },
         ],
         'Nissan': [
-            { name: 'Nissan Leaf', type: 'Hatchback', connector: 'CHAdeMO', battery: '40 kWh', range: '270 km', modelPath: teslaModel_3 },
-            { name: 'Nissan Ariya', type: 'SUV', connector: 'CCS', battery: '87 kWh', range: '500 km', modelPath: teslaModel_3 },
+            { name: 'Nissan Leaf', type: 'Hatchback', connector: 'CHAdeMO', battery: '40 kWh', range: '270 km', modelPath: DEFAULT_MODEL_PATH },
+            { name: 'Nissan Ariya', type: 'SUV', connector: 'CCS', battery: '87 kWh', range: '500 km', modelPath: DEFAULT_MODEL_PATH },
         ],
     },
 };

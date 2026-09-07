@@ -4,10 +4,10 @@
 // documents where it exists but was never part of the schema.
 // Run manually once, then this script can be deleted.
 
-import 'dotenv/config';
-import dns from 'node:dns';
-import mongoose from 'mongoose';
-import connectDB from '../config/db.js';
+require('dotenv').config();
+const dns = require('node:dns');
+const mongoose = require('mongoose');
+const connectDB = require('../config/db');
 
 dns.setDefaultResultOrder('ipv4first');
 dns.setServers(['8.8.8.8', '8.8.4.4']);

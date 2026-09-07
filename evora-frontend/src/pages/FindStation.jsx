@@ -71,6 +71,7 @@ const sortComparator = (sortBy) => {
 };
 
 const FindStationContent = ({
+    stations,
     selected, setSelectedId, search, setSearch, sortOpen, setSortOpen,
     sortBy, setSortBy, favorites, toggleFavorite, goDetails,
     favOpen, setFavOpen, notifOpen, setNotifOpen, zoom, setZoom,
@@ -81,7 +82,7 @@ const FindStationContent = ({
     const notifBtnRef = useRef(null);
     const [selectedBay, setSelectedBay] = useState(null);
 
-    const safeSelected = selected || STATIONS[0];
+    const safeSelected = selected || (stations && stations[0]);
 
     const baysData = useMemo(() => {
         if (!safeSelected) return [];
@@ -103,12 +104,12 @@ const FindStationContent = ({
     }, [safeSelected]);
 
     const displayedStations = useMemo(() => {
-        let list = STATIONS;
+        let list = stations || [];
         if (activeTab === 'favorites') {
-            list = STATIONS.filter((s) => favorites[s.id]);
+            list = list.filter((s) => favorites[s.id]);
         } else if (activeTab === 'recent') {
             const recentIds = ['colombo-city-center', 'morven-hotel', 'one-galle-face'];
-            list = STATIONS.filter((s) => recentIds.includes(s.id));
+            list = list.filter((s) => recentIds.includes(s.id));
         }
         const term = search.trim().toLowerCase();
         return list
@@ -116,11 +117,11 @@ const FindStationContent = ({
             .filter((s) => !selectedPort || stationHasPort(s, selectedPort))
             .filter((s) => !term || s.name.toLowerCase().includes(term) || s.address.toLowerCase().includes(term))
             .sort(sortComparator(sortBy));
-    }, [search, activeTab, favorites, sortBy, selectedModel, selectedPort]);
+    }, [stations, search, activeTab, favorites, sortBy, selectedModel, selectedPort]);
 
     const favoriteStations = useMemo(
-        () => STATIONS.filter((s) => favorites[s.id]),
-        [favorites],
+        () => (stations || []).filter((s) => favorites[s.id]),
+        [stations, favorites],
     );
 
     const selectedPos = getPos(safeSelected.id);
@@ -235,7 +236,7 @@ const FindStationContent = ({
                                 title="You are here"
                             />
 
-                            {STATIONS.map((s) => {
+                            {(stations || []).map((s) => {
                                 const pos = getPos(s.id);
                                 const isHighestSpeed = sortBy === 'Charging Speed' && (s.maxChargingSpeedKw || 0) === highestSpeed;
                                 return (
@@ -556,6 +557,7 @@ const FindStationContent = ({
 
 const FindStation = () => {
     const navigate = useNavigate();
+    const [stations, setStations] = useState(STATIONS); // start with local data immediately
     const [selectedId, setSelectedId] = useState('volt-charge-cod');
     const [search, setSearch] = useState('');
     const [sortOpen, setSortOpen] = useState(false);
@@ -571,7 +573,33 @@ const FindStation = () => {
     const [routeOn, setRouteOn] = useState(true);
     const [locating, setLocating] = useState(false);
 
-    const selected = STATIONS.find((s) => s.id === selectedId) || STATIONS[6] || STATIONS[0];
+    // Fetch from backend API; silently keep local data if API is unreachable
+    useEffect(() => {
+        const params = new URLSearchParams({ limit: 50, page: 1 });
+        if (search.trim()) params.set('search', search.trim());
+        if (sortBy && sortBy !== 'Nearby') params.set('sortBy', sortBy);
+        if (selectedModel) params.set('model', selectedModel);
+        if (selectedPort) params.set('port', selectedPort);
+
+        fetch(`/api/stations?${params.toString()}`)
+            .then((res) => {
+                if (!res.ok) throw new Error('api error');
+                return res.json();
+            })
+            .then((json) => {
+                const list = (json.data || []).map((s) => ({
+                    ...s,
+                    id: s.slug || s.id, // backend uses 'slug'; UI uses 'id'
+                }));
+                if (list.length > 0) setStations(list);
+            })
+            .catch(() => {
+                // Keep local static data when backend is unavailable
+                setStations(STATIONS);
+            });
+    }, [search, sortBy, selectedModel, selectedPort]);
+
+    const selected = stations.find((s) => s.id === selectedId) || stations[stations.length - 1] || stations[0];
     const goDetails = (id) => navigate(`/station/${id}`);
     const toggleFavorite = (id) => setFavorites((f) => ({ ...f, [id]: !f[id] }));
 
@@ -592,6 +620,7 @@ const FindStation = () => {
     }, []);
 
     const shared = {
+        stations,
         selected, setSelectedId, search, setSearch, sortOpen, setSortOpen,
         sortBy, setSortBy, favorites, toggleFavorite, goDetails,
         favOpen, setFavOpen, notifOpen, setNotifOpen, zoom, setZoom,

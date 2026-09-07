@@ -1,12 +1,12 @@
-import mongoose from 'mongoose';
-import Review from '../models/Review.js';
-import EvDriver from '../models/EvDriver.js';
-import Station from '../models/Station.js';
+const mongoose = require('mongoose');
+const Review = require('../models/Review');
+const EvDriver = require('../models/EvDriver');
+const Station = require('../models/Station');
 
 // @desc    Create a new review
 // @route   POST /api/reviews
 // @access  Public (or Protected)
-export const createReview = async (req, res) => {
+const createReview = async (req, res) => {
   try {
     const {
       rating,
@@ -107,7 +107,7 @@ export const createReview = async (req, res) => {
 // @desc    Get all reviews
 // @route   GET /api/reviews
 // @access  Public
-export const getReviews = async (req, res) => {
+const getReviews = async (req, res) => {
   try {
     const reviews = await Review.find().sort({ createdAt: -1 });
     return res.status(200).json({
@@ -123,4 +123,9 @@ export const getReviews = async (req, res) => {
       error: error.message
     });
   }
+};
+
+module.exports = {
+  createReview,
+  getReviews
 };

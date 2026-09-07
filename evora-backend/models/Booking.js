@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema(
   {
@@ -79,4 +79,4 @@ const bookingSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model('Booking', bookingSchema, 'booking');
+module.exports = mongoose.models.Booking || mongoose.model('Booking', bookingSchema, 'booking');

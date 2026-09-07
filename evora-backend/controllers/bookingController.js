@@ -5,14 +5,14 @@
 //   (2) the My Reservations page — all bookings for a driver,
 //       with real-time status resolution and reschedule eligibility
 
-import mongoose from 'mongoose';
-import Booking from '../models/Booking.js';
-import '../models/TimeSlot.js';
-import '../models/Connector.js';
-import '../models/Station.js';
-import '../models/Charger.js';
-import '../models/Vehicle.js';
-import '../models/EvDriver.js';
+const mongoose = require('mongoose');
+const Booking = require('../models/Booking');
+require('../models/TimeSlot');
+require('../models/Connector');
+require('../models/Station');
+require('../models/Charger');
+require('../models/Vehicle');
+require('../models/EvDriver');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -97,7 +97,7 @@ function formatDateDisplay(rawDate) {
  *
  * The ?status query param filters the result set. Defaults to 'all'.
  */
-export async function getDriverBookings(req, res) {
+async function getDriverBookings(req, res) {
     try {
         const { driverId } = req.params;
         const { status = 'all' } = req.query;
@@ -164,7 +164,7 @@ export async function getDriverBookings(req, res) {
  * Returns a single booking with everything the Review page needs —
  * station details come via the charger reference (charger → station).
  */
-export async function getBookingForReview(req, res) {
+async function getBookingForReview(req, res) {
     try {
         const booking = await Booking.findById(req.params.id)
             .populate({
@@ -202,7 +202,7 @@ export async function getBookingForReview(req, res) {
  * PATCH /api/bookings/:id/cancel
  * Marks a booking as cancelled in MongoDB.
  */
-export async function cancelBooking(req, res) {
+async function cancelBooking(req, res) {
     try {
         const now = new Date();
         const cancelledBooking = await Booking.findByIdAndUpdate(
@@ -225,3 +225,9 @@ export async function cancelBooking(req, res) {
         res.status(400).json({ message: error.message });
     }
 }
+
+module.exports = {
+    getDriverBookings,
+    getBookingForReview,
+    cancelBooking
+};

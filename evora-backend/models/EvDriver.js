@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const evDriverSchema = new mongoose.Schema(
   {
@@ -12,4 +12,4 @@ const evDriverSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model('EvDriver', evDriverSchema, 'ev_driver');
+module.exports = mongoose.models.EvDriver || mongoose.model('EvDriver', evDriverSchema, 'ev_driver');

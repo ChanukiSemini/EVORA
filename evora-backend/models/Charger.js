@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const chargerSchema = new mongoose.Schema(
   {
@@ -35,4 +35,4 @@ const chargerSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model('Charger', chargerSchema, 'charger');
+module.exports = mongoose.models.Charger || mongoose.model('Charger', chargerSchema, 'charger');

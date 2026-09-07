@@ -1,9 +1,9 @@
-import express from 'express';
-import { createReview, getReviews } from '../controllers/reviewController.js';
+const express = require('express');
+const { createReview, getReviews } = require('../controllers/reviewController');
 
 const router = express.Router();
 
 router.get('/', getReviews);
 router.post('/', createReview);
 
-export default router;
+module.exports = router;

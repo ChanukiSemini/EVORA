@@ -1,10 +1,10 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const timeSlotSchema = new mongoose.Schema(
   {
-    time: { type: String, required: true }
+    time: { type: String, required: true, unique: true }
   },
   { timestamps: true, collection: 'timeslot' }
 );
 
-export default mongoose.model('TimeSlot', timeSlotSchema, 'timeslot');
+module.exports = mongoose.models.TimeSlot || mongoose.model('TimeSlot', timeSlotSchema, 'timeslot');
