@@ -11,6 +11,13 @@ function ManageInfrastructure() {
   const [showRemoveModal, setShowRemoveModal] = useState(false)
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false)
 
+  const storedUser = JSON.parse(
+    localStorage.getItem('evora_current_user') ||
+    localStorage.getItem('evora_host_user') ||
+    '{}'
+  )
+  const displayName = storedUser.name || storedUser.company || 'Host Admin'
+
   return (
     <div className="dashboard-container page-wrapper">
       <div className="dashboard-card">
@@ -19,7 +26,7 @@ function ManageInfrastructure() {
           <div>
             <h2 style={{ color: '#22e584', fontSize: '24px', margin: 0, fontWeight: 'bold' }}>MANAGE CHARGERS </h2>
             <p style={{ color: '#8A9EA8', fontSize: '13px', marginTop: '4px', margin: 0 }}>
-              {company.name} - Logged in as Admin Pamod
+              {company.name} — Logged in as {displayName}
             </p>
           </div>
         </div>

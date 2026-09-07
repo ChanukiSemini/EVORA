@@ -4,7 +4,8 @@
 // Interactive date chips, time slot grid, schedule comparison & EVORA design system
 // ============================================
 
-import { useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { generateBookingDays, ALL_HOURLY_SLOTS, computeSlotStatus } from '../utils/bookingHelpers';
 
 /* ---------- SVG Icons ---------- */
 const IconCalendarClock = () => (
@@ -29,40 +30,47 @@ const IconArrowRight = () => (
     </svg>
 );
 
-/* ---------- Mock Dates & Time Slots ---------- */
-const AVAILABLE_DATES = [
-    { id: 'd1', day: 'Sat', date: 'Oct 24', fullDate: 'Oct 24, 2026' },
-    { id: 'd2', day: 'Sun', date: 'Oct 25', fullDate: 'Oct 25, 2026' },
-    { id: 'd3', day: 'Mon', date: 'Oct 26', fullDate: 'Oct 26, 2026' },
-    { id: 'd4', day: 'Tue', date: 'Oct 27', fullDate: 'Oct 27, 2026' },
-    { id: 'd5', day: 'Wed', date: 'Oct 28', fullDate: 'Oct 28, 2026' },
-];
-
-const AVAILABLE_SLOTS = [
-    { time: '08:30 AM', available: true },
-    { time: '10:00 AM', available: false }, // occupied
-    { time: '11:30 AM', available: true },
-    { time: '01:15 PM', available: true },
-    { time: '03:00 PM', available: true },
-    { time: '04:45 PM', available: true },
-    { time: '06:30 PM', available: false }, // occupied
-    { time: '08:00 PM', available: true },
-];
-
 const RescheduleBookingModal = ({ booking, onClose, onConfirmReschedule }) => {
     const currentBooking = booking || {
         id: '212456',
         station: 'Keels Kaduwela Bay 01',
-        date: 'Oct 24, 2026',
-        time: '10:30 AM',
+        date: 'Today',
+        time: '12:00 PM',
     };
 
-    const [selectedDateObj, setSelectedDateObj] = useState(AVAILABLE_DATES[2]); // Oct 26
-    const [selectedTimeSlot, setSelectedTimeSlot] = useState('01:15 PM');
+    const dates = useMemo(() => generateBookingDays(0, 6), []);
+    const [selectedDateIdx, setSelectedDateIdx] = useState(1); // Default to tomorrow or first available
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+
+    const activeDateObj = dates[selectedDateIdx] || dates[0];
+
+    const slots = useMemo(() => {
+        return ALL_HOURLY_SLOTS.map((slot) => {
+            const statusInfo = computeSlotStatus({
+                slotHour: slot.hour,
+                slotTime: slot.time,
+                selectedDate: activeDateObj?.date,
+            });
+            return {
+                ...slot,
+                ...statusInfo,
+            };
+        });
+    }, [activeDateObj?.date]);
+
+    // Auto-select valid slot
+    useEffect(() => {
+        const currentSlotValid = slots.find((s) => s.time === selectedTimeSlot && !s.disabled);
+        if (!currentSlotValid) {
+            const firstAvailable = slots.find((s) => !s.disabled);
+            if (firstAvailable) setSelectedTimeSlot(firstAvailable.time);
+        }
+    }, [slots, selectedTimeSlot]);
 
     const handleConfirm = () => {
         if (onConfirmReschedule) {
-            onConfirmReschedule(currentBooking.id, selectedDateObj.fullDate, selectedTimeSlot);
+            const formattedDate = `${activeDateObj.month} ${activeDateObj.num}, ${activeDateObj.year}`;
+            onConfirmReschedule(currentBooking.id, formattedDate, selectedTimeSlot);
         }
         if (onClose) onClose();
     };
@@ -91,16 +99,16 @@ const RescheduleBookingModal = ({ booking, onClose, onConfirmReschedule }) => {
                 <div className="reschedule-section">
                     <span className="reschedule-section-title">SELECT NEW DATE</span>
                     <div className="reschedule-dates-row">
-                        {AVAILABLE_DATES.map((d) => {
-                            const isSelected = selectedDateObj.id === d.id;
+                        {dates.map((d, i) => {
+                            const isSelected = selectedDateIdx === i;
                             return (
                                 <button
-                                    key={d.id}
+                                    key={d.isoDate}
                                     className={`reschedule-date-chip ${isSelected ? 'active' : ''}`}
-                                    onClick={() => setSelectedDateObj(d)}
+                                    onClick={() => setSelectedDateIdx(i)}
                                 >
                                     <span className="reschedule-chip-day">{d.day}</span>
-                                    <span className="reschedule-chip-date">{d.date}</span>
+                                    <span className="reschedule-chip-date">{d.shortMonth} {d.num}</span>
                                     {isSelected && <span className="reschedule-chip-check"><IconCheck /></span>}
                                 </button>
                             );
@@ -112,17 +120,19 @@ const RescheduleBookingModal = ({ booking, onClose, onConfirmReschedule }) => {
                 <div className="reschedule-section">
                     <span className="reschedule-section-title">SELECT TIME SLOT</span>
                     <div className="reschedule-slots-grid">
-                        {AVAILABLE_SLOTS.map((s, idx) => {
-                            const isSelected = selectedTimeSlot === s.time;
+                        {slots.map((s) => {
+                            const isSelected = selectedTimeSlot === s.time && !s.disabled;
                             return (
                                 <button
-                                    key={idx}
-                                    className={`reschedule-slot-pill ${isSelected ? 'active' : ''} ${!s.available ? 'occupied' : ''}`}
-                                    onClick={() => s.available && setSelectedTimeSlot(s.time)}
-                                    disabled={!s.available}
+                                    key={s.time}
+                                    className={`reschedule-slot-pill ${isSelected ? 'active' : ''} ${s.status === 'booked' ? 'occupied' : ''} ${s.disabled ? 'disabled' : ''}`}
+                                    onClick={() => !s.disabled && setSelectedTimeSlot(s.time)}
+                                    disabled={s.disabled}
+                                    title={s.status === 'past' ? 'Past time' : s.status === 'booked' ? 'Already booked' : 'Available'}
                                 >
                                     <span className="reschedule-slot-time">{s.time}</span>
-                                    {!s.available && <span className="reschedule-slot-busy">Booked</span>}
+                                    {s.status === 'booked' && <span className="reschedule-slot-busy">Booked</span>}
+                                    {s.status === 'past' && <span className="reschedule-slot-busy" style={{ background: '#475569', color: '#cbd5e1' }}>Past</span>}
                                 </button>
                             );
                         })}
@@ -140,7 +150,7 @@ const RescheduleBookingModal = ({ booking, onClose, onConfirmReschedule }) => {
 
                     <div className="reschedule-comp-col">
                         <span className="reschedule-comp-label">New Scheduled Time</span>
-                        <span className="reschedule-comp-val new">{selectedDateObj.fullDate} · {selectedTimeSlot}</span>
+                        <span className="reschedule-comp-val new">{activeDateObj.shortMonth} {activeDateObj.num}, {activeDateObj.year} · {selectedTimeSlot || 'Select time'}</span>
                     </div>
                 </div>
 
@@ -149,7 +159,7 @@ const RescheduleBookingModal = ({ booking, onClose, onConfirmReschedule }) => {
                     <button className="reschedule-btn-secondary" onClick={onClose}>
                         Keep Current
                     </button>
-                    <button className="reschedule-btn-primary" onClick={handleConfirm}>
+                    <button className="reschedule-btn-primary" onClick={handleConfirm} disabled={!selectedTimeSlot}>
                         Confirm Reschedule
                     </button>
                 </div>

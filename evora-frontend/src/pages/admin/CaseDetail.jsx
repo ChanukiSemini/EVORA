@@ -19,7 +19,7 @@ function CaseDetail() {
       <div className="dashboard-container chat-narrow page-wrapper">
         <div className="dashboard-card">
           <p>Case not found.</p>
-          <button className="back-btn" onClick={() => navigate('/admin/chatbot')}>{'<'} Back</button>
+          <button className="back-btn" onClick={() => navigate('/admin/help-desk')}>{'<'} Back</button>
         </div>
       </div>
     )
@@ -43,20 +43,20 @@ function CaseDetail() {
 
   function handleResolve() {
     resolveSession(session.id)
-    navigate('/admin/chatbot')
+    navigate('/admin/help-desk')
   }
 
   function handleFlagBug() {
     resolveSession(session.id)
     alert('Flagged for dev team review. Case marked as handled.')
-    navigate('/admin/chatbot')
+    navigate('/admin/help-desk')
   }
 
   return (
     <div className="dashboard-container chat-narrow page-wrapper">
       <div className="dashboard-card">
         <div className="detail-header">
-          <button className="back-btn" onClick={() => navigate('/admin/chatbot')}>{'<'}</button>
+          <button className="back-btn" onClick={() => navigate('/admin/help-desk')}>{'<'}</button>
           <div>
             <h2>Case Detail</h2>
             {session.escalated && (

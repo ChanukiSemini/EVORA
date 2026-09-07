@@ -58,16 +58,39 @@ const getStations = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Get a single station by its slug (matches useParams() id in StationDetails.jsx)
+// @desc    Get a single station by its slug or ID (matches useParams() id in StationDetails.jsx)
 // @route   GET /api/stations/:id
 // @access  Public
 const getStationById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const station = await Station.findOne({ slug: id });
+  let station = await Station.findOne({ slug: id });
+  if (!station) station = await Station.findOne({ branchId: id });
+  if (!station && require('mongoose').Types.ObjectId.isValid(id)) {
+    station = await Station.findById(id);
+  }
 
   if (!station) {
     throw new ApiError(404, `Station not found for id '${id}'`);
+  }
+
+  // Ensure baysDetail is populated
+  if (!station.baysDetail || station.baysDetail.length === 0) {
+    const rawBays = station.bays || ['available', 'available', 'available', 'available'];
+    station.baysDetail = rawBays.map((st, i) => {
+      const isSlow = i >= 2;
+      const status = st === 'available' ? 'available' : st === 'soon' || st === 'limited' ? 'limited' : 'unavailable';
+      const label = status === 'available' ? 'Available' : status === 'limited' ? 'Limited' : 'Unavailable';
+      return {
+        bayId: `bay-${i + 1}`,
+        name: `Bay ${i + 1}`,
+        status,
+        label,
+        type: isSlow ? 'Type 2' : 'CCS2',
+        power: isSlow ? '22kW' : '150kW',
+        ratePerHour: isSlow ? 1680 : 2450,
+      };
+    });
   }
 
   return sendResponse(res, 200, station);

@@ -5,7 +5,7 @@
 // ============================================
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import BookCharger from './BookCharger';
 
 /* ---------- Icon components ---------- */
@@ -53,8 +53,8 @@ const IconArrowRight = () => (
     </svg>
 );
 
-/* ---------- Mock booking data ---------- */
-const BOOKING = {
+/* ---------- Fallback mock booking data ---------- */
+const DEFAULT_BOOKING = {
     id: '212456',
     station: 'Keels Kaduwela Bay 01',
     stationLabel: 'Station Location',
@@ -64,10 +64,13 @@ const BOOKING = {
     durationLabel: 'Estimated Duration',
 };
 
-const BookingConfirmedModal = ({ onClose, onNavigateBookings }) => {
+const BookingConfirmedModal = ({ bookingData, onClose, onNavigateBookings }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [showCheck, setShowCheck] = useState(false);
     const [showContent, setShowContent] = useState(false);
+
+    const booking = bookingData || location.state?.booking || DEFAULT_BOOKING;
 
     useEffect(() => {
         const t1 = setTimeout(() => setShowCheck(true), 120);
@@ -79,7 +82,15 @@ const BookingConfirmedModal = ({ onClose, onNavigateBookings }) => {
         if (onClose) {
             onClose();
         } else {
-            navigate('/book-charger');
+            const stationSlug = booking.stationSlug || location.state?.stationParam || location.state?.stationData?.slug;
+            const bayId = booking.bayId || location.state?.selectedBayId;
+            if (stationSlug) {
+                navigate(`/book-charger?station=${encodeURIComponent(stationSlug)}${bayId ? `&bay=${encodeURIComponent(bayId)}` : ''}`);
+            } else if (window.history.length > 1) {
+                navigate(-1);
+            } else {
+                navigate('/book-charger');
+            }
         }
     };
 
@@ -121,7 +132,7 @@ const BookingConfirmedModal = ({ onClose, onNavigateBookings }) => {
                 {/* Title & Booking ID */}
                 <div className={`bc-title-block ${showContent ? 'visible' : ''}`}>
                     <h2 className="bc-title">Booking Confirmed</h2>
-                    <p className="bc-booking-id">Booking Id : {BOOKING.id}</p>
+                    <p className="bc-booking-id">Booking Id : {booking.bookingNumber || booking.id}</p>
                 </div>
 
                 {/* Booking details card */}
@@ -130,24 +141,24 @@ const BookingConfirmedModal = ({ onClose, onNavigateBookings }) => {
                         <div className="bc-detail-row">
                             <span className="bc-detail-icon bc-icon-accent"><IconMapPin /></span>
                             <div className="bc-detail-text">
-                                <span className="bc-detail-value">{BOOKING.station}</span>
-                                <span className="bc-detail-label">{BOOKING.stationLabel}</span>
+                                <span className="bc-detail-value">{booking.stationName || booking.station}</span>
+                                <span className="bc-detail-label">{booking.stationLabel || 'Station Location'}</span>
                             </div>
                         </div>
                         <div className="bc-detail-divider" />
                         <div className="bc-detail-row">
                             <span className="bc-detail-icon bc-icon-cyan"><IconCalendar /></span>
                             <div className="bc-detail-text">
-                                <span className="bc-detail-value">{BOOKING.dateTime}</span>
-                                <span className="bc-detail-label">{BOOKING.dateTimeLabel}</span>
+                                <span className="bc-detail-value">{booking.dateTime || (booking.date ? new Date(booking.date).toLocaleDateString() + ' ' + booking.slot : 'Today 12:00 PM')}</span>
+                                <span className="bc-detail-label">{booking.dateTimeLabel || 'Date & Time'}</span>
                             </div>
                         </div>
                         <div className="bc-detail-divider" />
                         <div className="bc-detail-row">
                             <span className="bc-detail-icon bc-icon-amber"><IconClock /></span>
                             <div className="bc-detail-text">
-                                <span className="bc-detail-value">{BOOKING.duration}</span>
-                                <span className="bc-detail-label">{BOOKING.durationLabel}</span>
+                                <span className="bc-detail-value">{booking.duration || `${booking.durationMinutes || 60} min`}</span>
+                                <span className="bc-detail-label">{booking.durationLabel || 'Estimated Duration'}</span>
                             </div>
                         </div>
                     </div>

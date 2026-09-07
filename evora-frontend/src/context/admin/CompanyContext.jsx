@@ -4,8 +4,26 @@ import { company as initialCompany } from '../../data/admin/companyData'
 const API_BASE_URL = 'http://localhost:5000/api/admin'
 const CompanyContext = createContext()
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('evora_token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 export function CompanyProvider({ children }) {
-  const [company, setCompany] = useState(initialCompany)
+  const storedUser = JSON.parse(
+    localStorage.getItem('evora_current_user') ||
+    localStorage.getItem('evora_host_user') ||
+    '{}'
+  )
+  const hostCompanyName = storedUser.company || storedUser.name || initialCompany.name || 'GreenCharge Network'
+
+  const [company, setCompany] = useState({
+    ...initialCompany,
+    name: hostCompanyName,
+  })
 
   // Helper to normalize DB format to Frontend state format
   const formatBranchFromDB = (b) => ({
@@ -30,12 +48,18 @@ export function CompanyProvider({ children }) {
   useEffect(() => {
     async function fetchBranches() {
       try {
-        const response = await fetch(`${API_BASE_URL}/branches`)
+        const response = await fetch(`${API_BASE_URL}/branches`, {
+          headers: getAuthHeaders(),
+        })
         if (response.ok) {
           const dbBranches = await response.json()
           if (Array.isArray(dbBranches) && dbBranches.length > 0) {
             const formatted = dbBranches.map(formatBranchFromDB)
-            setCompany((prev) => ({ ...prev, branches: formatted }))
+            setCompany((prev) => ({
+              ...prev,
+              name: hostCompanyName,
+              branches: formatted,
+            }))
           }
         }
       } catch (err) {
@@ -43,7 +67,7 @@ export function CompanyProvider({ children }) {
       }
     }
     fetchBranches()
-  }, [])
+  }, [hostCompanyName])
 
   async function updatePort(branchId, chargerId, portId, updates) {
     // Optimistic UI update
@@ -73,7 +97,7 @@ export function CompanyProvider({ children }) {
       if (updates.status) {
         await fetch(`${API_BASE_URL}/branches/${branchId}/chargers/${chargerId}/ports/${portId}/status`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ status: updates.status }),
         })
       }
@@ -103,6 +127,7 @@ export function CompanyProvider({ children }) {
     try {
       await fetch(`${API_BASE_URL}/branches/${branchId}/chargers/${chargerId}/ports/${portId}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       })
     } catch (err) {
       console.error('Failed to remove port on backend:', err.message)
@@ -132,7 +157,7 @@ export function CompanyProvider({ children }) {
 
       await fetch(`${API_BASE_URL}/branches/${branchId}/chargers`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ chargers: formattedForDB }),
       })
     } catch (err) {
@@ -167,7 +192,7 @@ export function CompanyProvider({ children }) {
         for (const port of charger.ports) {
           await fetch(`${API_BASE_URL}/branches/${branchId}/chargers/${chargerId}/ports/${port.id}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ status }),
           })
         }
@@ -196,14 +221,13 @@ export function CompanyProvider({ children }) {
     try {
       await fetch(`${API_BASE_URL}/branches/${branchId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status }),
       })
     } catch (err) {
       console.error('Failed to sync branch status with backend:', err.message)
     }
   }
-
 
   async function addBranch(newBranchData) {
     const slug = newBranchData.name.toLowerCase().trim().replace(/\s+/g, '-')
@@ -255,7 +279,7 @@ export function CompanyProvider({ children }) {
 
       await fetch(`${API_BASE_URL}/branches`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(dbPayload),
       })
     } catch (err) {
@@ -274,11 +298,27 @@ export function CompanyProvider({ children }) {
     try {
       await fetch(`${API_BASE_URL}/branches/${branchId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(updatedData),
       })
     } catch (err) {
       console.error('Failed to update branch on backend:', err.message)
+    }
+  }
+
+  async function deleteBranch(branchId) {
+    setCompany((prev) => ({
+      ...prev,
+      branches: prev.branches.filter((b) => b.id !== branchId),
+    }))
+
+    try {
+      await fetch(`${API_BASE_URL}/branches/${branchId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+    } catch (err) {
+      console.error('Failed to delete branch on backend:', err.message)
     }
   }
 
@@ -293,6 +333,7 @@ export function CompanyProvider({ children }) {
         setBranchStatus,
         addBranch,
         updateBranch,
+        deleteBranch,
       }}
     >
       {children}
