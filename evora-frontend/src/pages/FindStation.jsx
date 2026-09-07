@@ -131,14 +131,12 @@ const FindStationContent = ({
 
     return (
         <>
-            <div className="fs-topbar">
-                <div className="fs-search-wrap">
-                    <IconSearch />
-                    <input
-                        placeholder="Search location or station name..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+            <header className="fs-topbar">
+                <div className="fs-header-titles">
+                    <h1 className="fs-page-title">Find Your Station</h1>
+                    <p className="fs-page-subtitle">
+                        Explore real-time charging stations, live bay availability, and reserve your slot.
+                    </p>
                 </div>
                 <div className="fs-topbar-actions">
                     <div className="fs-popout-anchor">
@@ -204,9 +202,7 @@ const FindStationContent = ({
                         )}
                     </div>
                 </div>
-            </div>
-
-            <h1 className="fs-heading">Find Your Station</h1>
+            </header>
 
             <div className="fs-grid">
                 <div className="fs-left">
