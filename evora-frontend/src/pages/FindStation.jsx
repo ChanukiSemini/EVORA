@@ -270,38 +270,13 @@ const FindStationContent = ({
                             style={{ transform: `scale(${zoom})` }}
                         >
                             <svg className="fs-map-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                {/* Water shading & Land Boundary */}
-                                <path d="M 22 0 C 26 20, 24 45, 28 70 C 31 85, 36 100, 36 100 L 0 100 L 0 0 Z" fill="rgba(2, 22, 31, 0.45)" />
-                                <path d="M 22 0 C 26 20, 24 45, 28 70 C 31 85, 36 100, 36 100" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
-
-                                {/* Urban Street Grid Lines */}
-                                <line x1="20" y1="20" x2="85" y2="20" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                                <line x1="25" y1="40" x2="88" y2="40" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                                <line x1="30" y1="60" x2="90" y2="60" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                                <line x1="35" y1="80" x2="90" y2="80" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                                <line x1="30" y1="10" x2="30" y2="90" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                                <line x1="50" y1="10" x2="50" y2="90" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-                                <line x1="70" y1="10" x2="70" y2="90" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-
-                                {/* A1 Highway Corridor to Kandy */}
-                                <path d="M 32 30 Q 50 24 74 22" stroke="rgba(255, 255, 255, 0.09)" strokeWidth="1.2" fill="none" />
-
-                                {/* Galle Road / Marine Drive Coastal Arterial */}
-                                <path d="M 30 15 Q 32 45 38 75 T 38 88" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="1.4" fill="none" />
-
-                                {/* E01 Southern Expressway Corridor */}
-                                <path d="M 40 55 Q 50 64 56 72 T 44 90" stroke="rgba(255, 255, 255, 0.11)" strokeWidth="1.4" fill="none" />
-
-                                {/* East-West Urban Corridors (Kaduwela / Outer Circular) */}
-                                <path d="M 30 35 Q 48 38 68 30 T 95 28" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1.0" fill="none" />
-                                <path d="M 28 55 Q 48 58 72 52" stroke="rgba(255, 255, 255, 0.07)" strokeWidth="0.9" fill="none" />
-
-                                {/* Geographic Area Labels */}
-                                <text x="24" y="24" fill="rgba(138,158,168,0.35)" fontSize="2.8" fontWeight="bold" letterSpacing="0.5">COLOMBO</text>
-                                <text x="70" y="16" fill="rgba(138,158,168,0.35)" fontSize="2.8" fontWeight="bold" letterSpacing="0.5">KANDY</text>
-                                <text x="58" y="26" fill="rgba(138,158,168,0.25)" fontSize="2.2">KADUWELA</text>
-                                <text x="56" y="66" fill="rgba(138,158,168,0.3)" fontSize="2.2" fontWeight="bold" letterSpacing="0.4">E01 EXPRESSWAY</text>
-                                <text x="40" y="94" fill="rgba(138,158,168,0.35)" fontSize="2.8" fontWeight="bold" letterSpacing="0.5">GALLE</text>
+                                {/* Subtle Minimal Map Coordinate Grid */}
+                                <defs>
+                                    <pattern id="fs-map-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="0.5" />
+                                    </pattern>
+                                </defs>
+                                <rect width="100%" height="100%" fill="url(#fs-map-grid)" />
 
                                 {/* Interactive Animated Route Path to selected station */}
                                 {routeOn && (
