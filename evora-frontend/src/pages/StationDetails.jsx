@@ -6,12 +6,12 @@
 // placeholder message — no booking flow yet.
 // ============================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import MobileNav from '../components/MobileNav';
 import StationGallery from '../components/StationGallery';
-import { getStationById, STATIONS } from '../data/stations';
+import { STATIONS } from '../data/stations';
 import { getDirectionsUrl } from '../utils/directions';
 import {
     IconBack, IconMenu, IconPin, IconStarFilled, IconPlug, IconClock,
@@ -180,9 +180,32 @@ const DetailsContent = ({ station, onBook, onDirections, navigate }) => (
 const StationDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const station = getStationById(id) || STATIONS[0];
+    const [station, setStation] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [menuOpen, setMenuOpen] = useState(false);
     const [toast, setToast] = useState(false);
+
+    // Fetch station from backend; fall back to local static data if API is unreachable
+    useEffect(() => {
+        setLoading(true);
+        fetch(`/api/stations/${id}`)
+            .then((res) => {
+                if (!res.ok) throw new Error('not found');
+                return res.json();
+            })
+            .then((json) => {
+                // Backend uses 'slug' as the id; normalise to 'id' for the UI
+                const data = json.data || json;
+                setStation({ ...data, id: data.slug || data.id || id });
+                setLoading(false);
+            })
+            .catch(() => {
+                // API unreachable — fall back to local static data
+                const fallback = STATIONS.find((s) => s.id === id) || STATIONS[0];
+                setStation(fallback);
+                setLoading(false);
+            });
+    }, [id]);
 
     useEffect(() => {
         if (!toast) return;
@@ -195,6 +218,28 @@ const StationDetails = () => {
         const url = getDirectionsUrl(station);
         if (url) window.open(url, '_blank', 'noopener,noreferrer');
     };
+
+    if (loading) {
+        return (
+            <div className="app-shell station-details-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+                <Sidebar />
+                <main className="app-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Loading station…</div>
+                </main>
+            </div>
+        );
+    }
+
+    if (!station) {
+        return (
+            <div className="app-shell station-details-page">
+                <Sidebar />
+                <main className="app-main" style={{ padding: '2rem', color: 'var(--text-secondary)' }}>
+                    Station not found.
+                </main>
+            </div>
+        );
+    }
 
     return (
         <>
