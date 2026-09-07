@@ -10,13 +10,13 @@ try {
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/evora', {
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/evora'
+    const conn = await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 10000,
     })
-    console.log(`MongoDB Connected: ${conn.connection.host}`)
+    console.log(`✅ MongoDB Connected to database [${conn.connection.name}] on host: ${conn.connection.host}`)
   } catch (error) {
-    console.warn(`MongoDB Warning: ${error.message}`)
-    console.warn(`(Make sure MongoDB is running locally or set MONGO_URI in .env)`)
+    console.error(`❌ MongoDB Connection Error: ${error.message}`)
   }
 }
 

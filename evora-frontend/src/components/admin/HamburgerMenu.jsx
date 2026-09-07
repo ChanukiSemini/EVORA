@@ -12,14 +12,22 @@ function HamburgerMenu() {
     location.pathname.startsWith('/admin/manage-infrastructure') ||
     location.pathname.startsWith('/admin/register-hardware')
 
+  const storedUser = JSON.parse(localStorage.getItem('evora_current_user') || localStorage.getItem('evora_host_user') || '{}');
+  const displayName = storedUser.name || storedUser.company || 'Host Admin';
+  const displayEmail = storedUser.email || 'host@evora.lk';
+  const avatarLetter = (displayName[0] || 'H').toUpperCase();
+
   function handleNavigate(path) {
     navigate(path)
     setIsOpen(false)
   }
 
   function handleLogout() {
-    alert('Logged out (this is a placeholder — no real auth is connected yet).')
+    localStorage.removeItem('evora_token')
+    localStorage.removeItem('evora_current_user')
+    localStorage.removeItem('evora_host_user')
     setIsOpen(false)
+    navigate('/login')
   }
 
   const linkStyle = (isActive) => ({
@@ -72,10 +80,10 @@ function HamburgerMenu() {
 
             <div className="hamburger-footer">
               <div className="hamburger-profile">
-                <div className="avatar-circle">P</div>
+                <div className="avatar-circle">{avatarLetter}</div>
                 <div>
-                  <strong style={{ fontSize: '13px' }}>Admin Pamod</strong>
-                  <p style={{ fontSize: '11px', color: '#9ca3af' }}>pamod@greencharge.lk</p>
+                  <strong style={{ fontSize: '13px' }}>{displayName}</strong>
+                  <p style={{ fontSize: '11px', color: '#9ca3af' }}>{displayEmail}</p>
                 </div>
               </div>
               <button className="logout-btn" onClick={handleLogout}>

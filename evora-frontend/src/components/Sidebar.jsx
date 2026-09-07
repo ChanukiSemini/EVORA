@@ -9,9 +9,43 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { NAV_ITEMS } from './navigation.js';
 import { IconBolt, IconLogout } from './NavigationIcons.jsx';
 
-const Sidebar = ({ user = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.com' } }) => {
+const Sidebar = ({ user }) => {
     const navigate = useNavigate();
-    const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+    // Dynamically retrieve authenticated user
+    const getActiveUser = () => {
+        if (user && user.name && user.name !== 'Sarah Jenkins') return user;
+        try {
+            const stored = JSON.parse(
+                localStorage.getItem('evora_current_user') ||
+                localStorage.getItem('evora_driver_user') ||
+                localStorage.getItem('evora_host_user') ||
+                '{}'
+            );
+            const name = stored.fullName || stored.name || (user && user.name) || 'EV Driver';
+            const email = stored.email || (user && user.email) || 'driver@evora.lk';
+            return { name, email, ...stored };
+        } catch {
+            return user || { name: 'EV Driver', email: 'driver@evora.lk' };
+        }
+    };
+
+    const currentUser = getActiveUser();
+    const initials = (currentUser.name || 'EV')
+        .split(' ')
+        .filter(Boolean)
+        .map(n => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'EV';
+
+    const handleLogout = () => {
+        localStorage.removeItem('evora_token');
+        localStorage.removeItem('evora_current_user');
+        localStorage.removeItem('evora_driver_user');
+        localStorage.removeItem('evora_host_user');
+        navigate('/login');
+    };
 
     return (
         <aside className="app-sidebar">
@@ -37,11 +71,11 @@ const Sidebar = ({ user = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.
                 <div className="sidebar-user-card" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }} role="button" tabIndex={0}>
                     <div className="sidebar-user-avatar">{initials}</div>
                     <div className="sidebar-user-info">
-                        <span className="sidebar-user-name">{user.name}</span>
-                        <span className="sidebar-user-email">{user.email}</span>
+                        <span className="sidebar-user-name">{currentUser.name}</span>
+                        <span className="sidebar-user-email">{currentUser.email}</span>
                     </div>
                 </div>
-                <button className="sidebar-logout-btn" onClick={() => navigate('/login')}>
+                <button className="sidebar-logout-btn" onClick={handleLogout}>
                     <IconLogout /> Log Out
                 </button>
             </div>
