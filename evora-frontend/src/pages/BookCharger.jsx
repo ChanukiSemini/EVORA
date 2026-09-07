@@ -10,7 +10,6 @@ import {
     IconBolt,
     IconCalendar,
     IconReceipt,
-    IconCreditCard,
     IconCCTV,
     IconRestroom,
     IconLounge,
@@ -557,9 +556,6 @@ const BookCharger = () => {
                             {/* Estimated Total Box */}
                             <div className="bc-total-card">
                                 <div className="bc-total-left">
-                                    <span className="bc-total-icon">
-                                        <IconCreditCard />
-                                    </span>
                                     <div>
                                         <span className="bc-total-title">Estimated Total</span>
                                         <span className="bc-total-sub">Taxes & fees included</span>
