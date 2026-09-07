@@ -12,6 +12,7 @@ import Sidebar from '../components/Sidebar';
 import MobileNav from '../components/MobileNav';
 import { STATIONS } from '../data/stations';
 import { getDirectionsUrl } from '../utils/directions';
+import { getStationImages } from '../utils/stationImageHelper';
 import {
     IconSearch, IconHeart, IconBell, IconMenu, IconChevronDown, IconCheck,
     IconStarFilled, IconPin, IconPlug, IconCarSmall, IconLocate, IconPlus,
@@ -32,19 +33,76 @@ const stationHasPort = (station, port) =>
         return false;
     });
 
-// Fixed layout positions (percent of map card) so the pins line up
-// with the little illustrated "roads" behind them.
+// Map layout coordinates (% of map container) for stations across Sri Lanka / Colombo corridors
 const MAP_POSITIONS = {
-    'one-galle-face': { x: 44, y: 78 },
-    'colombo-city-center': { x: 30, y: 22 },
-    'independence-arcade': { x: 33, y: 48 },
-    'havelock-city': { x: 63, y: 55 },
-    'morven-hotel': { x: 52, y: 34 },
-    'vedrive-station': { x: 78, y: 30 },
-    'volt-charge-cod': { x: 22, y: 62 },
+    'one-galle-face': { x: 34, y: 38 },
+    'colombo-city-center': { x: 38, y: 28 },
+    'independence-arcade': { x: 44, y: 46 },
+    'havelock-city': { x: 42, y: 58 },
+    'morven-hotel': { x: 32, y: 48 },
+    'vedrive-station': { x: 50, y: 34 },
+    'volt-charge-cod': { x: 28, y: 64 },
+    'cinnamon-grand-colombo': { x: 30, y: 42 },
+    'branch-cinnamon-grand-colombo-1788819001001': { x: 30, y: 42 },
+    'kandy-city-centre': { x: 74, y: 22 },
+    'branch-kcc-kandy-1788819002002': { x: 74, y: 22 },
+    'galle-fort-heritage-station': { x: 38, y: 84 },
+    'branch-galle-fort-1788819003003': { x: 38, y: 84 },
+    'southern-expressway-welipenna': { x: 56, y: 72 },
+    'branch-welipenna-e01-1788819004004': { x: 56, y: 72 },
+    'branch-keells-kaduwela-1788819005005': { x: 64, y: 36 },
+    'branch-keells-union-place-1788819006006': { x: 36, y: 32 },
+    'branch-keells-kohuwala-1788819007007': { x: 48, y: 60 },
+    'branch-s-ev-charging-colombo-1788818271550': { x: 68, y: 30 },
 };
 
-const getPos = (id) => MAP_POSITIONS[id] || { x: 50, y: 50 };
+const getPos = (stationOrId) => {
+    if (!stationOrId) return { x: 45, y: 45 };
+    const id = typeof stationOrId === 'object'
+        ? (stationOrId.slug || stationOrId.branchId || stationOrId.id || '')
+        : String(stationOrId);
+
+    if (MAP_POSITIONS[id]) return MAP_POSITIONS[id];
+
+    // Check partial slug matching
+    for (const [k, pos] of Object.entries(MAP_POSITIONS)) {
+        if (id.includes(k) || k.includes(id)) return pos;
+    }
+
+    const s = typeof stationOrId === 'object' ? stationOrId : {};
+    if (s.lat && s.lng) {
+        const x = Math.max(16, Math.min(84, Math.round(((s.lng - 79.7) / (80.9 - 79.7)) * 68 + 16)));
+        const y = Math.max(16, Math.min(84, Math.round((1 - (s.lat - 5.9) / (7.5 - 5.9)) * 68 + 16)));
+        return { x, y };
+    }
+
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = (hash << 5) - hash + id.charCodeAt(i);
+    return {
+        x: 18 + (Math.abs(hash) % 64),
+        y: 20 + (Math.abs(hash >> 3) % 60),
+    };
+};
+
+// Dynamic status evaluator for map pins, badges, and availability indicators
+export const getStationStatus = (station) => {
+    if (!station) return 'available';
+    const status = (station.status || '').toLowerCase().trim();
+    const total = station.pluggedTotal ?? (station.portsCount || (station.baysDetail?.length) || (station.bays?.length) || 4);
+    const avail = station.pluggedAvailable ?? (
+        Array.isArray(station.baysDetail)
+            ? station.baysDetail.filter((b) => b && b.status === 'available').length
+            : (Array.isArray(station.bays) ? station.bays.filter((b) => b === 'available' || b?.status === 'available').length : total)
+    );
+
+    if (status === 'full' || status === 'offline' || status === 'maintenance' || status === 'closed' || status === 'unavailable' || avail === 0) {
+        return 'full';
+    }
+    if (status === 'soon' || status === 'limited' || status === 'busy' || status === 'coming_soon' || (avail > 0 && avail <= Math.max(1, Math.floor(total * 0.4)))) {
+        return 'soon';
+    }
+    return 'available';
+};
 
 // Mock notifications feed — swap for a real API later.
 const NOTIFICATIONS = [
@@ -212,13 +270,47 @@ const FindStationContent = ({
                             style={{ transform: `scale(${zoom})` }}
                         >
                             <svg className="fs-map-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                <path d="M0 30 Q 35 10 55 25 T 100 20" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" fill="none" />
-                                <path d="M10 0 Q 20 40 15 60 T 30 100" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" fill="none" />
-                                <path d="M60 0 Q 55 45 68 60 T 60 100" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" fill="none" />
+                                {/* Water shading & Land Boundary */}
+                                <path d="M 22 0 C 26 20, 24 45, 28 70 C 31 85, 36 100, 36 100 L 0 100 L 0 0 Z" fill="rgba(2, 22, 31, 0.45)" />
+                                <path d="M 22 0 C 26 20, 24 45, 28 70 C 31 85, 36 100, 36 100" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" strokeDasharray="3 3" fill="none" />
+
+                                {/* Urban Street Grid Lines */}
+                                <line x1="20" y1="20" x2="85" y2="20" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                                <line x1="25" y1="40" x2="88" y2="40" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                                <line x1="30" y1="60" x2="90" y2="60" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                                <line x1="35" y1="80" x2="90" y2="80" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                                <line x1="30" y1="10" x2="30" y2="90" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                                <line x1="50" y1="10" x2="50" y2="90" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                                <line x1="70" y1="10" x2="70" y2="90" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+
+                                {/* A1 Highway Corridor to Kandy */}
+                                <path d="M 32 30 Q 50 24 74 22" stroke="rgba(255, 255, 255, 0.09)" strokeWidth="1.2" fill="none" />
+
+                                {/* Galle Road / Marine Drive Coastal Arterial */}
+                                <path d="M 30 15 Q 32 45 38 75 T 38 88" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="1.4" fill="none" />
+
+                                {/* E01 Southern Expressway Corridor */}
+                                <path d="M 40 55 Q 50 64 56 72 T 44 90" stroke="rgba(255, 255, 255, 0.11)" strokeWidth="1.4" fill="none" />
+
+                                {/* East-West Urban Corridors (Kaduwela / Outer Circular) */}
+                                <path d="M 30 35 Q 48 38 68 30 T 95 28" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1.0" fill="none" />
+                                <path d="M 28 55 Q 48 58 72 52" stroke="rgba(255, 255, 255, 0.07)" strokeWidth="0.9" fill="none" />
+
+                                {/* Geographic Area Labels */}
+                                <text x="24" y="24" fill="rgba(138,158,168,0.35)" fontSize="2.8" fontWeight="bold" letterSpacing="0.5">COLOMBO</text>
+                                <text x="70" y="16" fill="rgba(138,158,168,0.35)" fontSize="2.8" fontWeight="bold" letterSpacing="0.5">KANDY</text>
+                                <text x="58" y="26" fill="rgba(138,158,168,0.25)" fontSize="2.2">KADUWELA</text>
+                                <text x="56" y="66" fill="rgba(138,158,168,0.3)" fontSize="2.2" fontWeight="bold" letterSpacing="0.4">E01 EXPRESSWAY</text>
+                                <text x="40" y="94" fill="rgba(138,158,168,0.35)" fontSize="2.8" fontWeight="bold" letterSpacing="0.5">GALLE</text>
+
+                                {/* Interactive Animated Route Path to selected station */}
                                 {routeOn && (
                                     <path
-                                        d={`M18 8 L ${selectedPos.x} ${selectedPos.y}`}
-                                        stroke="var(--accent-cyan)" strokeWidth="0.6" strokeDasharray="2 2" fill="none"
+                                        d={`M 18 8 Q ${(18 + selectedPos.x) / 2 + 3} ${(8 + selectedPos.y) / 2 - 3} ${selectedPos.x} ${selectedPos.y}`}
+                                        stroke="#3DDC97"
+                                        strokeWidth="1.4"
+                                        strokeDasharray="3 2"
+                                        fill="none"
                                     />
                                 )}
                             </svg>
@@ -229,19 +321,20 @@ const FindStationContent = ({
                                     left: '18%', top: '8%',
                                     boxShadow: locating ? '0 0 0 16px rgba(9,209,199,0.02)' : undefined,
                                 }}
-                                title="You are here"
+                                title="You are here (Current Location)"
                             />
 
                             {(stations || []).map((s) => {
-                                const pos = getPos(s.id);
+                                const pos = getPos(s);
                                 const isHighestSpeed = sortBy === 'Charging Speed' && (s.maxChargingSpeedKw || 0) === highestSpeed;
+                                const statusClass = getStationStatus(s);
                                 return (
                                     <div
                                         key={s.id}
-                                        className={`fs-map-pin ${s.status} ${s.id === safeSelected.id ? 'selected' : ''} ${isHighestSpeed ? 'highlighted' : ''}`}
+                                        className={`fs-map-pin ${statusClass} ${s.id === safeSelected.id ? 'selected' : ''} ${isHighestSpeed ? 'highlighted' : ''}`}
                                         style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                                         onClick={() => setSelectedId(s.id)}
-                                        title={s.name}
+                                        title={`${s.name} (${s.address || ''}) · ${statusClass === 'available' ? 'Available' : statusClass === 'soon' ? 'Soon Available' : 'Full / Closed'}`}
                                     >
                                         {showMapMetric && (
                                             <div className="fs-map-pin-rating">
@@ -374,7 +467,7 @@ const FindStationContent = ({
                             const isFav = !!favorites[s.id];
                             const availPlugs = s.pluggedAvailable ?? (s.portsCount ? s.portsCount - 1 : 4);
                             const totalPlugs = s.pluggedTotal ?? (s.portsCount || 6);
-                            const availClass = s.status === 'full' ? 'full' : s.status === 'soon' ? 'soon' : 'available';
+                            const statusClass = getStationStatus(s);
 
                             return (
                                 <div
@@ -382,7 +475,7 @@ const FindStationContent = ({
                                     className={`fs-list-row ${isSelected ? 'selected' : ''}`}
                                     onClick={() => setSelectedId(s.id)}
                                 >
-                                    <div className={`fs-list-badge ${s.status}`}>
+                                    <div className={`fs-list-badge ${statusClass}`}>
                                         <IconPin />
                                     </div>
                                     <div className="fs-list-info">
@@ -396,7 +489,7 @@ const FindStationContent = ({
                                         <span className="fs-list-time">
                                             <IconClock /> {s.distanceMins || 15} min away
                                         </span>
-                                        <span className={`fs-list-plugs-pill ${availClass}`}>
+                                        <span className={`fs-list-plugs-pill ${statusClass}`}>
                                             {availPlugs} / {totalPlugs} Plugs
                                         </span>
                                         <button
@@ -587,21 +680,33 @@ const FindStationContent = ({
 
 const FindStation = () => {
     const navigate = useNavigate();
-    const [stations, setStations] = useState(STATIONS); // start with local data immediately
-    const [selectedId, setSelectedId] = useState('volt-charge-cod');
+    const [stations, setStations] = useState(STATIONS);
+    const [selectedId, setSelectedId] = useState(() => {
+        try {
+            return sessionStorage.getItem('evora_selected_station') || 'branch-cinnamon-grand-colombo-1788819001001';
+        } catch {
+            return 'branch-cinnamon-grand-colombo-1788819001001';
+        }
+    });
     const [search, setSearch] = useState('');
     const [sortOpen, setSortOpen] = useState(false);
     const [sortBy, setSortBy] = useState('Nearby');
     const [selectedModel, setSelectedModel] = useState('');
     const [selectedPort, setSelectedPort] = useState('');
     const [activeTab, setActiveTab] = useState('nearby');
-    const [favorites, setFavorites] = useState({ 'volt-charge-cod': true, 'one-galle-face': true });
+    const [favorites, setFavorites] = useState({ 'branch-cinnamon-grand-colombo-1788819001001': true, 'branch-welipenna-e01-1788819004004': true });
     const [menuOpen, setMenuOpen] = useState(false);
     const [favOpen, setFavOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
     const [zoom, setZoom] = useState(1);
     const [routeOn, setRouteOn] = useState(true);
     const [locating, setLocating] = useState(false);
+
+    // Persist selected station id across refresh
+    const handleSelectStation = (id) => {
+        setSelectedId(id);
+        try { sessionStorage.setItem('evora_selected_station', id); } catch {}
+    };
 
     // Fetch from backend API; silently keep local data if API is unreachable
     useEffect(() => {
@@ -617,26 +722,25 @@ const FindStation = () => {
                 return res.json();
             })
             .then((json) => {
-                const list = (json.data || []).map((s) => {
-                    const stationId = s.slug || s.id;
-                    const localMatch = STATIONS.find((loc) => loc.id === stationId || loc.id === s.slug) || STATIONS[0];
+                const list = (json.data || []).map((s, idx) => {
+                    const stationId = s.slug || s.branchId || s.id;
+                    const { image, images } = getStationImages(s, idx);
                     return {
-                        ...localMatch,
                         ...s,
                         id: stationId,
-                        image: (s.image && s.image.trim()) ? s.image : localMatch?.image,
-                        images: (s.images && s.images.length) ? s.images : localMatch?.images,
+                        slug: s.slug || stationId,
+                        image: (s.image && s.image.trim()) ? s.image : image,
+                        images: (s.images && s.images.length && s.images[0]) ? s.images : images,
                     };
                 });
                 if (list.length > 0) setStations(list);
             })
             .catch(() => {
-                // Keep local static data when backend is unavailable
                 setStations(STATIONS);
             });
     }, [search, sortBy, selectedModel, selectedPort]);
 
-    const selected = stations.find((s) => s.id === selectedId) || stations[stations.length - 1] || stations[0];
+    const selected = stations.find((s) => s.id === selectedId) || stations[0] || STATIONS[0];
     const goDetails = (id, bayId) => navigate(bayId ? `/station/${id}?bay=${bayId}` : `/station/${id}`);
     const toggleFavorite = (id) => setFavorites((f) => ({ ...f, [id]: !f[id] }));
 
@@ -658,7 +762,7 @@ const FindStation = () => {
 
     const shared = {
         stations,
-        selected, setSelectedId, search, setSearch, sortOpen, setSortOpen,
+        selected, setSelectedId: handleSelectStation, search, setSearch, sortOpen, setSortOpen,
         sortBy, setSortBy, favorites, toggleFavorite, goDetails,
         favOpen, setFavOpen, notifOpen, setNotifOpen, zoom, setZoom,
         routeOn, setRouteOn, locating, onLocate, activeTab, setActiveTab,

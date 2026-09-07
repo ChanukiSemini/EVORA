@@ -17,6 +17,8 @@ import {
     IconNav, IconCheck, IconCard, IconBolt, IconParkingP, IconCarModel,
 } from '../components/Icons';
 import { AMENITY_ICONS, AMENITY_LABELS } from '../data/amenities';
+import { getStationImages } from '../utils/stationImageHelper';
+
 
 const StatusBar = ({ station }) => {
     if (station.status === 'full' || station.status === 'offline') {
@@ -323,13 +325,12 @@ const StationDetails = () => {
             })
             .then((json) => {
                 const data = json.data || json;
-                const fallback = STATIONS.find((s) => s.id === id || s.id === data.slug) || STATIONS[0];
+                const { image, images } = getStationImages(data);
                 const normalized = {
-                    ...fallback,
                     ...data,
                     id: data.slug || data.id || id,
-                    image: (data.image && data.image.trim()) ? data.image : fallback.image,
-                    images: (data.images && data.images.length) ? data.images : fallback.images,
+                    image: (data.image && data.image.trim()) ? data.image : image,
+                    images: (data.images && data.images.length && data.images[0]) ? data.images : images,
                 };
                 setStation(normalized);
                 const allBays = getNormalizedBays(normalized);
@@ -340,8 +341,14 @@ const StationDetails = () => {
             })
             .catch(() => {
                 const fallback = STATIONS.find((s) => s.id === id) || STATIONS[0];
-                setStation(fallback);
-                const allBays = getNormalizedBays(fallback);
+                const { image, images } = getStationImages(fallback);
+                const normalized = {
+                    ...fallback,
+                    image: fallback.image || image,
+                    images: (fallback.images && fallback.images.length) ? fallback.images : images,
+                };
+                setStation(normalized);
+                const allBays = getNormalizedBays(normalized);
                 const bayParam = searchParams.get('bay');
                 const matched = allBays.find((b) => b.id === bayParam || b.bayId === bayParam) || allBays.find((b) => b.status === 'available') || allBays[0];
                 setSelectedBay(matched);
