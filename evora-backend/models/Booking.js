@@ -1,82 +1,66 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema(
   {
     bookingNumber: {
       type: String,
-      required: true
+      required: true,
+      unique: true
     },
     driver: {
-      type: mongoose.Schema.Types.Mixed,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'EvDriver',
       required: true
     },
     vehicle: {
-      type: mongoose.Schema.Types.Mixed,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Vehicle',
       required: true
     },
     charger: {
-      type: mongoose.Schema.Types.Mixed,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Charger',
       required: true
     },
-    slot: {
-      type: mongoose.Schema.Types.Mixed,
-      ref: 'TimeSlot',
-      required: false
-    },
-    date: {
-      type: mongoose.Schema.Types.Mixed,
-      required: true
-    },
-    time: {
-      type: String,
-      required: false
+    bookeddate: {
+      type: Date,
+      default: Date.now
     },
     timeSlot: {
-      type: String,
-      required: false
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TimeSlot',
+      required: true
     },
     durationMinutes: {
       type: Number,
-      required: false
+      required: true
     },
     energyDeliveredKWh: {
       type: Number,
       required: false
     },
     estimatedTotalCost: {
-      type: mongoose.Schema.Types.Mixed,
-      required: false
-    },
-    estimatedTotalcost: {
-      type: mongoose.Schema.Types.Mixed,
-      required: false
-    },
-    canModify: {
-      type: mongoose.Schema.Types.Mixed,
-      required: false
+      type: Number,
+      required: true
     },
     status: {
       type: String,
       enum: ['upcoming', 'completed', 'cancelled'],
       default: 'upcoming'
     },
-    cancelledDate: {
-      type: String,
-      required: false
+    modify: {
+      type: boolean,
+      default: true,
+      required: true
     },
-    cancelleddate: {
-      type: String,
+    cancelledDate: {
+      type: Date,
       required: false
     }
   },
   {
-    timestamps: true,
-    strict: false,
-    collection: 'booking'
+    timestamps: true
   }
 );
 
-module.exports = mongoose.models.Booking || mongoose.model('Booking', bookingSchema, 'booking');
+export default mongoose.model('Booking', bookingSchema, 'booking');
