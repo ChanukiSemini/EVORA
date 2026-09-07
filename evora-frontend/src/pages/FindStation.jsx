@@ -548,6 +548,31 @@ const FindStationContent = ({
                                 Details
                             </button>
                             <button
+                                className="btn-book-charger-pill"
+                                style={{
+                                    background: '#3DDC97',
+                                    color: '#031C26',
+                                    fontWeight: '600',
+                                    padding: '8px 18px',
+                                    borderRadius: '999px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '0.88rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    letterSpacing: '0.01em',
+                                    transition: 'all 0.2s ease',
+                                }}
+                                onClick={() => {
+                                    const bay = selectedBay !== null ? (baysData[selectedBay]?.bayId || `bay-${selectedBay + 1}`) : 'bay-1';
+                                    navigate(`/book-charger?station=${safeSelected.id || safeSelected.slug}&bay=${bay}`, {
+                                        state: { station: safeSelected }
+                                    });
+                                }}
+                            >
+                                Book Charger
+                            </button>
+                            <button
                                 className="btn-directions-pill"
                                 onClick={() => {
                                     const url = getDirectionsUrl(safeSelected);

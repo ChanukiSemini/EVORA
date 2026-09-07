@@ -179,6 +179,258 @@ const ConnectorDropdownMenu = ({ connectors, connector, connectorIdx, setConnect
     );
 };
 
+/* ---------- Station Selection Hub (shown when no specific station is selected) ---------- */
+const StationSelectionView = ({ onSelectStation }) => {
+    const navigate = useNavigate();
+    const [allStations, setAllStations] = useState(STATIONS);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeCategory, setActiveCategory] = useState('All Stations');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchStations = async () => {
+            try {
+                let res = await fetch('http://localhost:5000/api/stations');
+                if (!res.ok) res = await fetch('/api/stations');
+                if (res.ok) {
+                    const json = await res.json();
+                    const list = json.data || json;
+                    if (Array.isArray(list) && list.length > 0) {
+                        const mergedList = list.map((item) => {
+                            const local = STATIONS.find((s) => s.id === item.slug || s.id === item.id || s.slug === item.slug || s.name === item.name);
+                            return {
+                                ...(local || {}),
+                                ...item,
+                                image: (item.image && item.image.trim()) ? item.image : (local?.image || kaduwelaHero),
+                                images: (item.images && item.images.length > 0) ? item.images : (local?.images || [kaduwelaHero]),
+                            };
+                        });
+                        setAllStations(mergedList);
+                    }
+                }
+            } catch {
+                // local fallback
+            }
+        };
+        fetchStations();
+    }, []);
+
+    const filteredStations = useMemo(() => {
+        return allStations.filter((s) => {
+            const matchQuery =
+                !searchTerm ||
+                s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                s.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                s.tags?.some((t) => t.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                s.connectors?.some((c) => c.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+
+            if (!matchQuery) return false;
+
+            if (activeCategory === 'Available') {
+                return s.status === 'available' || (s.pluggedAvailable && s.pluggedAvailable > 0);
+            }
+            if (activeCategory === 'DC Fast (100kW+)') {
+                return (s.maxChargingSpeedKw && s.maxChargingSpeedKw >= 100) || s.tags?.includes('DC Fast') || s.network?.includes('Rapid DC');
+            }
+            if (activeCategory === 'CCS2') {
+                return s.tags?.includes('CCS2') || s.connectors?.some((c) => c.name?.toLowerCase().includes('ccs'));
+            }
+            if (activeCategory === 'Type 2') {
+                return s.tags?.includes('Type 2') || s.connectors?.some((c) => c.name?.toLowerCase().includes('type 2'));
+            }
+            return true;
+        });
+    }, [allStations, searchTerm, activeCategory]);
+
+    return (
+        <div className="app-shell book-charger-shell">
+            <Sidebar />
+            <main className="app-main book-charger-main">
+                <div className="bc-selector-container">
+                    <header className="bc-selector-header">
+                        <div className="bc-selector-top-row">
+                            <div>
+                                <h1 className="bc-selector-title">Book a Charger</h1>
+                                <p className="bc-selector-subtitle">
+                                    Select an EV charging station below to reserve your bay and charging slot.
+                                </p>
+                            </div>
+
+                            {/* Mobile Hamburger */}
+                            <button
+                                type="button"
+                                className="bc-mobile-menu-btn"
+                                onClick={() => setIsMobileMenuOpen(true)}
+                                title="Open Menu"
+                            >
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                    <line x1="4" y1="6" x2="20" y2="6" />
+                                    <line x1="4" y1="12" x2="20" y2="12" />
+                                    <line x1="4" y1="18" x2="20" y2="18" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="bc-selector-controls">
+                            <div className="bc-search-wrap">
+                                <span className="bc-search-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                        <circle cx="11" cy="11" r="8" />
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                    </svg>
+                                </span>
+                                <input
+                                    type="text"
+                                    className="bc-search-input"
+                                    placeholder="Search stations by name, city, address, or connector..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="bc-filter-chips">
+                                {['All Stations', 'Available', 'DC Fast (100kW+)', 'CCS2', 'Type 2'].map((cat) => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        className={`bc-filter-chip ${activeCategory === cat ? 'active' : ''}`}
+                                        onClick={() => setActiveCategory(cat)}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Stations Grid */}
+                    <div className="bc-stations-grid">
+                        {filteredStations.map((station) => {
+                            const bays = station.baysDetail || [
+                                { name: 'Bay 1', status: 'available', label: 'Available' },
+                                { name: 'Bay 2', status: 'available', label: 'Available' },
+                                { name: 'Bay 3', status: 'limited', label: 'Limited' },
+                                { name: 'Bay 4', status: 'unavailable', label: 'Unavailable' },
+                            ];
+                            const availableBaysCount = bays.filter((b) => b.status === 'available').length;
+                            const mainImg = station.image || station.images?.[0] || kaduwelaHero;
+
+                            return (
+                                <div key={station.id || station._id} className="bc-station-card">
+                                    <div className="bc-station-card-media">
+                                        <img src={mainImg} alt={station.name} className="bc-station-card-img" />
+                                        <div className="bc-station-card-overlay" />
+                                        <div className="bc-station-card-badges">
+                                            <div className="bc-card-rating">
+                                                <span style={{ color: '#FFB347' }}>★</span>
+                                                <span>{station.rating || 4.8}</span>
+                                            </div>
+                                            <div className="bc-card-status">
+                                                {availableBaysCount > 0 ? `${availableBaysCount} Bays Available` : 'Busy'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bc-station-card-body">
+                                        <h3 className="bc-card-name">{station.name}</h3>
+                                        <p className="bc-card-address">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z" />
+                                                <circle cx="12" cy="9" r="2.5" />
+                                            </svg>
+                                            {station.address}
+                                        </p>
+
+                                        <div className="bc-card-specs-row">
+                                            <span className="bc-spec-tag highlight">{station.power || (station.maxChargingSpeedKw ? `Up to ${station.maxChargingSpeedKw}kW` : 'Fast Charging')}</span>
+                                            <span className="bc-spec-tag">{station.openHours || 'Open 24 hrs'}</span>
+                                            {(station.tags || []).slice(0, 2).map((t, idx) => (
+                                                <span key={idx} className="bc-spec-tag">{t}</span>
+                                            ))}
+                                        </div>
+
+                                        {/* Quick Bay Selector */}
+                                        <div className="bc-card-bays-wrap">
+                                            <span className="bc-card-bays-label">Select Bay to Book</span>
+                                            <div className="bc-card-bays-list">
+                                                {bays.slice(0, 4).map((b, bIdx) => (
+                                                    <button
+                                                        key={bIdx}
+                                                        type="button"
+                                                        className={`bc-card-bay-pill ${b.status}`}
+                                                        disabled={b.status === 'unavailable'}
+                                                        onClick={() => onSelectStation(station, b.bayId || b.id || `bay-${bIdx + 1}`)}
+                                                        title={`${b.name} (${b.label})`}
+                                                    >
+                                                        {b.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bc-card-footer">
+                                            <div className="bc-card-price-block">
+                                                <span className="bc-card-price-val">{station.priceHeadline || station.pricingText || 'LKR 62.00'}</span>
+                                                <span className="bc-card-price-unit">per kWh</span>
+                                            </div>
+
+                                            <div className="bc-card-actions">
+                                                <button
+                                                    type="button"
+                                                    className="bc-btn-card-details"
+                                                    onClick={() => navigate(`/station/${station.id || station.slug}`)}
+                                                >
+                                                    Details
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="bc-btn-card-book"
+                                                    onClick={() => onSelectStation(station, 'bay-1')}
+                                                >
+                                                    Book Slot
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Mobile Menu Drawer */}
+                {isMobileMenuOpen && (
+                    <div className="mobile-menu-drawer-backdrop" onClick={() => setIsMobileMenuOpen(false)}>
+                        <div className="mobile-menu-drawer" onClick={(e) => e.stopPropagation()}>
+                            <div className="mobile-menu-header">
+                                <div className="mobile-menu-logo">
+                                    <span className="logo-icon">⚡</span>
+                                    <span className="logo-text">Evora</span>
+                                </div>
+                                <button className="mobile-menu-close" onClick={() => setIsMobileMenuOpen(false)}>✕</button>
+                            </div>
+                            <nav className="mobile-menu-nav">
+                                <div className="mobile-menu-item" onClick={() => { navigate('/dashboard'); setIsMobileMenuOpen(false); }}>
+                                    <span>📊</span> Dashboard / Home
+                                </div>
+                                <div className="mobile-menu-item active" onClick={() => { navigate('/book-charger'); setIsMobileMenuOpen(false); }}>
+                                    <span>⚡</span> Book a Charger
+                                </div>
+                                <div className="mobile-menu-item" onClick={() => { navigate('/bookings'); setIsMobileMenuOpen(false); }}>
+                                    <span>📅</span> My Reservations
+                                </div>
+                                <div className="mobile-menu-item" onClick={() => { navigate('/vehicles'); setIsMobileMenuOpen(false); }}>
+                                    <span>🚗</span> My Vehicles
+                                </div>
+                            </nav>
+                        </div>
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+};
+
 const BookCharger = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -218,30 +470,53 @@ const BookCharger = () => {
 
     // Fetch station info if stationParam provided and stationData not yet populated
     useEffect(() => {
-        if (!stationData && stationParam) {
+        if (!stationParam && !location.state?.station) {
+            setStationData(null);
+            return;
+        }
+
+        if (stationParam) {
             const fetchStation = async () => {
+                const local = STATIONS.find((s) => s.id === stationParam || s.slug === stationParam);
                 try {
                     let res = await fetch(`http://localhost:5000/api/stations/${stationParam}`);
                     if (!res.ok) res = await fetch(`/api/stations/${stationParam}`);
                     if (res.ok) {
                         const json = await res.json();
                         const data = json.data || json;
-                        setStationData(data);
+                        const merged = {
+                            ...(local || {}),
+                            ...data,
+                            image: (data.image && data.image.trim()) ? data.image : (local?.image || kaduwelaHero),
+                            images: (data.images && data.images.length > 0) ? data.images : (local?.images || [kaduwelaHero]),
+                        };
+                        setStationData(merged);
                         return;
                     }
                 } catch {
                     // ignore network errors and use local fallback
                 }
-                const local = STATIONS.find((s) => s.id === stationParam || s.slug === stationParam);
                 if (local) setStationData(local);
             };
             fetchStation();
         }
-    }, [stationParam, stationData]);
+    }, [stationParam, location.state]);
 
     // Construct tailored Station View and Bays
     const displayStation = useMemo(() => {
         if (!stationData) return DEFAULT_STATION;
+
+        const local = STATIONS.find((s) => s.id === (stationData.slug || stationData.id || stationParam) || s.slug === (stationData.slug || stationData.id || stationParam) || s.name === stationData.name);
+        const resolvedImage = (stationData.images && stationData.images.length > 0 && stationData.images[0]) ||
+                              (stationData.image && stationData.image.trim()) ||
+                              local?.image ||
+                              local?.images?.[0] ||
+                              kaduwelaHero;
+        const resolvedThumb = (stationData.images && stationData.images[1]) ||
+                              (stationData.thumb && stationData.thumb.trim()) ||
+                              local?.thumb ||
+                              local?.images?.[1] ||
+                              resolvedImage;
 
         const fastRate = stationData.rates?.fast ? stationData.rates.fast * 50 : 2450;
         const slowRate = stationData.rates?.slow ? stationData.rates.slow * 40 : 1680;
@@ -293,14 +568,14 @@ const BookCharger = () => {
             tag: stationData.tags?.[0] || (stationData.maxChargingSpeedKw >= 100 ? 'Ultra-Fast' : 'Standard Fast'),
             power: stationData.maxChargingSpeedKw ? `Up to ${stationData.maxChargingSpeedKw}kW` : 'Up to 150kW',
             model: stationData.supportedModels?.[0] || 'Model 3',
-            image: (stationData.images && stationData.images[0]) || stationData.image || kaduwelaHero,
-            thumb: stationData.image || kaduwelaThumb,
+            image: resolvedImage,
+            thumb: resolvedThumb,
             connectors: dynamicConnectors,
             bays: normalizedBays,
             amenities: DEFAULT_STATION.amenities,
             raw: stationData,
         };
-    }, [stationData]);
+    }, [stationData, stationParam]);
 
     const activeBays = displayStation.bays || [
         { id: 'bay-1', bayId: 'bay-1', name: 'Bay 1', status: 'available', label: 'Available', type: 'CCS2', power: '150kW', ratePerHour: 2450 },
@@ -510,6 +785,22 @@ const BookCharger = () => {
         }
     };
 
+    // If no specific station is selected, display the Station Selection view
+    if (!stationParam && !location.state?.station && !stationData) {
+        return (
+            <StationSelectionView
+                onSelectStation={(selectedStation, bayId) => {
+                    setStationData(selectedStation);
+                    if (bayId) setSelectedBayId(bayId);
+                    const param = selectedStation.slug || selectedStation.id || selectedStation._id;
+                    navigate(`/book-charger?station=${encodeURIComponent(param)}&bay=${encodeURIComponent(bayId || 'bay-1')}`, {
+                        state: { station: selectedStation },
+                    });
+                }}
+            />
+        );
+    }
+
     return (
         <div className="app-shell book-charger-shell">
             {/* Desktop Sidebar */}
@@ -522,15 +813,31 @@ const BookCharger = () => {
                         <button
                             type="button"
                             className="bc-back-btn"
-                            onClick={() => navigate(-1)}
-                            title="Go Back"
+                            onClick={() => {
+                                setStationData(null);
+                                navigate('/book-charger');
+                            }}
+                            title="Back to Stations"
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M19 12H5M12 19l-7-7 7-7" />
                             </svg>
                         </button>
                         <div className="bc-header-titles">
-                            <h1 className="bc-page-title">Book a Charger</h1>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                <h1 className="bc-page-title">Book a Charger</h1>
+                                <button
+                                    type="button"
+                                    className="bc-change-station-pill"
+                                    onClick={() => {
+                                        setStationData(null);
+                                        navigate('/book-charger');
+                                    }}
+                                    title="Choose another station"
+                                >
+                                    ← Change Station
+                                </button>
+                            </div>
                             <p className="bc-page-subtitle">
                                 Find and reserve your charging slot at {displayStation.name}.
                             </p>
