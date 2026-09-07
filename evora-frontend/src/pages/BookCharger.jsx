@@ -18,6 +18,11 @@ import {
     IconLeaf,
 } from '../components/NavigationIcons.jsx';
 import { STATIONS } from '../data/stations';
+import {
+    generateBookingDays,
+    ALL_HOURLY_SLOTS,
+    computeSlotStatus,
+} from '../utils/bookingHelpers';
 
 import kaduwelaHero from '../assets/kaduwela-bay-hero.jpg';
 import kaduwelaThumb from '../assets/kaduwela-bay-thumb.jpg';
@@ -40,43 +45,6 @@ const DEFAULT_STATION = {
         { icon: IconSupport, title: '24/7', sub: 'Support' },
     ],
 };
-
-const DATES = [
-    { day: 'Sun', num: 26, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
-    { day: 'Mon', num: 27, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
-    { day: 'Tue', num: 28, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
-    { day: 'Wed', num: 29, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
-    { day: 'Thu', num: 30, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
-    { day: 'Fri', num: 31, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
-    { day: 'Sat', num: 1, month: 'August', shortMonth: 'AUG', year: 2026, monthIndex: 7 },
-];
-
-const TIME_SLOTS = [
-    { time: '12:00 AM', status: 'available' },
-    { time: '1:00 AM', status: 'available' },
-    { time: '2:00 AM', status: 'available' },
-    { time: '3:00 AM', status: 'available' },
-    { time: '4:00 AM', status: 'available' },
-    { time: '5:00 AM', status: 'available' },
-    { time: '6:00 AM', status: 'available' },
-    { time: '7:00 AM', status: 'available' },
-    { time: '8:00 AM', status: 'available' },
-    { time: '9:00 AM', status: 'available' },
-    { time: '10:00 AM', status: 'available' },
-    { time: '11:00 AM', status: 'in-use' },
-    { time: '12:00 PM', status: 'available' },
-    { time: '1:00 PM', status: 'available' },
-    { time: '2:00 PM', status: 'available' },
-    { time: '3:00 PM', status: 'available' },
-    { time: '4:00 PM', status: 'available' },
-    { time: '5:00 PM', status: 'available' },
-    { time: '6:00 PM', status: 'in-use' },
-    { time: '7:00 PM', status: 'booked' },
-    { time: '8:00 PM', status: 'booked' },
-    { time: '9:00 PM', status: 'available' },
-    { time: '10:00 PM', status: 'available' },
-    { time: '11:00 PM', status: 'available' },
-];
 
 const DEFAULT_CONNECTORS = [
     {
@@ -222,8 +190,13 @@ const BookCharger = () => {
     const [submitting, setSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
-    const [selectedDate, setSelectedDate] = useState(0);
-    const [selectedTime, setSelectedTime] = useState(12); // 12:00 PM default active
+    // Real date & time state
+    const [weekOffset, setWeekOffset] = useState(0);
+    const [selectedDateIdx, setSelectedDateIdx] = useState(0);
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+    const [bookedSlots, setBookedSlots] = useState([]);
+    const [loadingAvailability, setLoadingAvailability] = useState(false);
+
     const [duration, setDuration] = useState(60);
     const [connectorIdx, setConnectorIdx] = useState(0);
     const [selectedBayId, setSelectedBayId] = useState(
@@ -236,6 +209,10 @@ const BookCharger = () => {
     );
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Dynamic real dates list generated starting from today
+    const dates = useMemo(() => generateBookingDays(weekOffset, 7), [weekOffset]);
+    const activeDateObj = dates[selectedDateIdx] || dates[0] || generateBookingDays(0, 1)[0];
 
     // Fetch station info if stationParam provided and stationData not yet populated
     useEffect(() => {
@@ -335,7 +312,71 @@ const BookCharger = () => {
     const activeConnectors = displayStation.connectors || DEFAULT_CONNECTORS;
     const safeConnectorIdx = Math.min(connectorIdx, activeConnectors.length - 1);
     const connector = activeConnectors[safeConnectorIdx] || DEFAULT_CONNECTORS[0];
-    const activeDateObj = DATES[selectedDate];
+
+    // Fetch existing pre-booked slots from MongoDB database for the active station, bay & date
+    useEffect(() => {
+        const fetchAvailability = async () => {
+            if (!activeDateObj?.isoDate) return;
+            const slug = displayStation.raw?.slug || stationParam || '';
+            const bay = selectedBayId || 'bay-1';
+            setLoadingAvailability(true);
+            try {
+                let url = `http://localhost:5000/api/bookings/availability?stationSlug=${encodeURIComponent(slug)}&bayId=${encodeURIComponent(bay)}&date=${activeDateObj.isoDate}`;
+                let res = await fetch(url);
+                if (!res.ok) {
+                    res = await fetch(`/api/bookings/availability?stationSlug=${encodeURIComponent(slug)}&bayId=${encodeURIComponent(bay)}&date=${activeDateObj.isoDate}`);
+                }
+                if (res.ok) {
+                    const json = await res.json();
+                    const data = json.data || json;
+                    setBookedSlots(data.bookedSlots || []);
+                } else {
+                    setBookedSlots([]);
+                }
+            } catch (err) {
+                console.warn('Availability fetch fallback:', err);
+                setBookedSlots([]);
+            } finally {
+                setLoadingAvailability(false);
+            }
+        };
+        fetchAvailability();
+    }, [activeDateObj?.isoDate, displayStation.raw?.slug, stationParam, selectedBayId]);
+
+    // Compute live 24-hour slots with past time and pre-booked validation
+    const computedTimeSlots = useMemo(() => {
+        return ALL_HOURLY_SLOTS.map((slot) => {
+            const info = computeSlotStatus({
+                slotHour: slot.hour,
+                slotTime: slot.time,
+                selectedDate: activeDateObj.date,
+                bookedSlots,
+                bayStatus: currentBay?.status || 'available',
+            });
+            return {
+                ...slot,
+                ...info,
+            };
+        });
+    }, [activeDateObj.date, bookedSlots, currentBay?.status]);
+
+    // Auto-select first available valid slot if current selection is invalid/disabled
+    useEffect(() => {
+        if (!computedTimeSlots || computedTimeSlots.length === 0) return;
+
+        const currentSelected = computedTimeSlots.find(
+            (s) => s.time === selectedTimeSlot && !s.disabled
+        );
+
+        if (!currentSelected) {
+            const firstAvailable = computedTimeSlots.find((s) => !s.disabled);
+            if (firstAvailable) {
+                setSelectedTimeSlot(firstAvailable.time);
+            } else {
+                setSelectedTimeSlot(null);
+            }
+        }
+    }, [computedTimeSlots, selectedTimeSlot]);
 
     // When changing bay, update connector and hourly rate automatically
     const handleSelectBay = (bay) => {
@@ -362,16 +403,25 @@ const BookCharger = () => {
         setDuration((d) => Math.min(MAX_DURATION, Math.max(MIN_DURATION, d + delta)));
     };
 
-    const handleSelectTime = (i) => {
-        setSelectedTime(i);
+    const handleSelectTime = (slotTime) => {
+        setSelectedTimeSlot(slotTime);
     };
 
     // Confirm booking: Submit to backend POST /api/bookings and save to MongoDB
     const handleConfirm = async () => {
+        if (!selectedTimeSlot) {
+            setErrorMsg('Please select an available charging time slot before continuing.');
+            return;
+        }
+
+        const chosenSlotObj = computedTimeSlots.find((s) => s.time === selectedTimeSlot);
+        if (!chosenSlotObj || chosenSlotObj.disabled) {
+            setErrorMsg(`The slot '${selectedTimeSlot}' is ${chosenSlotObj?.status === 'past' ? 'in the past' : chosenSlotObj?.status === 'booked' ? 'already booked' : 'unavailable'}. Please choose an available time slot.`);
+            return;
+        }
+
         setSubmitting(true);
         setErrorMsg('');
-
-        const bookingDate = new Date(activeDateObj.year, activeDateObj.monthIndex, activeDateObj.num, 12, 0, 0);
 
         let driverId = undefined;
         let token = localStorage.getItem('evora_token');
@@ -396,8 +446,8 @@ const BookCharger = () => {
             bayId: currentBay?.id || currentBay?.bayId || 'bay-1',
             bayName: currentBay?.name || 'Bay 1',
             connectorType: `${currentBay?.name ? currentBay.name + ' · ' : ''}${connector.label}`,
-            slot: TIME_SLOTS[selectedTime].time,
-            date: bookingDate.toISOString(),
+            slot: selectedTimeSlot,
+            date: activeDateObj.isoDate,
             durationMinutes: duration,
             estimatedTotalcost: estCost.toLocaleString(),
             driverId,
@@ -421,6 +471,11 @@ const BookCharger = () => {
                 });
             }
 
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || 'Booking conflict or server error. Please select another slot.');
+            }
+
             const json = await res.json();
             const createdBooking = json.data || json;
 
@@ -434,7 +489,7 @@ const BookCharger = () => {
                         stationName: displayStation.name,
                         stationLabel: 'Station Location',
                         bayName: currentBay?.name || 'Bay 1',
-                        dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${TIME_SLOTS[selectedTime].time}`,
+                        dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${selectedTimeSlot}`,
                         dateTimeLabel: 'Date & Time',
                         duration: `${duration} min`,
                         durationMinutes: duration,
@@ -446,22 +501,7 @@ const BookCharger = () => {
             });
         } catch (err) {
             console.error('Error saving booking:', err);
-            // Fallback navigation if network offline
-            navigate('/booking-confirmed', {
-                state: {
-                    booking: {
-                        id: Math.floor(100000 + Math.random() * 900000).toString(),
-                        station: displayStation.name,
-                        stationLabel: 'Station Location',
-                        bayName: currentBay?.name || 'Bay 1',
-                        dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${TIME_SLOTS[selectedTime].time}`,
-                        dateTimeLabel: 'Date & Time',
-                        duration: `${duration} min`,
-                        durationLabel: 'Estimated Duration',
-                        cost: `Rs. ${estCost.toLocaleString()}`,
-                    },
-                },
-            });
+            setErrorMsg(err.message || 'Failed to complete booking. Please try another slot.');
         } finally {
             setSubmitting(false);
         }
@@ -638,16 +678,17 @@ const BookCharger = () => {
                                         <button
                                             type="button"
                                             className="bc-arrow-btn"
-                                            onClick={() => setSelectedDate((prev) => Math.max(0, prev - 1))}
-                                            title="Previous Month"
+                                            onClick={() => setWeekOffset((prev) => Math.max(0, prev - 7))}
+                                            disabled={weekOffset === 0}
+                                            title={weekOffset === 0 ? 'Cannot select past dates' : 'Previous Week'}
                                         >
                                             ‹
                                         </button>
                                         <button
                                             type="button"
                                             className="bc-arrow-btn"
-                                            onClick={() => setSelectedDate((prev) => Math.min(DATES.length - 1, prev + 1))}
-                                            title="Next Month"
+                                            onClick={() => setWeekOffset((prev) => prev + 7)}
+                                            title="Next Week"
                                         >
                                             ›
                                         </button>
@@ -656,16 +697,20 @@ const BookCharger = () => {
                             </div>
 
                             <div className="bc-date-chips-grid">
-                                {DATES.map((d, i) => {
-                                    const isSelected = selectedDate === i;
+                                {dates.map((d, i) => {
+                                    const isSelected = selectedDateIdx === i;
                                     return (
                                         <button
-                                            key={i}
+                                            key={d.isoDate}
                                             type="button"
-                                            className={`bc-date-chip ${isSelected ? 'active' : ''}`}
-                                            onClick={() => setSelectedDate(i)}
+                                            className={`bc-date-chip ${isSelected ? 'active' : ''} ${d.isToday ? 'is-today' : ''}`}
+                                            onClick={() => setSelectedDateIdx(i)}
+                                            title={d.isToday ? 'Today' : `${d.day}, ${d.num} ${d.month}`}
                                         >
-                                            <span className="bc-chip-day">{d.day}</span>
+                                            <span className="bc-chip-day">
+                                                {d.day}
+                                                {d.isToday && <span className="bc-chip-today-dot" title="Today">•</span>}
+                                            </span>
                                             <span className="bc-chip-num">{d.num}</span>
                                             <span className="bc-chip-month">{d.shortMonth}</span>
                                         </button>
@@ -684,7 +729,12 @@ const BookCharger = () => {
                                             <polyline points="12 6 12 12 16 14" />
                                         </svg>
                                     </span>
-                                    <h3 className="bc-card-title">Select Time Slot</h3>
+                                    <div>
+                                        <h3 className="bc-card-title">Select Time Slot</h3>
+                                        {loadingAvailability && (
+                                            <span style={{ fontSize: '11px', color: '#00e599', marginLeft: '6px' }}>Checking live availability...</span>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="bc-time-legend">
                                     <span className="bc-legend-item">
@@ -692,27 +742,39 @@ const BookCharger = () => {
                                         Available
                                     </span>
                                     <span className="bc-legend-item">
-                                        <span className="bc-legend-dot in-use" />
-                                        In Use
+                                        <span className="bc-legend-dot booked" />
+                                        Pre-booked
                                     </span>
                                     <span className="bc-legend-item">
-                                        <span className="bc-legend-dot booked" />
-                                        Booked
+                                        <span className="bc-legend-dot past" />
+                                        Past / Closed
                                     </span>
                                 </div>
                             </div>
 
                             <div className="bc-time-slots-row">
-                                {TIME_SLOTS.map((slot, i) => {
-                                    const isSelected = selectedTime === i;
+                                {computedTimeSlots.map((slot) => {
+                                    const isSelected = selectedTimeSlot === slot.time && !slot.disabled;
                                     return (
                                         <button
-                                            key={i}
+                                            key={slot.time}
                                             type="button"
                                             className={`bc-time-btn ${slot.status} ${isSelected ? 'selected' : ''}`}
-                                            onClick={() => handleSelectTime(i)}
+                                            onClick={() => !slot.disabled && handleSelectTime(slot.time)}
+                                            disabled={slot.disabled}
+                                            title={
+                                                slot.status === 'past'
+                                                    ? `${slot.time} - Time slot has already passed`
+                                                    : slot.status === 'booked'
+                                                    ? `${slot.time} - Pre-booked by another driver`
+                                                    : slot.status === 'unavailable'
+                                                    ? `${slot.time} - Bay is currently unavailable`
+                                                    : `Select ${slot.time}`
+                                            }
                                         >
-                                            {slot.time}
+                                            <span className="bc-time-btn-label">{slot.time}</span>
+                                            {slot.status === 'booked' && <span className="bc-time-tag booked">Booked</span>}
+                                            {slot.status === 'past' && <span className="bc-time-tag past">Past</span>}
                                         </button>
                                     );
                                 })}
@@ -852,7 +914,7 @@ const BookCharger = () => {
                                         </span> Time Slot
                                     </span>
                                     <span className="bc-spec-value bc-highlight">
-                                        {TIME_SLOTS[selectedTime].time}
+                                        {selectedTimeSlot || 'No slot available'}
                                     </span>
                                 </div>
 

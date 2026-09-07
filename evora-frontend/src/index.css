@@ -14440,10 +14440,16 @@ body {
   transition: all 0.2s ease;
 }
 
-.bc-arrow-btn:hover {
+.bc-arrow-btn:hover:not(:disabled) {
   border-color: #00E599;
   background: rgba(61, 220, 151, 0.15);
   color: #00E599;
+}
+
+.bc-arrow-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* 2. Date Chips Grid */
@@ -14454,6 +14460,7 @@ body {
 }
 
 .bc-date-chip {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -14474,6 +14481,18 @@ body {
   transform: translateY(-2px);
 }
 
+.bc-date-chip.is-today {
+  border-color: rgba(61, 220, 151, 0.45);
+}
+
+.bc-chip-today-dot {
+  display: inline-block;
+  color: #00E599;
+  margin-left: 2px;
+  font-size: 14px;
+  line-height: 1;
+}
+
 .bc-date-chip.active {
   background: #00E599;
   border-color: #00E599;
@@ -14484,6 +14503,9 @@ body {
   font-size: 11px;
   color: #8A9EA8;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .bc-date-chip.active .bc-chip-day {
@@ -14518,6 +14540,7 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-wrap: wrap;
 }
 
 .bc-legend-item {
@@ -14546,11 +14569,15 @@ body {
   background-color: #EF4444;
 }
 
+.bc-legend-dot.past {
+  background-color: #64748B;
+}
+
 .bc-time-slots-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
   gap: 8px;
-  max-height: 190px;
+  max-height: 210px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -14565,7 +14592,12 @@ body {
 }
 
 .bc-time-btn {
-  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  min-height: 48px;
   border-radius: 10px;
   background: rgba(4, 25, 34, 0.7);
   border: 1px solid rgba(61, 220, 151, 0.2);
@@ -14575,11 +14607,13 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
+  gap: 2px;
 }
 
-.bc-time-btn:hover {
-  border-color: rgba(61, 220, 151, 0.5);
-  background: rgba(61, 220, 151, 0.1);
+.bc-time-btn:hover:not(:disabled) {
+  border-color: rgba(61, 220, 151, 0.6);
+  background: rgba(61, 220, 151, 0.12);
+  transform: translateY(-1px);
 }
 
 .bc-time-btn.in-use {
@@ -14589,16 +14623,57 @@ body {
 }
 
 .bc-time-btn.booked {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.45);
   color: #FCA5A5;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.bc-time-btn.past,
+.bc-time-btn:disabled:not(.booked) {
+  background: rgba(15, 23, 42, 0.45);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #64748B;
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.bc-time-btn.past .bc-time-btn-label {
+  text-decoration: line-through;
+}
+
+.bc-time-tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1.1;
+}
+
+.bc-time-tag.booked {
+  background: rgba(239, 68, 68, 0.25);
+  color: #F87171;
+}
+
+.bc-time-tag.past {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94A3B8;
 }
 
 .bc-time-btn.selected {
-  background: #00E599;
-  border-color: #00E599;
-  color: #031C26;
+  background: #00E599 !important;
+  border-color: #00E599 !important;
+  color: #031C26 !important;
   font-weight: 700;
+  box-shadow: 0 0 12px rgba(0, 229, 153, 0.4);
+}
+
+.bc-time-btn.selected .bc-time-tag {
+  background: rgba(3, 28, 38, 0.3);
+  color: #031C26;
 }
 
 /* 4. Charging Duration */
