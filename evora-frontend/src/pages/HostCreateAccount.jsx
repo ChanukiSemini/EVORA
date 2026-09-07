@@ -4,38 +4,19 @@ import { useNavigate, Link } from 'react-router-dom';
 export default function HostCreateAccount() {
   const navigate = useNavigate();
 
-  // Host Type: 'organization' (Business/Commercial) | 'personal' (Individual/Residential)
-  const [hostType, setHostType] = useState('organization');
-
-  // Organization Form Data
-  const [orgData, setOrgData] = useState({
-    orgName: '',
-    brNumber: '',
-    contactPerson: '',
-    stationCount: '1-3 Stations',
-    email: '',
-    countryCode: '+94',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    agreeTerms: false,
-    brFile: null,
-    brFileName: '',
-  });
-
-  // Personal Form Data
-  const [personalData, setPersonalData] = useState({
+  // Unified Host Form Data
+  const [formData, setFormData] = useState({
     fullName: '',
-    nicPassport: '',
-    stationType: 'Private Wallbox / Home Station',
+    nicBrNumber: '',
+    stationName: '',
     email: '',
     countryCode: '+94',
     phone: '',
     password: '',
     confirmPassword: '',
     agreeTerms: false,
-    nicFile: null,
-    nicFileName: '',
+    docFile: null,
+    docFileName: '',
   });
 
   // UI States
@@ -78,26 +59,15 @@ export default function HostCreateAccount() {
     { code: '+81', name: 'Japan' },
   ];
 
-  const isOrg = hostType === 'organization';
-  const currentFormData = isOrg ? orgData : personalData;
-
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
-    if (isOrg) {
-      setOrgData((prev) => ({ ...prev, [name]: val }));
-    } else {
-      setPersonalData((prev) => ({ ...prev, [name]: val }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: val }));
     if (error) setError('');
   };
 
   const handleCountrySelect = (code) => {
-    if (isOrg) {
-      setOrgData((prev) => ({ ...prev, countryCode: code }));
-    } else {
-      setPersonalData((prev) => ({ ...prev, countryCode: code }));
-    }
+    setFormData((prev) => ({ ...prev, countryCode: code }));
     setOpenCountryDropdown(false);
   };
 
@@ -108,28 +78,20 @@ export default function HostCreateAccount() {
         setError('File size exceeds 5MB limit');
         return;
       }
-      if (isOrg) {
-        setOrgData((prev) => ({ ...prev, brFile: file, brFileName: file.name }));
-      } else {
-        setPersonalData((prev) => ({ ...prev, nicFile: file, nicFileName: file.name }));
-      }
+      setFormData((prev) => ({ ...prev, docFile: file, docFileName: file.name }));
       if (error) setError('');
     }
   };
 
   const handleRemoveFile = (e) => {
     e.stopPropagation();
-    if (isOrg) {
-      setOrgData((prev) => ({ ...prev, brFile: null, brFileName: '' }));
-    } else {
-      setPersonalData((prev) => ({ ...prev, nicFile: null, nicFileName: '' }));
-    }
+    setFormData((prev) => ({ ...prev, docFile: null, docFileName: '' }));
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Password Strength Calculation
+  // Password Strength Calculation (0 to 4)
   const passwordStrength = useMemo(() => {
-    const pwd = currentFormData.password;
+    const pwd = formData.password;
     if (!pwd) return 0;
     let score = 0;
     if (pwd.length >= 6) score += 1;
@@ -137,60 +99,50 @@ export default function HostCreateAccount() {
     if (/\d/.test(pwd)) score += 1;
     if (/[^A-Za-z0-9]/.test(pwd) || pwd.length >= 12) score += 1;
     return score;
-  }, [currentFormData.password]);
+  }, [formData.password]);
 
   const passwordsMatch =
-    currentFormData.password &&
-    currentFormData.confirmPassword &&
-    currentFormData.password === currentFormData.confirmPassword;
+    formData.password &&
+    formData.confirmPassword &&
+    formData.password === formData.confirmPassword;
 
   // Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isOrg) {
-      if (!orgData.orgName.trim()) {
-        setError('Please enter your organization / company name');
-        return;
-      }
-      if (!orgData.brNumber.trim()) {
-        setError('Please enter your Business Registration (BR) number');
-        return;
-      }
-      if (!orgData.contactPerson.trim()) {
-        setError('Please enter the station manager / contact person name');
-        return;
-      }
-    } else {
-      if (!personalData.fullName.trim() || personalData.fullName.trim().length < 2) {
-        setError('Please enter your full name (at least 2 characters)');
-        return;
-      }
-      if (!personalData.nicPassport.trim() || personalData.nicPassport.trim().length < 4) {
-        setError('Please enter a valid NIC or Passport number');
-        return;
-      }
+    if (!formData.fullName.trim() || formData.fullName.trim().length < 2) {
+      setError('Please enter your full name or business name (at least 2 characters)');
+      return;
+    }
+
+    if (!formData.nicBrNumber.trim() || formData.nicBrNumber.trim().length < 4) {
+      setError('Please enter a valid NIC, Passport, or Business Registration (BR) number');
+      return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!currentFormData.email.trim() || !emailRegex.test(currentFormData.email.trim())) {
+    if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) {
       setError('Please enter a valid email address (e.g. host@evora.lk)');
       return;
     }
-    const cleanPhone = currentFormData.phone.replace(/\D/g, '');
-    if (!currentFormData.phone.trim() || cleanPhone.length < 7) {
+
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    if (!formData.phone.trim() || cleanPhone.length < 7) {
       setError('Please enter a valid phone number (at least 7 digits)');
       return;
     }
-    if (!currentFormData.password || currentFormData.password.length < 6) {
+
+    if (!formData.password || formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
     }
-    if (currentFormData.password !== currentFormData.confirmPassword) {
+
+    if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    if (!currentFormData.agreeTerms) {
+
+    if (!formData.agreeTerms) {
       setError('Please agree to the Terms & Conditions and Privacy Policy');
       return;
     }
@@ -198,14 +150,19 @@ export default function HostCreateAccount() {
     setError('');
     setIsLoading(true);
 
+    const stationDisplayName = formData.stationName.trim()
+      ? formData.stationName.trim()
+      : `${formData.fullName.trim()}'s Charging Station`;
+
     const payload = {
-      fullName: isOrg ? orgData.orgName : personalData.fullName,
-      email: currentFormData.email.trim(),
-      password: currentFormData.password,
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
+      password: formData.password,
       role: 'host',
-      phone: `${currentFormData.countryCode} ${currentFormData.phone}`,
-      stationName: isOrg ? orgData.orgName : `${personalData.fullName}'s Charging Station`,
-      stationAddress: isOrg ? orgData.contactPerson : personalData.fullName,
+      phone: `${formData.countryCode} ${formData.phone}`,
+      stationName: stationDisplayName,
+      stationAddress: formData.fullName.trim(),
+      nicPassport: formData.nicBrNumber.trim(),
     };
 
     try {
@@ -234,8 +191,8 @@ export default function HostCreateAccount() {
 
       navigate('/verify-otp', {
         state: {
-          phone: `${currentFormData.countryCode} ${currentFormData.phone}`,
-          email: currentFormData.email,
+          phone: `${formData.countryCode} ${formData.phone}`,
+          email: formData.email,
           role: 'host',
         },
       });
@@ -250,12 +207,12 @@ export default function HostCreateAccount() {
     if (type === 'terms') {
       setModalTitle('Host Station Terms & Conditions');
       setModalContent(
-        'As an Evora Station Host (Organization or Personal), you agree to provide secure and safe EV charging infrastructure, maintain advertised power outputs and uptime, adhere to fair local electricity tariffs, and comply with safety and grid standards.'
+        'As an Evora Station Host, you agree to provide secure and safe EV charging infrastructure, maintain accurate pricing tariffs and charger uptime, adhere to local electricity standards, and comply with safety guidelines.'
       );
     } else if (type === 'privacy') {
       setModalTitle('Host Privacy Policy');
       setModalContent(
-        'Evora securely handles your organization verification, identity records, payout bank accounts, and station energy analytics. All documents and data are encrypted with AES-256 standard protocols.'
+        'Evora securely handles your host verification records, payouts, identity information, and charging session analytics. All data and documents are encrypted with AES-256 standard protocols.'
       );
     }
     setShowTermsModal(true);
@@ -300,34 +257,8 @@ export default function HostCreateAccount() {
             <div className="host-register-header-text">
               <h1 className="host-register-heading">Create Host Account</h1>
               <p className="host-register-subheading">
-                {isOrg
-                  ? 'Register stations managed by an organization / enterprise.'
-                  : 'Register personal or residential stations managed by an individual.'}
+                Register your charging stations and manage host operations on Evora.
               </p>
-            </div>
-
-            {/* Station Type Switcher: Organization vs Personal */}
-            <div className="host-type-toggle-container">
-              <button
-                type="button"
-                className={`host-toggle-tab ${isOrg ? 'active' : ''}`}
-                onClick={() => {
-                  setHostType('organization');
-                  setError('');
-                }}
-              >
-                Organization
-              </button>
-              <button
-                type="button"
-                className={`host-toggle-tab ${!isOrg ? 'active' : ''}`}
-                onClick={() => {
-                  setHostType('personal');
-                  setError('');
-                }}
-              >
-                Personal (Individual)
-              </button>
             </div>
           </div>
 
@@ -356,466 +287,226 @@ export default function HostCreateAccount() {
 
             {/* Registration Form */}
             <form className="host-register-form" onSubmit={handleSubmit} noValidate>
-              {/* TYPE 1: ORGANIZATION / BUSINESS STATIONS */}
-              {isOrg ? (
-                <div className="host-fields-section">
-                  {/* Row 1: Organization Name */}
-                  <div className="host-field-wrapper">
-                    <label className="host-field-label">Organization / Business Name</label>
-                    <div className="host-input-group">
-                      <div className="input-prefix-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
-                          <line x1="9" y1="6" x2="9" y2="6.01" />
-                          <line x1="15" y1="6" x2="15" y2="6.01" />
-                          <line x1="9" y1="10" x2="9" y2="10.01" />
-                          <line x1="15" y1="10" x2="15" y2="10.01" />
-                          <line x1="9" y1="14" x2="9" y2="14.01" />
-                          <line x1="15" y1="14" x2="15" y2="14.01" />
-                          <line x1="9" y1="18" x2="15" y2="18" />
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        name="orgName"
-                        className="host-text-input"
-                        placeholder="e.g. Lanka EV Solutions (Pvt) Ltd"
-                        value={orgData.orgName}
-                        onChange={handleInputChange}
-                        autoComplete="organization"
-                        required
-                      />
+              <div className="host-fields-section">
+                {/* Row 1: Full Name / Business Name */}
+                <div className="host-field-wrapper">
+                  <label className="host-field-label">Full Name / Business Name</label>
+                  <div className="host-input-group">
+                    <div className="input-prefix-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
                     </div>
-                  </div>
-
-                  {/* Row 2: Business Registration Number */}
-                  <div className="host-field-wrapper">
-                    <label className="host-field-label">Business Registration (BR) Number</label>
-                    <div className="host-input-group">
-                      <div className="input-prefix-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                          <line x1="16" y1="13" x2="8" y2="13" />
-                          <line x1="16" y1="17" x2="8" y2="17" />
-                          <polyline points="10 9 9 9 8 9" />
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        name="brNumber"
-                        className="host-text-input"
-                        placeholder="e.g. PV 00123456"
-                        value={orgData.brNumber}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <span className="field-hint-text">As per your Certificate of Incorporation</span>
-                  </div>
-
-                  {/* Row 3: Station Manager / Contact Person */}
-                  <div className="host-field-wrapper">
-                    <label className="host-field-label">Station Manager / Contact Person</label>
-                    <div className="host-input-group">
-                      <div className="input-prefix-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        name="contactPerson"
-                        className="host-text-input"
-                        placeholder="e.g. Nimal Perera"
-                        value={orgData.contactPerson}
-                        onChange={handleInputChange}
-                        autoComplete="name"
-                        required
-                      />
-                    </div>
-                    <span className="field-hint-text">Person responsible for managing charging stations</span>
-                  </div>
-
-                  {/* Row 4: Company Email Address */}
-                  <div className="host-field-wrapper">
-                    <label className="host-field-label">Official Email Address</label>
-                    <div className="host-input-group">
-                      <div className="input-prefix-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                          <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                      </div>
-                      <input
-                        type="email"
-                        name="email"
-                        className="host-text-input"
-                        placeholder="company@business.com"
-                        value={orgData.email}
-                        onChange={handleInputChange}
-                        autoComplete="email"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 5: Phone Number with Interactive Country Code */}
-                  <div className="host-field-wrapper" ref={countryDropdownRef}>
-                    <label className="host-field-label">Contact Phone Number</label>
-                    <div className="host-input-group phone-field">
-                      <div className="input-prefix-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                        </svg>
-                      </div>
-
-                      <div className="phone-country-custom-wrap">
-                        <button
-                          type="button"
-                          className="custom-country-trigger"
-                          onClick={() => setOpenCountryDropdown(!openCountryDropdown)}
-                        >
-                          <span className="country-code-val">{orgData.countryCode}</span>
-                          <svg className={`dropdown-chevron-svg ${openCountryDropdown ? 'open' : ''}`} viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#3DDC97" strokeWidth="2.5">
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
-                        </button>
-
-                        {openCountryDropdown && (
-                          <div className="custom-dropdown-menu country-dropdown-menu">
-                            {countryOptions.map((opt) => (
-                              <div
-                                key={opt.code}
-                                className={`custom-dropdown-item ${orgData.countryCode === opt.code ? 'selected' : ''}`}
-                                onClick={() => handleCountrySelect(opt.code)}
-                              >
-                                <span className="dropdown-opt-code">{opt.code}</span>
-                                <span className="dropdown-opt-name">{opt.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="phone-divider-bar" />
-
-                      <input
-                        type="tel"
-                        name="phone"
-                        className="host-text-input phone-number-input"
-                        placeholder="77 123 4567"
-                        value={orgData.phone}
-                        onChange={handleInputChange}
-                        autoComplete="tel"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password & Confirm Password */}
-                  <div className="host-passwords-grid">
-                    <div className="host-field-wrapper">
-                      <label className="host-field-label">Password</label>
-                      <div className="host-input-group">
-                        <div className="input-prefix-icon">
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                        </div>
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          name="password"
-                          className="host-text-input"
-                          placeholder="Password"
-                          value={orgData.password}
-                          onChange={handleInputChange}
-                          autoComplete="new-password"
-                          required
-                        />
-                        <button
-                          type="button"
-                          className="host-password-toggle-btn"
-                          onClick={() => setShowPassword(!showPassword)}
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showPassword ? (
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
-                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                              <line x1="1" y1="1" x2="23" y2="23" />
-                            </svg>
-                          ) : (
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="host-field-wrapper">
-                      <label className="host-field-label">Confirm Password</label>
-                      <div className="host-input-group">
-                        <div className="input-prefix-icon">
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                        </div>
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          name="confirmPassword"
-                          className="host-text-input"
-                          placeholder="Confirm Password"
-                          value={orgData.confirmPassword}
-                          onChange={handleInputChange}
-                          autoComplete="new-password"
-                          required
-                        />
-                        <div className="input-suffix-actions">
-                          {passwordsMatch && (
-                            <span className="password-match-icon" title="Passwords match">
-                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3DDC97" strokeWidth="3">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            className="host-password-toggle-btn"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                          >
-                            {showConfirmPassword ? (
-                              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
-                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                                <line x1="1" y1="1" x2="23" y2="23" />
-                              </svg>
-                            ) : (
-                              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Password Strength Meter */}
-                  <div className="password-strength-container host-strength-bar">
-                    <div className="strength-meter-bar">
-                      <div className={`strength-segment segment-1 ${passwordStrength >= 1 ? 'active' : ''}`} />
-                      <div className={`strength-segment segment-2 ${passwordStrength >= 2 ? 'active' : ''}`} />
-                      <div className={`strength-segment segment-3 ${passwordStrength >= 3 ? 'active' : ''}`} />
-                      <div className={`strength-segment segment-4 ${passwordStrength >= 4 ? 'active' : ''}`} />
-                    </div>
-                    <span className="strength-label">Password strength</span>
-                  </div>
-
-                  {/* Document Upload Box */}
-                  <div
-                    className="host-upload-box"
-                    onClick={() => fileInputRef.current?.click()}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
-                  >
                     <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="host-hidden-file-input"
-                      onChange={handleFileUpload}
-                      accept=".pdf,.png,.jpg,.jpeg"
+                      type="text"
+                      name="fullName"
+                      className="host-text-input"
+                      placeholder="e.g. Nimal Perera or GreenVolt Energy"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      autoComplete="name"
+                      required
                     />
+                  </div>
+                </div>
 
-                    <div className="upload-cloud-circle">
-                      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#3DDC97" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M16 16l-4-4-4 4" />
-                        <path d="M12 12v9" />
-                        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                {/* Row 2: NIC / Passport / BR Number */}
+                <div className="host-field-wrapper">
+                  <label className="host-field-label">NIC / Passport / BR Number</label>
+                  <div className="host-input-group">
+                    <div className="input-prefix-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <line x1="2" y1="10" x2="22" y2="10" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      name="nicBrNumber"
+                      className="host-text-input"
+                      placeholder="e.g. 200012345678 or PV 00123456"
+                      value={formData.nicBrNumber}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <span className="field-hint-text">Required for host identity & station verification</span>
+                </div>
+
+                {/* Row 3: Charging Station / Location Name (Optional) */}
+                <div className="host-field-wrapper">
+                  <label className="host-field-label">Charging Station / Location Name (Optional)</label>
+                  <div className="host-input-group">
+                    <div className="input-prefix-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      name="stationName"
+                      className="host-text-input"
+                      placeholder="e.g. Colombo 03 Fast Hub or Home Wallbox"
+                      value={formData.stationName}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <span className="field-hint-text">The name displayed to drivers on the EVORA map</span>
+                </div>
+
+                {/* Row 4: Host Email Address */}
+                <div className="host-field-wrapper">
+                  <label className="host-field-label">Email Address</label>
+                  <div className="host-input-group">
+                    <div className="input-prefix-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                    </div>
+                    <input
+                      type="email"
+                      name="email"
+                      className="host-text-input"
+                      placeholder="host@example.com"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      autoComplete="email"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Row 5: Phone Number with Country Code */}
+                <div className="host-field-wrapper" ref={countryDropdownRef}>
+                  <label className="host-field-label">Phone Number</label>
+                  <div className="host-input-group phone-field">
+                    <div className="input-prefix-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                       </svg>
                     </div>
 
-                    <h4 className="upload-main-title">Upload Business Registration Certificate</h4>
-                    <p className="upload-sub-text">
-                      {orgData.brFileName ? (
-                        <span className="uploaded-filename">
-                          📄 {orgData.brFileName}
-                          <button
-                            type="button"
-                            className="btn-remove-uploaded"
-                            onClick={handleRemoveFile}
-                            title="Remove file"
-                          >
-                            ✕
-                          </button>
-                        </span>
-                      ) : (
-                        'PDF or high-quality image (max 5MB)'
-                      )}
-                    </p>
+                    <div className="phone-country-custom-wrap">
+                      <button
+                        type="button"
+                        className="custom-country-trigger"
+                        onClick={() => setOpenCountryDropdown(!openCountryDropdown)}
+                      >
+                        <span className="country-code-val">{formData.countryCode}</span>
+                        <svg className={`dropdown-chevron-svg ${openCountryDropdown ? 'open' : ''}`} viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#3DDC97" strokeWidth="2.5">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </button>
 
-                    <span className="upload-badge-pill">Required for verification</span>
+                      {openCountryDropdown && (
+                        <div className="custom-dropdown-menu country-dropdown-menu">
+                          {countryOptions.map((opt) => (
+                            <div
+                              key={opt.code}
+                              className={`custom-dropdown-item ${formData.countryCode === opt.code ? 'selected' : ''}`}
+                              onClick={() => handleCountrySelect(opt.code)}
+                            >
+                              <span className="dropdown-opt-code">{opt.code}</span>
+                              <span className="dropdown-opt-name">{opt.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="phone-divider-bar" />
+
+                    <input
+                      type="tel"
+                      name="phone"
+                      className="host-text-input phone-number-input"
+                      placeholder="77 123 4567"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      autoComplete="tel"
+                      required
+                    />
                   </div>
                 </div>
-              ) : (
-                /* TYPE 2: PERSONAL / INDIVIDUAL STATIONS */
-                <div className="host-fields-section">
-                  {/* Full Name */}
+
+                {/* Row 6: Passwords Grid */}
+                <div className="host-passwords-grid">
                   <div className="host-field-wrapper">
-                    <label className="host-field-label">Host Full Name</label>
+                    <label className="host-field-label">Password</label>
                     <div className="host-input-group">
                       <div className="input-prefix-icon">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
                       </div>
                       <input
-                        type="text"
-                        name="fullName"
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
                         className="host-text-input"
-                        placeholder="e.g. Nimal Perera"
-                        value={personalData.fullName}
+                        placeholder="••••••••"
+                        value={formData.password}
                         onChange={handleInputChange}
-                        autoComplete="name"
+                        autoComplete="new-password"
                         required
                       />
-                    </div>
-                  </div>
-
-                  {/* NIC / Passport */}
-                  <div className="host-field-wrapper">
-                    <label className="host-field-label">NIC Number / Passport Number</label>
-                    <div className="host-input-group">
-                      <div className="input-prefix-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <rect x="2" y="5" width="20" height="14" rx="2" />
-                          <line x1="2" y1="10" x2="22" y2="10" />
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        name="nicPassport"
-                        className="host-text-input"
-                        placeholder="e.g. 200012345678 or N1234567"
-                        value={personalData.nicPassport}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <span className="field-hint-text">Required for personal identity verification</span>
-                  </div>
-
-                  {/* Email Address */}
-                  <div className="host-field-wrapper">
-                    <label className="host-field-label">Personal Email Address</label>
-                    <div className="host-input-group">
-                      <div className="input-prefix-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                          <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                      </div>
-                      <input
-                        type="email"
-                        name="email"
-                        className="host-text-input"
-                        placeholder="you@example.com"
-                        value={personalData.email}
-                        onChange={handleInputChange}
-                        autoComplete="email"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Phone Number */}
-                  <div className="host-field-wrapper" ref={countryDropdownRef}>
-                    <label className="host-field-label">Phone Number</label>
-                    <div className="host-input-group phone-field">
-                      <div className="input-prefix-icon">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                        </svg>
-                      </div>
-
-                      <div className="phone-country-custom-wrap">
-                        <button
-                          type="button"
-                          className="custom-country-trigger"
-                          onClick={() => setOpenCountryDropdown(!openCountryDropdown)}
-                        >
-                          <span className="country-code-val">{personalData.countryCode}</span>
-                          <svg className={`dropdown-chevron-svg ${openCountryDropdown ? 'open' : ''}`} viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#3DDC97" strokeWidth="2.5">
-                            <polyline points="6 9 12 15 18 9" />
+                      <button
+                        type="button"
+                        className="host-password-toggle-btn"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? (
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
                           </svg>
-                        </button>
-
-                        {openCountryDropdown && (
-                          <div className="custom-dropdown-menu country-dropdown-menu">
-                            {countryOptions.map((opt) => (
-                              <div
-                                key={opt.code}
-                                className={`custom-dropdown-item ${personalData.countryCode === opt.code ? 'selected' : ''}`}
-                                onClick={() => handleCountrySelect(opt.code)}
-                              >
-                                <span className="dropdown-opt-code">{opt.code}</span>
-                                <span className="dropdown-opt-name">{opt.name}</span>
-                              </div>
-                            ))}
-                          </div>
+                        ) : (
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
                         )}
-                      </div>
-
-                      <div className="phone-divider-bar" />
-
-                      <input
-                        type="tel"
-                        name="phone"
-                        className="host-text-input phone-number-input"
-                        placeholder="77 123 4567"
-                        value={personalData.phone}
-                        onChange={handleInputChange}
-                        autoComplete="tel"
-                        required
-                      />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Passwords */}
-                  <div className="host-passwords-grid">
-                    <div className="host-field-wrapper">
-                      <label className="host-field-label">Password</label>
-                      <div className="host-input-group">
-                        <div className="input-prefix-icon">
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                        </div>
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          name="password"
-                          className="host-text-input"
-                          placeholder="••••••••"
-                          value={personalData.password}
-                          onChange={handleInputChange}
-                          autoComplete="new-password"
-                          required
-                        />
+                  <div className="host-field-wrapper">
+                    <label className="host-field-label">Confirm Password</label>
+                    <div className="host-input-group">
+                      <div className="input-prefix-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                      </div>
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="confirmPassword"
+                        className="host-text-input"
+                        placeholder="••••••••"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        autoComplete="new-password"
+                        required
+                      />
+                      <div className="input-suffix-actions">
+                        {passwordsMatch && (
+                          <span className="password-match-icon" title="Passwords match">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3DDC97" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </span>
+                        )}
                         <button
                           type="button"
                           className="host-password-toggle-btn"
-                          onClick={() => setShowPassword(!showPassword)}
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                         >
-                          {showPassword ? (
+                          {showConfirmPassword ? (
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
                               <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                               <line x1="1" y1="1" x2="23" y2="23" />
@@ -829,69 +520,66 @@ export default function HostCreateAccount() {
                         </button>
                       </div>
                     </div>
-
-                    <div className="host-field-wrapper">
-                      <label className="host-field-label">Confirm Password</label>
-                      <div className="host-input-group">
-                        <div className="input-prefix-icon">
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                        </div>
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          name="confirmPassword"
-                          className="host-text-input"
-                          placeholder="••••••••"
-                          value={personalData.confirmPassword}
-                          onChange={handleInputChange}
-                          autoComplete="new-password"
-                          required
-                        />
-                        <div className="input-suffix-actions">
-                          {passwordsMatch && (
-                            <span className="password-match-icon" title="Passwords match">
-                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3DDC97" strokeWidth="3">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            className="host-password-toggle-btn"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                          >
-                            {showConfirmPassword ? (
-                              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
-                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                                <line x1="1" y1="1" x2="23" y2="23" />
-                              </svg>
-                            ) : (
-                              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A9EA8" strokeWidth="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Password Strength Meter */}
-                  <div className="password-strength-container host-strength-bar">
-                    <div className="strength-meter-bar">
-                      <div className={`strength-segment segment-1 ${passwordStrength >= 1 ? 'active' : ''}`} />
-                      <div className={`strength-segment segment-2 ${passwordStrength >= 2 ? 'active' : ''}`} />
-                      <div className={`strength-segment segment-3 ${passwordStrength >= 3 ? 'active' : ''}`} />
-                      <div className={`strength-segment segment-4 ${passwordStrength >= 4 ? 'active' : ''}`} />
-                    </div>
-                    <span className="strength-label">Password strength</span>
                   </div>
                 </div>
-              )}
+
+                {/* Password Strength Meter */}
+                <div className="password-strength-container host-strength-bar">
+                  <div className="strength-meter-bar">
+                    <div className={`strength-segment segment-1 ${passwordStrength >= 1 ? 'active' : ''}`} />
+                    <div className={`strength-segment segment-2 ${passwordStrength >= 2 ? 'active' : ''}`} />
+                    <div className={`strength-segment segment-3 ${passwordStrength >= 3 ? 'active' : ''}`} />
+                    <div className={`strength-segment segment-4 ${passwordStrength >= 4 ? 'active' : ''}`} />
+                  </div>
+                  <span className="strength-label">Password strength</span>
+                </div>
+
+                {/* Row 7: Document Upload Box */}
+                <div
+                  className="host-upload-box"
+                  onClick={() => fileInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="host-hidden-file-input"
+                    onChange={handleFileUpload}
+                    accept=".pdf,.png,.jpg,.jpeg"
+                  />
+
+                  <div className="upload-cloud-circle">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#3DDC97" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 16l-4-4-4 4" />
+                      <path d="M12 12v9" />
+                      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                    </svg>
+                  </div>
+
+                  <h4 className="upload-main-title">Upload Verification Document</h4>
+                  <p className="upload-sub-text">
+                    {formData.docFileName ? (
+                      <span className="uploaded-filename">
+                        📄 {formData.docFileName}
+                        <button
+                          type="button"
+                          className="btn-remove-uploaded"
+                          onClick={handleRemoveFile}
+                          title="Remove file"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ) : (
+                      'NIC, Passport copy, or BR Certificate (PDF / Image max 5MB)'
+                    )}
+                  </p>
+
+                  <span className="upload-badge-pill">Required for verification</span>
+                </div>
+              </div>
 
               {/* Terms of Service Checkbox */}
               <div className="host-terms-row">
@@ -899,12 +587,12 @@ export default function HostCreateAccount() {
                   <input
                     type="checkbox"
                     name="agreeTerms"
-                    checked={currentFormData.agreeTerms}
+                    checked={formData.agreeTerms}
                     onChange={handleInputChange}
                     className="host-hidden-checkbox"
                   />
                   <span className="host-custom-checkbox">
-                    {currentFormData.agreeTerms && (
+                    {formData.agreeTerms && (
                       <svg viewBox="0 0 24 24" width="13" height="13" stroke="#031C26" strokeWidth="3.5" fill="none">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -969,7 +657,7 @@ export default function HostCreateAccount() {
         <div className="driver-modal-overlay" onClick={() => setShowHelpModal(false)}>
           <div className="driver-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="driver-modal-header">
-              <h3 className="modal-title">Host Station Types</h3>
+              <h3 className="modal-title">Host Account Information</h3>
               <button
                 type="button"
                 className="driver-modal-close-icon"
@@ -981,17 +669,17 @@ export default function HostCreateAccount() {
             </div>
             <div className="driver-modal-body">
               <p>
-                <strong>🏢 Organization / Business Stations:</strong>
+                <strong>⚡ Evora Charging Station Host:</strong>
               </p>
               <p>
-                For charging stations operated by an enterprise, company, mall, fuel station, or fleet. Requires your Business Registration (BR) number and certificate for commercial verification.
+                As an Evora Host, you can list and monetize your EV charging stations (residential wallboxes, commercial hubs, or public chargers), manage reservations, track real-time power analytics, and set automated billing.
               </p>
               <br />
               <p>
-                <strong>👤 Personal / Individual Stations:</strong>
+                <strong>📋 Verification Requirements:</strong>
               </p>
               <p>
-                For private or residential EV wallboxes hosted by an individual homeowner or private host. Verified securely via NIC / Passport.
+                Provide a valid NIC / Passport number (for individual hosts) or Business Registration number (for commercial hosts) along with a verification document to activate your charging station on the Evora network.
               </p>
             </div>
             <button
