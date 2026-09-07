@@ -41,6 +41,14 @@ const bookingSchema = new mongoose.Schema(
       ref: 'Charger',
       required: false,
     },
+    bayId: {
+      type: String,
+      default: '',
+    },
+    bayName: {
+      type: String,
+      default: '',
+    },
     connectorType: {
       type: String,
       default: 'CCS2 (DC Fast)',

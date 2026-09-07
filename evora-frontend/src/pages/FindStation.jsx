@@ -485,7 +485,11 @@ const FindStationContent = ({
                                         <div
                                             key={i}
                                             className={`fs-bay-card ${b.status} ${selectedBay === i ? 'selected' : ''}`}
-                                            onClick={() => setSelectedBay(selectedBay === i ? null : i)}
+                                            onClick={() => {
+                                                setSelectedBay(i);
+                                                goDetails(safeSelected.id, b.bayId || b.id || `bay-${i + 1}`);
+                                            }}
+                                            title={`Click to view ${b.name} details`}
                                         >
                                             <span className="fs-bay-name">{b.name}</span>
                                             <div className={`fs-bay-icon-wrap ${b.status}`}>
@@ -537,7 +541,12 @@ const FindStationContent = ({
 
                         {/* Action Buttons */}
                         <div className="fs-panel-btn-row">
-                            <button className="btn-details-pill" onClick={() => goDetails(safeSelected.id)}>Details</button>
+                            <button
+                                className="btn-details-pill"
+                                onClick={() => goDetails(safeSelected.id, selectedBay !== null ? (baysData[selectedBay]?.bayId || `bay-${selectedBay + 1}`) : undefined)}
+                            >
+                                Details
+                            </button>
                             <button
                                 className="btn-directions-pill"
                                 onClick={() => {
@@ -607,7 +616,7 @@ const FindStation = () => {
     }, [search, sortBy, selectedModel, selectedPort]);
 
     const selected = stations.find((s) => s.id === selectedId) || stations[stations.length - 1] || stations[0];
-    const goDetails = (id) => navigate(`/station/${id}`);
+    const goDetails = (id, bayId) => navigate(bayId ? `/station/${id}?bay=${bayId}` : `/station/${id}`);
     const toggleFavorite = (id) => setFavorites((f) => ({ ...f, [id]: !f[id] }));
 
     const onLocate = () => {

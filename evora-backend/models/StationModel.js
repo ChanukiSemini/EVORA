@@ -1,34 +1,67 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-// A single bay indicator used by the small availability strip on the cards
+// A single bay / charger slot at the station
 const BayDetailSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true },
+    bayId: { type: String, trim: true },
+    name: { type: String, required: true, trim: true }, // e.g. "Bay 1"
     status: {
       type: String,
-      enum: ['available', 'limited', 'unavailable'],
+      enum: ['available', 'limited', 'unavailable', 'occupied', 'maintenance', 'faulty', 'in-use', 'reserved'],
+      default: 'available',
       required: true,
     },
-    label: { type: String, required: true, trim: true },
+    label: { type: String, default: 'Available', trim: true },
+    type: { type: String, default: 'CCS2', trim: true }, // e.g. "CCS2", "Type 2", "CHAdeMO"
+    power: { type: String, default: '150kW', trim: true }, // e.g. "150kW", "22kW"
+    ratePerHour: { type: Number, default: 2450 },
+    chargerId: { type: String, trim: true },
+    portId: { type: String, trim: true },
   },
   { _id: false }
 );
 
-// A physical connector / port at the station
+// A port in the admin charger hardware
+const PortSchema = new Schema(
+  {
+    portId: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ['available', 'occupied', 'reserved', 'faulty', 'charging', 'maintenance', 'out-of-order', 'unavailable', 'limited'],
+      default: 'available',
+    },
+    type: { type: String, default: 'CCS2' },
+    power: { type: String, default: '50kW' },
+  },
+  { _id: false }
+);
+
+// Admin-managed Charger Hardware attached to the station
+const ChargerSchema = new Schema(
+  {
+    chargerId: { type: String, required: true },
+    type: { type: String, default: 'CCS2' },
+    power: { type: String, default: '50kW' },
+    ports: [PortSchema],
+  },
+  { _id: false }
+);
+
+// A physical connector / port at the station (driver facing summary)
 const ConnectorSchema = new Schema(
   {
     name: { type: String, required: true, trim: true }, // e.g. "CCS Combo 2"
     kw: { type: String, required: true, trim: true }, // display string, e.g. "50kW – 150kW"
-    available: { type: Boolean, default: false },
+    available: { type: Boolean, default: true },
   },
   { _id: false }
 );
 
 const RatesSchema = new Schema(
   {
-    fast: { type: Number, required: true, min: 0 },
-    slow: { type: Number, required: true, min: 0 },
+    fast: { type: Number, default: 45, min: 0 },
+    slow: { type: Number, default: 20, min: 0 },
   },
   { _id: false }
 );
@@ -42,76 +75,83 @@ const StationSchema = new Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      match: [/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'slug must be lowercase, hyphen-separated'],
       index: true,
     },
+    branchId: { type: String, trim: true, index: true },
 
     name: { type: String, required: true, trim: true },
-    address: { type: String, required: true, trim: true },
+    address: { type: String, default: '', trim: true },
+    phone: { type: String, default: '', trim: true },
 
-    lat: { type: Number, required: true, min: -90, max: 90 },
-    lng: { type: Number, required: true, min: -180, max: 180 },
+    lat: { type: Number, default: 6.9271, min: -90, max: 90 },
+    lng: { type: Number, default: 79.8612, min: -180, max: 180 },
 
-    rating: { type: Number, default: 0, min: 0, max: 5 },
+    rating: { type: Number, default: 4.5, min: 0, max: 5 },
     reviews: { type: Number, default: 0, min: 0 },
 
     status: {
       type: String,
-      enum: ['available', 'soon', 'full'],
+      enum: ['available', 'soon', 'full', 'online', 'offline', 'maintenance'],
       default: 'available',
       index: true,
     },
 
-    // Distance/ETA are normally computed relative to the requesting user,
-    // but are kept here as station-level defaults / fallback values.
-    distanceMins: { type: Number, default: 0 },
-    distanceKm: { type: Number, default: 0 },
+    // Distance/ETA are normally computed relative to the requesting user
+    distanceMins: { type: Number, default: 15 },
+    distanceKm: { type: Number, default: 2.5 },
 
-    pluggedAvailable: { type: Number, default: 0, min: 0 },
-    pluggedTotal: { type: Number, default: 0, min: 0 },
+    pluggedAvailable: { type: Number, default: 4, min: 0 },
+    pluggedTotal: { type: Number, default: 4, min: 0 },
 
-    tags: { type: [String], default: [] },
+    tags: { type: [String], default: ['CCS2', 'Type 2', 'AC', 'DC Fast'] },
 
-    image: { type: String, trim: true }, // primary/cover photo URL
+    image: { type: String, default: '', trim: true }, // primary/cover photo URL
     images: { type: [String], default: [] }, // gallery photo URLs
 
     bays: {
       type: [String],
-      default: [],
-      // simplified parallel array of bay statuses, mirrors baysDetail
+      default: ['available', 'available', 'available', 'available'],
     },
     baysDetail: { type: [BayDetailSchema], default: [] },
+    chargers: { type: [ChargerSchema], default: [] },
 
     openHours: { type: String, default: 'Open 24 hrs', trim: true },
 
-    pricingText: { type: String, trim: true },
-    idleFeeText: { type: String, trim: true },
-    parkingText: { type: String, trim: true },
-    amenitiesText: { type: String, trim: true },
+    pricingText: { type: String, default: 'LKR 60 / kWh', trim: true },
+    idleFeeText: { type: String, default: 'LKR 10 / min', trim: true },
+    parkingText: { type: String, default: 'Free', trim: true },
+    amenitiesText: { type: String, default: 'Wi-Fi, Cafe', trim: true },
 
-    accessType: { type: String, trim: true }, // e.g. "Public · Mall Parking"
-    network: { type: String, trim: true }, // e.g. "Evora Power · Rapid DC (100kW+)"
+    accessType: { type: String, default: 'Public · Parking', trim: true },
+    network: { type: String, default: 'Evora Power · Rapid DC (100kW+)', trim: true },
 
-    priceHeadline: { type: String, trim: true }, // e.g. "LKR 62.00"
-    rates: { type: RatesSchema, required: true },
+    priceHeadline: { type: String, default: 'LKR 60.00', trim: true },
+    rates: { type: RatesSchema, default: () => ({ fast: 45, slow: 20 }) },
 
-    maxChargingSpeedKw: { type: Number, default: 0, index: true },
-    portsCount: { type: Number, default: 0 },
+    maxChargingSpeedKw: { type: Number, default: 150, index: true },
+    portsCount: { type: Number, default: 4 },
 
-    supportedModels: { type: [String], default: [], index: true },
+    supportedModels: {
+      type: [String],
+      default: ['Tesla Model 3/Y', 'Nissan Leaf', 'BYD Atto 3', 'Hyundai Ioniq 5'],
+      index: true,
+    },
 
     amenities: {
       type: [String],
-      default: [],
-      // keys should match src/data/amenities.js: wifi, cafe, parking, restroom, security, shopping
+      default: ['wifi', 'cafe', 'parking', 'restroom'],
     },
 
     connectors: { type: [ConnectorSchema], default: [] },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    collection: 'stations', // Explicitly maps to the stations collection in MongoDB Atlas
+  }
 );
 
-// Supports the FindStation.jsx search box (name/address) and general text search
+// Supports search box (name/address)
 StationSchema.index({ name: 'text', address: 'text' });
 
-module.exports = mongoose.model('Station', StationSchema);
+module.exports = mongoose.model('Station', StationSchema, 'stations');
+

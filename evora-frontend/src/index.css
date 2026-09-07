@@ -13321,14 +13321,22 @@ body {
 
 .sd-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: var(--space-6);
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
   align-items: start;
+}
+
+.sd-col-details,
+.sd-col-actions {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 @media (max-width: 980px) {
   .sd-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 
@@ -13541,6 +13549,234 @@ body {
   color: var(--text-disabled);
 }
 
+/* ---------- Station Details Bay Selection ---------- */
+.sd-bays-section-wrap {
+  margin-bottom: var(--space-6);
+}
+
+.sd-bays-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.sd-bays-hint {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.sd-bays-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .sd-bays-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sd-bay-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-accent-low);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sd-bay-card:hover:not(.unavailable):not(.maintenance) {
+  border-color: rgba(9, 209, 199, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.sd-bay-card.selected {
+  border-color: #00e599;
+  background: linear-gradient(135deg, rgba(0, 229, 153, 0.08) 0%, rgba(9, 209, 199, 0.04) 100%);
+  box-shadow: 0 0 0 1px #00e599, 0 8px 24px rgba(0, 229, 153, 0.2);
+}
+
+.sd-bay-card.unavailable,
+.sd-bay-card.maintenance {
+  opacity: 0.65;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sd-bay-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sd-bay-card-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sd-bay-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sd-bay-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sd-bay-status-badge.available {
+  background: rgba(0, 229, 153, 0.15);
+  color: #00e599;
+  border: 1px solid rgba(0, 229, 153, 0.3);
+}
+
+.sd-bay-status-badge.occupied,
+.sd-bay-status-badge.limited {
+  background: rgba(255, 179, 0, 0.15);
+  color: #ffb300;
+  border: 1px solid rgba(255, 179, 0, 0.3);
+}
+
+.sd-bay-status-badge.maintenance,
+.sd-bay-status-badge.faulty {
+  background: rgba(255, 77, 109, 0.15);
+  color: #ff4d6d;
+  border: 1px solid rgba(255, 77, 109, 0.3);
+}
+
+.sd-bay-status-badge.unavailable {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+.sd-bay-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.sd-bay-spec-pill {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.sd-bay-rate-val {
+  font-weight: 600;
+  color: #09d1c7;
+}
+
+.sd-bay-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sd-bay-select-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sd-bay-card.selected .sd-bay-select-btn {
+  background: #00e599;
+  color: #0b1320;
+}
+
+/* Book Charger Bay Chips */
+.bc-bays-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.bc-bay-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bc-bay-chip:hover:not(:disabled) {
+  border-color: rgba(0, 229, 153, 0.4);
+  background: rgba(0, 229, 153, 0.05);
+}
+
+.bc-bay-chip.active {
+  border-color: #00e599;
+  background: rgba(0, 229, 153, 0.12);
+  box-shadow: 0 0 12px rgba(0, 229, 153, 0.2);
+}
+
+.bc-bay-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.bc-bay-chip-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bc-bay-chip-sub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.bc-bay-chip-status {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.bc-bay-chip-status.available { color: #00e599; }
+.bc-bay-chip-status.occupied { color: #ffb300; }
+.bc-bay-chip-status.maintenance { color: #ff4d6d; }
+.bc-bay-chip-status.unavailable { color: #94a3b8; }
+
+
 /* ---------- Info grid ---------- */
 .sd-info-grid {
   display: grid;
@@ -13692,7 +13928,7 @@ body {
   margin-top: 8px;
 }
 
-/* ---------- Toast ---------- */
+/* ---------- Toast & Popups ---------- */
 .sd-toast {
   position: fixed;
   left: 50%;
@@ -13710,6 +13946,85 @@ body {
   z-index: 200;
   animation: fsPopoutIn .2s ease;
   font-size: var(--text-sm);
+}
+
+.sd-toast-popup {
+  position: fixed;
+  top: 28px;
+  right: 28px;
+  max-width: 420px;
+  background: rgba(10, 25, 35, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 77, 109, 0.45);
+  border-left: 4px solid #ff4d6d;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(255, 77, 109, 0.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 99999;
+  animation: sdToastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sdToastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sd-toast-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 77, 109, 0.16);
+  color: #ff4d6d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sd-toast-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sd-toast-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff4d6d;
+  letter-spacing: 0.2px;
+}
+
+.sd-toast-msg {
+  font-size: 12.5px;
+  color: #e2e8f0;
+  line-height: 1.4;
+}
+
+.sd-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.sd-toast-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* ============================================

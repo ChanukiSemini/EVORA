@@ -81,26 +81,82 @@ const TIME_SLOTS = [
 const DEFAULT_CONNECTORS = [
     {
         id: 'ccs2',
-        label: 'CCS2 (DC Fast)',
+        label: 'CCS Combo 2',
         shortLabel: 'CCS2',
-        specs: 'DC Fast · Up to 150kW',
+        specs: 'Power · 50kW – 150kW',
         ratePerHour: 2450,
     },
     {
         id: 'type2',
         label: 'Type 2 AC',
         shortLabel: 'Type 2 AC',
-        specs: 'AC Standard · Up to 22kW',
+        specs: 'Power · 3.7kW – 22kW',
         ratePerHour: 1680,
     },
     {
         id: 'chademo',
         label: 'CHAdeMO (DC)',
         shortLabel: 'CHAdeMO',
-        specs: 'DC Fast · Up to 50kW',
+        specs: 'Power · 50kW',
         ratePerHour: 2280,
     },
+    {
+        id: 'nacs',
+        label: 'Tesla NACS',
+        shortLabel: 'Tesla NACS',
+        specs: 'Power · 50kW',
+        ratePerHour: 2450,
+    },
 ];
+
+const matchConnectorForBay = (bay, connectorsList) => {
+    if (!bay || !connectorsList || !connectorsList.length) return 0;
+    const bType = (bay.type || '').toLowerCase();
+
+    // 1. Direct type match: Type 2 AC
+    if (bType.includes('type 2') || bType.includes('type2') || bType.includes('ac')) {
+        const found = connectorsList.findIndex((c) => {
+            const name = (c.label || c.name || c.shortLabel || '').toLowerCase();
+            return name.includes('type 2') || name.includes('type2') || name.includes('ac');
+        });
+        if (found !== -1) return found;
+    }
+
+    // 2. Direct type match: CCS / CCS2 / CCS Combo 2
+    if (bType.includes('ccs') || bType.includes('combo')) {
+        const found = connectorsList.findIndex((c) => {
+            const name = (c.label || c.name || c.shortLabel || '').toLowerCase();
+            return name.includes('ccs') || name.includes('combo');
+        });
+        if (found !== -1) return found;
+    }
+
+    // 3. Direct type match: CHAdeMO
+    if (bType.includes('chademo')) {
+        const found = connectorsList.findIndex((c) => {
+            const name = (c.label || c.name || c.shortLabel || '').toLowerCase();
+            return name.includes('chademo');
+        });
+        if (found !== -1) return found;
+    }
+
+    // 4. Direct type match: Tesla / NACS
+    if (bType.includes('tesla') || bType.includes('nacs')) {
+        const found = connectorsList.findIndex((c) => {
+            const name = (c.label || c.name || c.shortLabel || '').toLowerCase();
+            return name.includes('tesla') || name.includes('nacs');
+        });
+        if (found !== -1) return found;
+    }
+
+    // 5. Fallback substring match
+    const fallbackIdx = connectorsList.findIndex((c) => {
+        const name = (c.label || c.name || c.shortLabel || '').toLowerCase();
+        return name.includes(bType) || bType.includes(name);
+    });
+
+    return fallbackIdx !== -1 ? fallbackIdx : 0;
+};
 
 const DURATION_PRESETS = [30, 60, 90, 120];
 const MIN_DURATION = 15;
@@ -159,6 +215,7 @@ const BookCharger = () => {
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const stationParam = searchParams.get('station');
+    const bayParam = searchParams.get('bay');
 
     // Dynamic Station state from passed state or URL param
     const [stationData, setStationData] = useState(location.state?.station || null);
@@ -169,6 +226,14 @@ const BookCharger = () => {
     const [selectedTime, setSelectedTime] = useState(12); // 12:00 PM default active
     const [duration, setDuration] = useState(60);
     const [connectorIdx, setConnectorIdx] = useState(0);
+    const [selectedBayId, setSelectedBayId] = useState(
+        location.state?.selectedBay?.id ||
+        location.state?.bay?.id ||
+        location.state?.selectedBay?.bayId ||
+        location.state?.bay?.bayId ||
+        bayParam ||
+        'bay-1'
+    );
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -195,7 +260,7 @@ const BookCharger = () => {
         }
     }, [stationParam, stationData]);
 
-    // Construct tailored Station View
+    // Construct tailored Station View and Bays
     const displayStation = useMemo(() => {
         if (!stationData) return DEFAULT_STATION;
 
@@ -212,6 +277,35 @@ const BookCharger = () => {
             }))
             : DEFAULT_CONNECTORS;
 
+        const rawBays = stationData.baysDetail && stationData.baysDetail.length > 0
+            ? stationData.baysDetail
+            : (stationData.bays || ['available', 'available', 'available', 'available']).map((st, idx) => {
+                const isSlow = idx >= 2;
+                const status = typeof st === 'string' ? st : st.status || 'available';
+                const label = status === 'available' ? 'Available' : status === 'maintenance' ? 'Maintenance' : status === 'occupied' ? 'Occupied' : 'Unavailable';
+                return {
+                    id: `bay-${idx + 1}`,
+                    bayId: `bay-${idx + 1}`,
+                    name: `Bay ${idx + 1}`,
+                    status,
+                    label,
+                    type: isSlow ? 'Type 2' : 'CCS2',
+                    power: isSlow ? '22kW' : '150kW',
+                    ratePerHour: isSlow ? slowRate : fastRate,
+                };
+            });
+
+        const normalizedBays = rawBays.map((b, idx) => ({
+            id: b.bayId || b.id || `bay-${idx + 1}`,
+            bayId: b.bayId || b.id || `bay-${idx + 1}`,
+            name: b.name || `Bay ${idx + 1}`,
+            status: b.status || 'available',
+            label: b.label || (b.status === 'available' ? 'Available' : 'Unavailable'),
+            type: b.type || (idx >= 2 ? 'Type 2' : 'CCS2'),
+            power: b.power || (idx >= 2 ? '22kW' : '150kW'),
+            ratePerHour: b.ratePerHour || (b.type?.toLowerCase().includes('type 2') ? slowRate : fastRate),
+        }));
+
         return {
             name: stationData.name || DEFAULT_STATION.name,
             address: stationData.address || DEFAULT_STATION.address,
@@ -223,20 +317,46 @@ const BookCharger = () => {
             image: (stationData.images && stationData.images[0]) || stationData.image || kaduwelaHero,
             thumb: stationData.image || kaduwelaThumb,
             connectors: dynamicConnectors,
+            bays: normalizedBays,
             amenities: DEFAULT_STATION.amenities,
             raw: stationData,
         };
     }, [stationData]);
+
+    const activeBays = displayStation.bays || [
+        { id: 'bay-1', bayId: 'bay-1', name: 'Bay 1', status: 'available', label: 'Available', type: 'CCS2', power: '150kW', ratePerHour: 2450 },
+        { id: 'bay-2', bayId: 'bay-2', name: 'Bay 2', status: 'available', label: 'Available', type: 'CCS2', power: '150kW', ratePerHour: 2450 },
+        { id: 'bay-3', bayId: 'bay-3', name: 'Bay 3', status: 'available', label: 'Available', type: 'Type 2', power: '22kW', ratePerHour: 1680 },
+        { id: 'bay-4', bayId: 'bay-4', name: 'Bay 4', status: 'limited', label: 'Limited', type: 'CHAdeMO', power: '50kW', ratePerHour: 2280 },
+    ];
+
+    const currentBay = activeBays.find((b) => b.id === selectedBayId || b.bayId === selectedBayId) || activeBays[0];
 
     const activeConnectors = displayStation.connectors || DEFAULT_CONNECTORS;
     const safeConnectorIdx = Math.min(connectorIdx, activeConnectors.length - 1);
     const connector = activeConnectors[safeConnectorIdx] || DEFAULT_CONNECTORS[0];
     const activeDateObj = DATES[selectedDate];
 
+    // When changing bay, update connector and hourly rate automatically
+    const handleSelectBay = (bay) => {
+        setSelectedBayId(bay.id || bay.bayId);
+        const matchIdx = matchConnectorForBay(bay, activeConnectors);
+        setConnectorIdx(matchIdx);
+    };
+
+    // Auto-sync connector dropdown when bay or station loads
+    useEffect(() => {
+        if (currentBay && activeConnectors && activeConnectors.length > 0) {
+            const matchIdx = matchConnectorForBay(currentBay, activeConnectors);
+            setConnectorIdx(matchIdx);
+        }
+    }, [selectedBayId, displayStation]);
+
     const estCost = useMemo(() => {
         const hours = duration / 60;
-        return Math.round(hours * (connector?.ratePerHour || 2450));
-    }, [duration, connector]);
+        const rate = currentBay?.ratePerHour || connector?.ratePerHour || 2450;
+        return Math.round(hours * rate);
+    }, [duration, currentBay, connector]);
 
     const changeDuration = (delta) => {
         setDuration((d) => Math.min(MAX_DURATION, Math.max(MIN_DURATION, d + delta)));
@@ -273,7 +393,9 @@ const BookCharger = () => {
             stationSlug: displayStation.raw?.slug || stationParam || '',
             stationName: displayStation.name,
             stationAddress: displayStation.address,
-            connectorType: connector.label,
+            bayId: currentBay?.id || currentBay?.bayId || 'bay-1',
+            bayName: currentBay?.name || 'Bay 1',
+            connectorType: `${currentBay?.name ? currentBay.name + ' · ' : ''}${connector.label}`,
             slot: TIME_SLOTS[selectedTime].time,
             date: bookingDate.toISOString(),
             durationMinutes: duration,
@@ -311,6 +433,7 @@ const BookCharger = () => {
                         station: displayStation.name,
                         stationName: displayStation.name,
                         stationLabel: 'Station Location',
+                        bayName: currentBay?.name || 'Bay 1',
                         dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${TIME_SLOTS[selectedTime].time}`,
                         dateTimeLabel: 'Date & Time',
                         duration: `${duration} min`,
@@ -330,6 +453,7 @@ const BookCharger = () => {
                         id: Math.floor(100000 + Math.random() * 900000).toString(),
                         station: displayStation.name,
                         stationLabel: 'Station Location',
+                        bayName: currentBay?.name || 'Bay 1',
                         dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${TIME_SLOTS[selectedTime].time}`,
                         dateTimeLabel: 'Date & Time',
                         duration: `${duration} min`,
@@ -454,7 +578,50 @@ const BookCharger = () => {
                             </div>
                         </div>
 
-                        {/* 2. Select Date Card */}
+                        {/* 2. Select Charging Bay Card */}
+                        <div className="bc-section-card">
+                            <div className="bc-card-header">
+                                <div className="bc-card-header-left">
+                                    <span className="bc-card-icon">
+                                        <IconBolt />
+                                    </span>
+                                    <div>
+                                        <h3 className="bc-card-title">Select Charging Bay</h3>
+                                        <p className="bc-card-desc">Live hardware availability managed by Host/Admin</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bc-bays-grid">
+                                {activeBays.map((bay) => {
+                                    const isSelected = (currentBay?.id === bay.id) || (currentBay?.bayId === bay.id);
+                                    const isAvailable = bay.status === 'available';
+                                    return (
+                                        <button
+                                            key={bay.id}
+                                            type="button"
+                                            className={`bc-bay-chip ${isSelected ? 'active' : ''}`}
+                                            onClick={() => handleSelectBay(bay)}
+                                            disabled={!isAvailable}
+                                            title={!isAvailable ? `${bay.name} is currently ${bay.label}` : `Select ${bay.name}`}
+                                        >
+                                            <div className="bc-bay-chip-title">
+                                                <span>{bay.name}</span>
+                                                {isSelected && <span style={{ color: '#00e599' }}>✓</span>}
+                                            </div>
+                                            <div className="bc-bay-chip-sub">
+                                                {bay.type} · {bay.power}
+                                            </div>
+                                            <div className={`bc-bay-chip-status ${bay.status}`}>
+                                                {isAvailable ? '● Available' : `○ ${bay.label}`}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 3. Select Date Card */}
                         <div className="bc-section-card">
                             <div className="bc-card-header">
                                 <div className="bc-card-header-left">
@@ -507,7 +674,7 @@ const BookCharger = () => {
                             </div>
                         </div>
 
-                        {/* 3. Select Time Slot Card */}
+                        {/* 4. Select Time Slot Card */}
                         <div className="bc-section-card">
                             <div className="bc-card-header">
                                 <div className="bc-card-header-left">
@@ -552,7 +719,7 @@ const BookCharger = () => {
                             </div>
                         </div>
 
-                        {/* 4. Charging Duration Card */}
+                        {/* 5. Charging Duration Card */}
                         <div className="bc-section-card">
                             <div className="bc-duration-header">
                                 <div className="bc-card-header-left">
@@ -662,6 +829,15 @@ const BookCharger = () => {
                             <div className="bc-summary-specs-list">
                                 <div className="bc-summary-spec-row">
                                     <span className="bc-spec-label">
+                                        <span className="bc-spec-icon"><IconBolt /></span> Charging Bay
+                                    </span>
+                                    <span className="bc-spec-value bc-highlight">
+                                        {currentBay?.name || 'Bay 1'} ({currentBay?.type || 'CCS2'})
+                                    </span>
+                                </div>
+
+                                <div className="bc-summary-spec-row">
+                                    <span className="bc-spec-label">
                                         <span className="bc-spec-icon"><IconCalendar /></span> Date
                                     </span>
                                     <span className="bc-spec-value">
@@ -708,7 +884,7 @@ const BookCharger = () => {
                                         <span className="bc-spec-icon"><IconBolt /></span> Plug Spec
                                     </span>
                                     <span className="bc-spec-value">
-                                        {connector.specs}
+                                        {currentBay?.power ? `Power · ${currentBay.power}` : connector.specs}
                                     </span>
                                 </div>
                             </div>
