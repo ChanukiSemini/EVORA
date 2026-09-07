@@ -82,7 +82,15 @@ const BookingConfirmedModal = ({ bookingData, onClose, onNavigateBookings }) => 
         if (onClose) {
             onClose();
         } else {
-            navigate('/book-charger');
+            const stationSlug = booking.stationSlug || location.state?.stationParam || location.state?.stationData?.slug;
+            const bayId = booking.bayId || location.state?.selectedBayId;
+            if (stationSlug) {
+                navigate(`/book-charger?station=${encodeURIComponent(stationSlug)}${bayId ? `&bay=${encodeURIComponent(bayId)}` : ''}`);
+            } else if (window.history.length > 1) {
+                navigate(-1);
+            } else {
+                navigate('/book-charger');
+            }
         }
     };
 

@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { BookingConfirmedModal } from './BookingConfirmed';
 import {
     IconBolt,
     IconCalendar,
@@ -189,6 +190,7 @@ const BookCharger = () => {
     const [stationData, setStationData] = useState(location.state?.station || null);
     const [submitting, setSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [confirmedBooking, setConfirmedBooking] = useState(null);
 
     // Real date & time state
     const [weekOffset, setWeekOffset] = useState(0);
@@ -479,25 +481,26 @@ const BookCharger = () => {
             const json = await res.json();
             const createdBooking = json.data || json;
 
-            // Navigate to Booking Confirmed popup with real stored data
-            navigate('/booking-confirmed', {
-                state: {
-                    booking: {
-                        id: createdBooking.bookingNumber || createdBooking._id || '212456',
-                        bookingNumber: createdBooking.bookingNumber,
-                        station: displayStation.name,
-                        stationName: displayStation.name,
-                        stationLabel: 'Station Location',
-                        bayName: currentBay?.name || 'Bay 1',
-                        dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${selectedTimeSlot}`,
-                        dateTimeLabel: 'Date & Time',
-                        duration: `${duration} min`,
-                        durationMinutes: duration,
-                        durationLabel: 'Estimated Duration',
-                        cost: `Rs. ${estCost.toLocaleString()}`,
-                        ...createdBooking,
-                    },
-                },
+            // Immediately mark slot as booked in local state
+            setBookedSlots((prev) => [...prev, selectedTimeSlot]);
+
+            // Show confirmation popup in place (stays on same station page)
+            setConfirmedBooking({
+                id: createdBooking.bookingNumber || createdBooking._id || '212456',
+                bookingNumber: createdBooking.bookingNumber,
+                station: displayStation.name,
+                stationName: displayStation.name,
+                stationLabel: 'Station Location',
+                stationSlug: displayStation.raw?.slug || stationParam,
+                bayName: currentBay?.name || 'Bay 1',
+                bayId: currentBay?.id || currentBay?.bayId || selectedBayId,
+                dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${selectedTimeSlot}`,
+                dateTimeLabel: 'Date & Time',
+                duration: `${duration} min`,
+                durationMinutes: duration,
+                durationLabel: 'Estimated Duration',
+                cost: `Rs. ${estCost.toLocaleString()}`,
+                ...createdBooking,
             });
         } catch (err) {
             console.error('Error saving booking:', err);
@@ -1068,6 +1071,15 @@ const BookCharger = () => {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {/* Booking Confirmation Pop-up Modal (preserves station context upon exit) */}
+                {confirmedBooking && (
+                    <BookingConfirmedModal
+                        bookingData={confirmedBooking}
+                        onClose={() => setConfirmedBooking(null)}
+                        onNavigateBookings={() => navigate('/bookings')}
+                    />
                 )}
             </main>
         </div>
