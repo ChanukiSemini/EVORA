@@ -123,8 +123,9 @@ const registerUser = async (req, res) => {
       })
     }
 
-    // 3. Create user
+    // 3. Create user in ev_driver collection
     const user = await User.create({
+      name: fullName.trim(),
       fullName: fullName.trim(),
       email: normalizedEmail,
       password,
@@ -138,6 +139,7 @@ const registerUser = async (req, res) => {
       stationAddress: stationAddress || '',
       chargerType: chargerType || '',
       totalSlots: totalSlots || 1,
+      active: true,
     })
 
     if (user) {
@@ -149,7 +151,8 @@ const registerUser = async (req, res) => {
         token,
         user: {
           _id: user._id,
-          fullName: user.fullName,
+          name: user.name || user.fullName,
+          fullName: user.fullName || user.name,
           email: user.email,
           role: user.role,
           phone: user.phone,

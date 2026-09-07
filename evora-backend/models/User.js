@@ -3,9 +3,12 @@ const bcrypt = require('bcryptjs')
 
 const userSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      trim: true,
+    },
     fullName: {
       type: String,
-      required: [true, 'Please add a full name'],
       trim: true,
     },
     email: {
@@ -29,10 +32,23 @@ const userSchema = new mongoose.Schema(
       enum: ['driver', 'host', 'admin'],
       default: 'driver',
     },
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'roles',
+      default: () => new mongoose.Types.ObjectId('6a99243b7fb2502dd5392d1f'), // Default driver role ID
+    },
     phone: {
       type: String,
       trim: true,
       default: '',
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
+    },
+    active: {
+      type: Boolean,
+      default: true,
     },
     // Driver-specific attributes
     vehicleCategory: {
@@ -75,11 +91,19 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    collection: 'ev_driver', // Explicitly points to ev_driver collection in MongoDB Atlas
   }
 )
 
-// Encrypt password using bcrypt before saving (Mongoose async hook)
+// Sync name and fullName, and encrypt password before saving
 userSchema.pre('save', async function () {
+  if (this.fullName && !this.name) {
+    this.name = this.fullName
+  }
+  if (this.name && !this.fullName) {
+    this.fullName = this.name
+  }
+
   if (!this.isModified('password')) {
     return
   }
@@ -92,6 +116,6 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password)
 }
 
-const User = mongoose.model('User', userSchema)
+const User = mongoose.model('User', userSchema, 'ev_driver')
 
 module.exports = User
