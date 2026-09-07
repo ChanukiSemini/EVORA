@@ -12086,10 +12086,7 @@ body {
   border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid var(--border-accent-low);
-  background:
-    radial-gradient(circle at 20% 10%, rgba(9, 209, 199, 0.10), transparent 55%),
-    radial-gradient(circle at 80% 85%, rgba(61, 220, 151, 0.08), transparent 50%),
-    linear-gradient(160deg, var(--bg-card) 0%, var(--bg-primary) 100%);
+  background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-primary) 100%);
   box-shadow: var(--shadow-card);
 }
 
@@ -12113,21 +12110,8 @@ body {
   height: 14px;
   border-radius: 50%;
   background: var(--accent-cyan);
-  box-shadow: 0 0 0 6px rgba(9, 209, 199, 0.18);
+  box-shadow: 0 0 0 4px rgba(9, 209, 199, 0.25);
   transform: translate(-50%, -50%);
-  animation: fsPulse 2s ease-in-out infinite;
-}
-
-@keyframes fsPulse {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0 6px rgba(9, 209, 199, 0.18);
-  }
-
-  50% {
-    box-shadow: 0 0 0 12px rgba(9, 209, 199, 0.06);
-  }
 }
 
 .fs-map-pin {
@@ -12176,7 +12160,7 @@ body {
 .fs-map-pin:hover .fs-map-pin-dot,
 .fs-map-pin.selected .fs-map-pin-dot {
   transform: rotate(-45deg) scale(1.18);
-  box-shadow: var(--glow-accent-strong);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 .fs-map-pin-rating {
@@ -12199,13 +12183,13 @@ body {
 }
 
 .fs-map-pin.highlighted .fs-map-pin-dot {
-  box-shadow: 0 0 0 4px rgba(61, 220, 151, 0.28), var(--glow-accent-strong);
+  box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.4), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .fs-map-pin.highlighted .fs-map-pin-rating {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
-  box-shadow: var(--glow-accent);
+  box-shadow: none;
 }
 
 .fs-map-controls {
@@ -12349,7 +12333,7 @@ body {
   color: var(--accent-cyan);
   border-color: rgba(9, 209, 199, 0.4);
   font-weight: var(--font-semibold);
-  box-shadow: 0 0 12px rgba(9, 209, 199, 0.15);
+  box-shadow: none;
 }
 
 .fs-filter-wrap {
@@ -13393,7 +13377,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 5;
-  box-shadow: var(--glow-accent);
+  box-shadow: none;
 }
 
 .sd-gallery-arrow {
@@ -13594,13 +13578,13 @@ body {
 .sd-bay-card:hover:not(.unavailable):not(.maintenance) {
   border-color: rgba(9, 209, 199, 0.45);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .sd-bay-card.selected {
   border-color: #00e599;
-  background: linear-gradient(135deg, rgba(0, 229, 153, 0.08) 0%, rgba(9, 209, 199, 0.04) 100%);
-  box-shadow: 0 0 0 1px #00e599, 0 8px 24px rgba(0, 229, 153, 0.2);
+  background: rgba(0, 229, 153, 0.06);
+  box-shadow: 0 0 0 1px #00e599;
 }
 
 .sd-bay-card.unavailable,
@@ -13742,7 +13726,7 @@ body {
 .bc-bay-chip.active {
   border-color: #00e599;
   background: rgba(0, 229, 153, 0.12);
-  box-shadow: 0 0 12px rgba(0, 229, 153, 0.2);
+  box-shadow: none;
 }
 
 .bc-bay-chip:disabled {
@@ -13820,7 +13804,7 @@ body {
 
 .sd-info-label svg {
   color: var(--accent-primary);
-  filter: drop-shadow(0 0 4px var(--accent-primary));
+  filter: none;
 }
 
 .sd-info-badge {
@@ -13942,7 +13926,7 @@ body {
   color: var(--text-primary);
   padding: 12px 20px;
   border-radius: var(--radius-full);
-  box-shadow: var(--glow-accent-strong);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 200;
   animation: fsPopoutIn .2s ease;
   font-size: var(--text-sm);
@@ -13957,7 +13941,7 @@ body {
   backdrop-filter: blur(16px);
   border: 1.5px solid rgba(255, 77, 109, 0.45);
   border-left: 4px solid #ff4d6d;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(255, 77, 109, 0.2);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   border-radius: 12px;
   padding: 14px 18px;
   display: flex;
@@ -14038,9 +14022,6 @@ body {
   width: 100%;
   min-height: 100vh;
   background-color: #02161f;
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(61, 220, 151, 0.04) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(9, 209, 199, 0.04) 0%, transparent 40%);
 }
 
 @media (max-width: 767px) {
