@@ -145,7 +145,7 @@ export default function HostCreateAccount() {
     currentFormData.password === currentFormData.confirmPassword;
 
   // Form Submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (isOrg) {
@@ -198,25 +198,40 @@ export default function HostCreateAccount() {
     setError('');
     setIsLoading(true);
 
-    const hostProfile = {
+    const payload = {
+      fullName: isOrg ? orgData.orgName : personalData.fullName,
+      email: currentFormData.email.trim(),
+      password: currentFormData.password,
       role: 'host',
-      stationHostType: isOrg ? 'organization' : 'personal',
-      name: isOrg ? orgData.orgName : personalData.fullName,
-      orgName: isOrg ? orgData.orgName : '',
-      brNumber: isOrg ? orgData.brNumber : '',
-      contactPerson: isOrg ? orgData.contactPerson : personalData.fullName,
-      nicPassport: !isOrg ? personalData.nicPassport : '',
-      email: currentFormData.email,
       phone: `${currentFormData.countryCode} ${currentFormData.phone}`,
-      certificateName: isOrg ? orgData.brFileName : personalData.nicFileName,
-      registeredAt: new Date().toISOString(),
+      stationName: isOrg ? orgData.orgName : `${personalData.fullName}'s Charging Station`,
+      stationAddress: isOrg ? orgData.contactPerson : personalData.fullName,
     };
 
-    localStorage.setItem('evora_host_user', JSON.stringify(hostProfile));
-    localStorage.setItem('evora_current_user', JSON.stringify(hostProfile));
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setTimeout(() => {
-      setIsLoading(false);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Host registration failed. Please try again.');
+      }
+
+      // Store authenticated user session
+      if (data.token) {
+        localStorage.setItem('evora_token', data.token);
+      }
+      if (data.user) {
+        localStorage.setItem('evora_host_user', JSON.stringify(data.user));
+        localStorage.setItem('evora_current_user', JSON.stringify(data.user));
+      }
+
       navigate('/verify-otp', {
         state: {
           phone: `${currentFormData.countryCode} ${currentFormData.phone}`,
@@ -224,7 +239,11 @@ export default function HostCreateAccount() {
           role: 'host',
         },
       });
-    }, 500);
+    } catch (err) {
+      setError(err.message || 'Unable to connect to server. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const openModal = (type) => {

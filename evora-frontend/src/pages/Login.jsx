@@ -10,7 +10,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please enter both email and password');
@@ -19,10 +19,49 @@ export default function Login() {
     setError('');
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          rememberMe,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Login failed. Please check your credentials.');
+      }
+
+      // Store auth session
+      if (data.token) {
+        localStorage.setItem('evora_token', data.token);
+      }
+      if (data.user) {
+        localStorage.setItem('evora_current_user', JSON.stringify(data.user));
+        if (data.user.role === 'driver') {
+          localStorage.setItem('evora_driver_user', JSON.stringify(data.user));
+        } else if (data.user.role === 'host') {
+          localStorage.setItem('evora_host_user', JSON.stringify(data.user));
+        }
+      }
+
+      // Route according to user role
+      if (data.user?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/book-charger');
+      }
+    } catch (err) {
+      setError(err.message || 'Unable to connect to server. Please try again.');
+    } finally {
       setIsLoading(false);
-      navigate('/book-charger');
-    }, 600);
+    }
   };
 
   const handleSocialLogin = (provider) => {

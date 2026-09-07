@@ -159,7 +159,7 @@ export default function DriverCreateAccount() {
   const passwordsMatch = formData.password && formData.confirmPassword && formData.password === formData.confirmPassword;
 
   // Handle Form Submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.fullName.trim() || formData.fullName.trim().length < 2) {
@@ -192,23 +192,42 @@ export default function DriverCreateAccount() {
     setError('');
     setIsLoading(true);
 
-    const driverProfile = {
-      fullName: formData.fullName,
-      email: formData.email,
+    const payload = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
+      password: formData.password,
+      role: 'driver',
       phone: `${formData.countryCode} ${formData.phone}`,
       vehicleCategory: formData.vehicleCategory,
       connectorType: formData.connectorType === 'Connector Type (e.g. Type 2, CCS)' ? 'Type 2 (Mennekes)' : formData.connectorType,
       vehicleModel: formData.vehicleModel || 'Electric Vehicle',
       vehicleRegNumber: formData.vehicleRegNumber || 'WP-EV-0001',
-      registeredAt: new Date().toISOString(),
-      role: 'driver',
     };
 
-    localStorage.setItem('evora_driver_user', JSON.stringify(driverProfile));
-    localStorage.setItem('evora_current_user', JSON.stringify(driverProfile));
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setTimeout(() => {
-      setIsLoading(false);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Registration failed. Please try again.');
+      }
+
+      // Store authenticated user session
+      if (data.token) {
+        localStorage.setItem('evora_token', data.token);
+      }
+      if (data.user) {
+        localStorage.setItem('evora_driver_user', JSON.stringify(data.user));
+        localStorage.setItem('evora_current_user', JSON.stringify(data.user));
+      }
+
       navigate('/verify-otp', {
         state: {
           phone: `${formData.countryCode} ${formData.phone}`,
@@ -216,7 +235,11 @@ export default function DriverCreateAccount() {
           role: 'driver',
         },
       });
-    }, 500);
+    } catch (err) {
+      setError(err.message || 'Unable to connect to server. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const openModal = (type) => {

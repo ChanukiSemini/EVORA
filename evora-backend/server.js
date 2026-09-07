@@ -3,6 +3,7 @@ const cors = require('cors')
 const dotenv = require('dotenv')
 const connectDB = require('./config/db')
 const adminRoutes = require('./routes/adminRoutes')
+const authRoutes = require('./routes/authRoutes')
 const { notFound, errorHandler } = require('./middleware/errorMiddleware')
 
 // Load environment variables
@@ -16,10 +17,11 @@ app.use(express.json())
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'EVORA Admin Backend API running' })
+  res.json({ status: 'OK', message: 'EVORA Backend API running' })
 })
 
-// Mount Admin Routes
+// Mount Routes
+app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes)
 
 // Error Handling Middleware
