@@ -52,7 +52,8 @@ export default function Login() {
       }
 
       // Route according to user role
-      if (data.user?.role === 'admin') {
+      const userRole = (data.user?.role || '').toLowerCase();
+      if (userRole === 'host' || userRole === 'admin') {
         navigate('/admin');
       } else {
         navigate('/book-charger');
