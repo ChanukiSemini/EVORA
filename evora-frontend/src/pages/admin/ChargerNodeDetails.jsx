@@ -8,8 +8,9 @@ import { getBranchAvailability, isBranchOpen } from '../../utils/admin/branchHel
 function ChargerNodeDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { company, setBranchStatus } = useCompany()
+  const { company, setBranchStatus, deleteBranch } = useCompany()
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const branch = company.branches.find((b) => b.id === id)
 
@@ -31,6 +32,11 @@ function ChargerNodeDetails() {
     setBranchStatus(branch.id, open ? 'faulty' : 'available')
   }
 
+  async function handleDeleteBranch() {
+    await deleteBranch(branch.id)
+    navigate('/admin')
+  }
+
   return (
     <div className="dashboard-container page-wrapper">
       <div className="dashboard-card">
@@ -44,13 +50,31 @@ function ChargerNodeDetails() {
           </div>
         </div>
 
-        <button
-          className={open ? 'action-btn action-btn-red' : 'action-btn action-btn-green'}
-          onClick={handleToggleBranch}
-          style={{ marginBottom: '16px' }}
-        >
-          {open ? '🔒 Mark Branch as Closed' : '🔓 Reopen Branch'}
-        </button>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <button
+            className={open ? 'action-btn action-btn-red' : 'action-btn action-btn-green'}
+            onClick={handleToggleBranch}
+            style={{ flex: 1, margin: 0 }}
+          >
+            {open ? '🔒 Mark Branch as Closed' : '🔓 Reopen Branch'}
+          </button>
+          <button
+            className="action-btn"
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              backgroundColor: 'rgba(255, 77, 109, 0.15)',
+              color: '#ff4d6d',
+              border: '1px solid rgba(255, 77, 109, 0.3)',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              margin: 0,
+            }}
+          >
+            🗑️ Delete Branch
+          </button>
+        </div>
 
         <div style={{
           backgroundColor: '#0d3040',
@@ -115,8 +139,37 @@ function ChargerNodeDetails() {
           onClose={() => setShowEditModal(false)}
         />
       )}
+
+      {showDeleteConfirm && (
+        <div className="modal-backdrop" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon modal-icon-warning">⚠️</div>
+            <h3 style={{ textAlign: 'center' }}>Delete {branch.name}?</h3>
+            <p className="modal-text">
+              Are you sure you want to permanently decommission and remove the <strong>{branch.name}</strong> station branch from the EVORA network?
+            </p>
+            <div className="modal-btn-row">
+              <button
+                type="button"
+                className="modal-btn modal-btn-gray"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="modal-btn modal-btn-red"
+                onClick={handleDeleteBranch}
+              >
+                Yes, Delete Branch
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
 
 export default ChargerNodeDetails

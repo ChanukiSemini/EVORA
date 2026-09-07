@@ -52,11 +52,19 @@ function AdminSidebar() {
         </NavLink>
 
         <NavLink
-          to="/admin/chatbot"
-          className={({ isActive }) => getLinkClass(isActive)}
+          to="/admin/help-desk"
+          className={({ isActive }) =>
+            getLinkClass(
+              isActive ||
+              location.pathname.startsWith('/admin/help-desk') ||
+              location.pathname.startsWith('/admin/support') ||
+              location.pathname.startsWith('/admin/case') ||
+              location.pathname.startsWith('/admin/chatbot')
+            )
+          }
         >
-          <span className="sidebar-nav-icon">🤖</span>
-          <span>Chatbot</span>
+          <span className="sidebar-nav-icon">🎧</span>
+          <span>Help Desk</span>
         </NavLink>
 
         <NavLink

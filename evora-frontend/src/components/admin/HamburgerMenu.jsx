@@ -70,8 +70,20 @@ function HamburgerMenu() {
               <div style={linkStyle(isManageActive)} onClick={() => handleNavigate('/admin/manage-infrastructure')}>
                 🔧 Manage Chargers
               </div>
-              <NavLink to="/admin/chatbot" style={({ isActive }) => linkStyle(isActive)} onClick={() => setIsOpen(false)}>
-                🤖 Chatbot
+              <NavLink
+                to="/admin/help-desk"
+                style={({ isActive }) =>
+                  linkStyle(
+                    isActive ||
+                    location.pathname.startsWith('/admin/help-desk') ||
+                    location.pathname.startsWith('/admin/support') ||
+                    location.pathname.startsWith('/admin/case') ||
+                    location.pathname.startsWith('/admin/chatbot')
+                  )
+                }
+                onClick={() => setIsOpen(false)}
+              >
+                🎧 Help Desk
               </NavLink>
               <NavLink to="/admin/reports" style={({ isActive }) => linkStyle(isActive)} onClick={() => setIsOpen(false)}>
                 📈 Reports
