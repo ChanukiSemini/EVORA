@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
 const stationRoutes = require('./routes/stationRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 // Load environment variables
@@ -32,6 +33,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stations', stationRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

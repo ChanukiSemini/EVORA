@@ -587,10 +587,17 @@ const FindStation = () => {
                 return res.json();
             })
             .then((json) => {
-                const list = (json.data || []).map((s) => ({
-                    ...s,
-                    id: s.slug || s.id, // backend uses 'slug'; UI uses 'id'
-                }));
+                const list = (json.data || []).map((s) => {
+                    const stationId = s.slug || s.id;
+                    const localMatch = STATIONS.find((loc) => loc.id === stationId || loc.id === s.slug) || STATIONS[0];
+                    return {
+                        ...localMatch,
+                        ...s,
+                        id: stationId,
+                        image: (s.image && s.image.trim()) ? s.image : localMatch?.image,
+                        images: (s.images && s.images.length) ? s.images : localMatch?.images,
+                    };
+                });
                 if (list.length > 0) setStations(list);
             })
             .catch(() => {

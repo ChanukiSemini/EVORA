@@ -196,7 +196,14 @@ const StationDetails = () => {
             .then((json) => {
                 // Backend uses 'slug' as the id; normalise to 'id' for the UI
                 const data = json.data || json;
-                setStation({ ...data, id: data.slug || data.id || id });
+                const fallback = STATIONS.find((s) => s.id === id || s.id === data.slug) || STATIONS[0];
+                setStation({
+                    ...fallback,
+                    ...data,
+                    id: data.slug || data.id || id,
+                    image: (data.image && data.image.trim()) ? data.image : fallback.image,
+                    images: (data.images && data.images.length) ? data.images : fallback.images,
+                });
                 setLoading(false);
             })
             .catch(() => {
@@ -213,7 +220,10 @@ const StationDetails = () => {
         return () => clearTimeout(t);
     }, [toast]);
 
-    const onBook = () => navigate('/book-charger');
+    const onBook = () => {
+        const stationParam = station?.slug || station?.id || id;
+        navigate(`/book-charger?station=${stationParam}`, { state: { station } });
+    };
     const onDirections = () => {
         const url = getDirectionsUrl(station);
         if (url) window.open(url, '_blank', 'noopener,noreferrer');

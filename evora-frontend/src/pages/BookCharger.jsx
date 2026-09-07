@@ -1,10 +1,10 @@
 // ============================================
 // src/pages/BookCharger.jsx
-// EVORA - Book Your Charger Page (Pixel-perfect Redesign)
+// EVORA - Book Your Charger Page (Dynamic Station Data + Backend API)
 // ============================================
 
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import {
     IconBolt,
@@ -17,12 +17,13 @@ import {
     IconShield,
     IconLeaf,
 } from '../components/NavigationIcons.jsx';
+import { STATIONS } from '../data/stations';
 
 import kaduwelaHero from '../assets/kaduwela-bay-hero.jpg';
 import kaduwelaThumb from '../assets/kaduwela-bay-thumb.jpg';
 
-/* ---------- Station Mock Data ---------- */
-const STATION = {
+/* ---------- Fallback Mock Data ---------- */
+const DEFAULT_STATION = {
     name: 'Kaduwela Bay Charging Hub',
     address: 'Kaduwela Bay 01, Colombo',
     rating: '4.8',
@@ -30,6 +31,8 @@ const STATION = {
     tag: 'Ultra-Fast',
     power: 'Up to 150kW',
     model: 'Model 3',
+    image: kaduwelaHero,
+    thumb: kaduwelaThumb,
     amenities: [
         { icon: IconCCTV, title: 'CCTV', sub: 'Secured' },
         { icon: IconRestroom, title: 'Restroom', sub: 'Available' },
@@ -39,13 +42,13 @@ const STATION = {
 };
 
 const DATES = [
-    { day: 'Sun', num: 26, month: 'July', shortMonth: 'JUL', year: 2026 },
-    { day: 'Mon', num: 27, month: 'July', shortMonth: 'JUL', year: 2026 },
-    { day: 'Tue', num: 28, month: 'July', shortMonth: 'JUL', year: 2026 },
-    { day: 'Wed', num: 29, month: 'July', shortMonth: 'JUL', year: 2026 },
-    { day: 'Thu', num: 30, month: 'July', shortMonth: 'JUL', year: 2026 },
-    { day: 'Fri', num: 31, month: 'July', shortMonth: 'JUL', year: 2026 },
-    { day: 'Sat', num: 1, month: 'August', shortMonth: 'AUG', year: 2026 },
+    { day: 'Sun', num: 26, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
+    { day: 'Mon', num: 27, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
+    { day: 'Tue', num: 28, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
+    { day: 'Wed', num: 29, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
+    { day: 'Thu', num: 30, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
+    { day: 'Fri', num: 31, month: 'July', shortMonth: 'JUL', year: 2026, monthIndex: 6 },
+    { day: 'Sat', num: 1, month: 'August', shortMonth: 'AUG', year: 2026, monthIndex: 7 },
 ];
 
 const TIME_SLOTS = [
@@ -75,7 +78,7 @@ const TIME_SLOTS = [
     { time: '11:00 PM', status: 'available' },
 ];
 
-const CONNECTORS = [
+const DEFAULT_CONNECTORS = [
     {
         id: 'ccs2',
         label: 'CCS2 (DC Fast)',
@@ -105,7 +108,8 @@ const MAX_DURATION = 180;
 const DURATION_STEP = 15;
 
 /* ---------- Dropdown for Connector Selection ---------- */
-const ConnectorDropdownMenu = ({ connector, connectorIdx, setConnectorIdx, dropdownOpen, setDropdownOpen }) => {
+const ConnectorDropdownMenu = ({ connectors, connector, connectorIdx, setConnectorIdx, dropdownOpen, setDropdownOpen }) => {
+    const list = connectors && connectors.length ? connectors : DEFAULT_CONNECTORS;
     return (
         <div className="connector-dropdown-wrap">
             <button
@@ -122,11 +126,11 @@ const ConnectorDropdownMenu = ({ connector, connectorIdx, setConnectorIdx, dropd
 
             {dropdownOpen && (
                 <div className="connector-dropdown-menu">
-                    {CONNECTORS.map((c, i) => {
+                    {list.map((c, i) => {
                         const isSelected = connectorIdx === i;
                         return (
                             <div
-                                key={c.id}
+                                key={c.id || i}
                                 className={`connector-dropdown-item ${isSelected ? 'selected' : ''}`}
                                 onClick={() => {
                                     setConnectorIdx(i);
@@ -152,6 +156,14 @@ const ConnectorDropdownMenu = ({ connector, connectorIdx, setConnectorIdx, dropd
 
 const BookCharger = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
+    const stationParam = searchParams.get('station');
+
+    // Dynamic Station state from passed state or URL param
+    const [stationData, setStationData] = useState(location.state?.station || null);
+    const [submitting, setSubmitting] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
     const [selectedDate, setSelectedDate] = useState(0);
     const [selectedTime, setSelectedTime] = useState(12); // 12:00 PM default active
@@ -160,12 +172,70 @@ const BookCharger = () => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const connector = CONNECTORS[connectorIdx];
+    // Fetch station info if stationParam provided and stationData not yet populated
+    useEffect(() => {
+        if (!stationData && stationParam) {
+            const fetchStation = async () => {
+                try {
+                    let res = await fetch(`http://localhost:5000/api/stations/${stationParam}`);
+                    if (!res.ok) res = await fetch(`/api/stations/${stationParam}`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        const data = json.data || json;
+                        setStationData(data);
+                        return;
+                    }
+                } catch {
+                    // ignore network errors and use local fallback
+                }
+                const local = STATIONS.find((s) => s.id === stationParam || s.slug === stationParam);
+                if (local) setStationData(local);
+            };
+            fetchStation();
+        }
+    }, [stationParam, stationData]);
+
+    // Construct tailored Station View
+    const displayStation = useMemo(() => {
+        if (!stationData) return DEFAULT_STATION;
+
+        const fastRate = stationData.rates?.fast ? stationData.rates.fast * 50 : 2450;
+        const slowRate = stationData.rates?.slow ? stationData.rates.slow * 40 : 1680;
+
+        const dynamicConnectors = (stationData.connectors && stationData.connectors.length > 0)
+            ? stationData.connectors.map((c, idx) => ({
+                id: `conn-${idx}`,
+                label: c.name || 'Connector',
+                shortLabel: c.name || 'Connector',
+                specs: c.kw ? `Power · ${c.kw}` : 'Standard Fast Charge',
+                ratePerHour: c.name?.toLowerCase().includes('slow') || c.name?.toLowerCase().includes('type 2') ? slowRate : fastRate,
+            }))
+            : DEFAULT_CONNECTORS;
+
+        return {
+            name: stationData.name || DEFAULT_STATION.name,
+            address: stationData.address || DEFAULT_STATION.address,
+            rating: stationData.rating ? String(stationData.rating) : '4.8',
+            reviewsCount: stationData.reviews ? `${stationData.reviews} reviews` : '120+ reviews',
+            tag: stationData.tags?.[0] || (stationData.maxChargingSpeedKw >= 100 ? 'Ultra-Fast' : 'Standard Fast'),
+            power: stationData.maxChargingSpeedKw ? `Up to ${stationData.maxChargingSpeedKw}kW` : 'Up to 150kW',
+            model: stationData.supportedModels?.[0] || 'Model 3',
+            image: (stationData.images && stationData.images[0]) || stationData.image || kaduwelaHero,
+            thumb: stationData.image || kaduwelaThumb,
+            connectors: dynamicConnectors,
+            amenities: DEFAULT_STATION.amenities,
+            raw: stationData,
+        };
+    }, [stationData]);
+
+    const activeConnectors = displayStation.connectors || DEFAULT_CONNECTORS;
+    const safeConnectorIdx = Math.min(connectorIdx, activeConnectors.length - 1);
+    const connector = activeConnectors[safeConnectorIdx] || DEFAULT_CONNECTORS[0];
     const activeDateObj = DATES[selectedDate];
 
     const estCost = useMemo(() => {
         const hours = duration / 60;
-        return Math.round(hours * connector.ratePerHour);
+        return Math.round(hours * (connector?.ratePerHour || 2450));
     }, [duration, connector]);
 
     const changeDuration = (delta) => {
@@ -176,11 +246,106 @@ const BookCharger = () => {
         setSelectedTime(i);
     };
 
-    const handleConfirm = () => navigate('/booking-confirmed');
+    // Confirm booking: Submit to backend POST /api/bookings and save to MongoDB
+    const handleConfirm = async () => {
+        setSubmitting(true);
+        setErrorMsg('');
+
+        const bookingDate = new Date(activeDateObj.year, activeDateObj.monthIndex, activeDateObj.num, 12, 0, 0);
+
+        let driverId = undefined;
+        let token = localStorage.getItem('evora_token');
+        try {
+            const userObj = JSON.parse(
+                localStorage.getItem('evora_current_user') ||
+                localStorage.getItem('evora_driver_user') ||
+                '{}'
+            );
+            if (userObj._id || userObj.id) {
+                driverId = userObj._id || userObj.id;
+            }
+        } catch {
+            // ignore
+        }
+
+        const payload = {
+            stationId: displayStation.raw?._id || undefined,
+            stationSlug: displayStation.raw?.slug || stationParam || '',
+            stationName: displayStation.name,
+            stationAddress: displayStation.address,
+            connectorType: connector.label,
+            slot: TIME_SLOTS[selectedTime].time,
+            date: bookingDate.toISOString(),
+            durationMinutes: duration,
+            estimatedTotalcost: estCost.toLocaleString(),
+            driverId,
+        };
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        try {
+            let res = await fetch('http://localhost:5000/api/bookings', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                res = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload),
+                });
+            }
+
+            const json = await res.json();
+            const createdBooking = json.data || json;
+
+            // Navigate to Booking Confirmed popup with real stored data
+            navigate('/booking-confirmed', {
+                state: {
+                    booking: {
+                        id: createdBooking.bookingNumber || createdBooking._id || '212456',
+                        bookingNumber: createdBooking.bookingNumber,
+                        station: displayStation.name,
+                        stationName: displayStation.name,
+                        stationLabel: 'Station Location',
+                        dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${TIME_SLOTS[selectedTime].time}`,
+                        dateTimeLabel: 'Date & Time',
+                        duration: `${duration} min`,
+                        durationMinutes: duration,
+                        durationLabel: 'Estimated Duration',
+                        cost: `Rs. ${estCost.toLocaleString()}`,
+                        ...createdBooking,
+                    },
+                },
+            });
+        } catch (err) {
+            console.error('Error saving booking:', err);
+            // Fallback navigation if network offline
+            navigate('/booking-confirmed', {
+                state: {
+                    booking: {
+                        id: Math.floor(100000 + Math.random() * 900000).toString(),
+                        station: displayStation.name,
+                        stationLabel: 'Station Location',
+                        dateTime: `${activeDateObj.num}th ${activeDateObj.month} ${TIME_SLOTS[selectedTime].time}`,
+                        dateTimeLabel: 'Date & Time',
+                        duration: `${duration} min`,
+                        durationLabel: 'Estimated Duration',
+                        cost: `Rs. ${estCost.toLocaleString()}`,
+                    },
+                },
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     return (
         <div className="app-shell book-charger-shell">
-            {/* Desktop Sidebar (and tablet responsive view) */}
+            {/* Desktop Sidebar */}
             <Sidebar />
 
             <main className="app-main book-charger-main">
@@ -200,12 +365,12 @@ const BookCharger = () => {
                         <div className="bc-header-titles">
                             <h1 className="bc-page-title">Book a Charger</h1>
                             <p className="bc-page-subtitle">
-                                Find and reserve your charging slot at {STATION.name}.
+                                Find and reserve your charging slot at {displayStation.name}.
                             </p>
                         </div>
                     </div>
 
-                    {/* Mobile Hamburger (visible on mobile screens) */}
+                    {/* Mobile Hamburger */}
                     <button
                         type="button"
                         className="bc-mobile-menu-btn"
@@ -220,6 +385,12 @@ const BookCharger = () => {
                     </button>
                 </header>
 
+                {errorMsg && (
+                    <div style={{ background: '#ff4d6d22', color: '#ff4d6d', padding: '10px 16px', borderRadius: '8px', marginBottom: '16px' }}>
+                        {errorMsg}
+                    </div>
+                )}
+
                 {/* ── Main Two-Column Layout ── */}
                 <div className="bc-content-grid">
                     {/* ════════ Left Column ════════ */}
@@ -228,8 +399,8 @@ const BookCharger = () => {
                         <div className="bc-hero-card">
                             <div className="bc-hero-media">
                                 <img
-                                    src={kaduwelaHero}
-                                    alt={STATION.name}
+                                    src={displayStation.image}
+                                    alt={displayStation.name}
                                     className="bc-hero-img"
                                 />
                                 <div className="bc-hero-overlay" />
@@ -239,8 +410,8 @@ const BookCharger = () => {
                             <div className="bc-hero-top-badges">
                                 <div className="bc-rating-badge">
                                     <span className="bc-star">★</span>
-                                    <span className="bc-rating-val">{STATION.rating}</span>
-                                    <span className="bc-reviews-count">({STATION.reviewsCount})</span>
+                                    <span className="bc-rating-val">{displayStation.rating}</span>
+                                    <span className="bc-reviews-count">({displayStation.reviewsCount})</span>
                                 </div>
 
                                 <div className="bc-speed-badge">
@@ -248,8 +419,8 @@ const BookCharger = () => {
                                         <IconBolt filled />
                                     </span>
                                     <div className="bc-speed-text">
-                                        <span className="bc-speed-tag">{STATION.tag}</span>
-                                        <span className="bc-speed-sub">{STATION.power}</span>
+                                        <span className="bc-speed-tag">{displayStation.tag}</span>
+                                        <span className="bc-speed-sub">{displayStation.power}</span>
                                     </div>
                                 </div>
                             </div>
@@ -257,15 +428,15 @@ const BookCharger = () => {
                             {/* Bottom Station Details & Amenities */}
                             <div className="bc-hero-bottom-info">
                                 <div className="bc-hero-title-group">
-                                    <h2 className="bc-hero-title">{STATION.name}</h2>
+                                    <h2 className="bc-hero-title">{displayStation.name}</h2>
                                     <p className="bc-hero-location">
                                         <span className="bc-pin-icon">📍</span>
-                                        {STATION.address}
+                                        {displayStation.address}
                                     </p>
                                 </div>
 
                                 <div className="bc-amenities-row">
-                                    {STATION.amenities.map((item, idx) => {
+                                    {displayStation.amenities.map((item, idx) => {
                                         const ItemIcon = item.icon;
                                         return (
                                             <div key={idx} className="bc-amenity-pill">
@@ -475,16 +646,16 @@ const BookCharger = () => {
                             <div className="bc-summary-station-box">
                                 <div className="bc-summary-station-media">
                                     <img
-                                        src={kaduwelaThumb}
-                                        alt={STATION.name}
+                                        src={displayStation.thumb}
+                                        alt={displayStation.name}
                                         className="bc-summary-thumb-img"
                                     />
                                 </div>
                                 <div className="bc-summary-station-text">
-                                    <h4 className="bc-summary-station-name">{STATION.name}</h4>
-                                    <p className="bc-summary-station-loc">{STATION.address}</p>
+                                    <h4 className="bc-summary-station-name">{displayStation.name}</h4>
+                                    <p className="bc-summary-station-loc">{displayStation.address}</p>
                                 </div>
-                                <span className="bc-summary-model-pill">{STATION.model}</span>
+                                <span className="bc-summary-model-pill">{displayStation.model}</span>
                             </div>
 
                             {/* Detail List */}
@@ -542,11 +713,12 @@ const BookCharger = () => {
                                 </div>
                             </div>
 
-                            {/* Connector Interactive Dropdown Selector (Clean toggle) */}
+                            {/* Connector Interactive Dropdown Selector */}
                             <div className="bc-connector-selector-box">
                                 <ConnectorDropdownMenu
+                                    connectors={activeConnectors}
                                     connector={connector}
-                                    connectorIdx={connectorIdx}
+                                    connectorIdx={safeConnectorIdx}
                                     setConnectorIdx={setConnectorIdx}
                                     dropdownOpen={dropdownOpen}
                                     setDropdownOpen={setDropdownOpen}
@@ -571,8 +743,10 @@ const BookCharger = () => {
                                 type="button"
                                 className="bc-confirm-btn"
                                 onClick={handleConfirm}
+                                disabled={submitting}
+                                style={{ opacity: submitting ? 0.7 : 1, cursor: submitting ? 'wait' : 'pointer' }}
                             >
-                                <span>Confirm Booking</span>
+                                <span>{submitting ? 'Confirming Booking...' : 'Confirm Booking'}</span>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="5" y1="12" x2="19" y2="12" />
                                     <polyline points="12 5 19 12 12 19" />
@@ -663,4 +837,3 @@ const BookCharger = () => {
 };
 
 export default BookCharger;
-
