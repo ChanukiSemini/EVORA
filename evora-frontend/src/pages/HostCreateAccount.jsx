@@ -8,7 +8,6 @@ export default function HostCreateAccount() {
   const [formData, setFormData] = useState({
     fullName: '',
     nicBrNumber: '',
-    stationName: '',
     email: '',
     countryCode: '+94',
     phone: '',
@@ -150,23 +149,15 @@ export default function HostCreateAccount() {
     setError('');
     setIsLoading(true);
 
-    const stationDisplayName = formData.stationName.trim()
-      ? formData.stationName.trim()
-      : `${formData.fullName.trim()}'s Charging Station`;
-
     const payload = {
       fullName: formData.fullName.trim(),
-      name: stationDisplayName,
+      name: formData.fullName.trim(),
       company: formData.fullName.trim(),
       brNo: formData.nicBrNumber.trim(),
-      nicPassport: formData.nicBrNumber.trim(),
-      nicBrNumber: formData.nicBrNumber.trim(),
       email: formData.email.trim(),
       password: formData.password,
       role: 'host',
       phone: `${formData.countryCode} ${formData.phone}`,
-      stationName: stationDisplayName,
-      stationAddress: formData.fullName.trim(),
     };
 
     try {
@@ -261,7 +252,7 @@ export default function HostCreateAccount() {
             <div className="host-register-header-text">
               <h1 className="host-register-heading">Create Host Account</h1>
               <p className="host-register-subheading">
-                Register your charging stations and manage host operations on Evora.
+                Register as an Evora Host to manage charging stations and operations.
               </p>
             </div>
           </div>
@@ -306,7 +297,7 @@ export default function HostCreateAccount() {
                       type="text"
                       name="fullName"
                       className="host-text-input"
-                      placeholder="e.g. Nimal Perera or GreenVolt Energy"
+                      placeholder="e.g. Keells Super or Nimal Perera"
                       value={formData.fullName}
                       onChange={handleInputChange}
                       autoComplete="name"
@@ -329,37 +320,16 @@ export default function HostCreateAccount() {
                       type="text"
                       name="nicBrNumber"
                       className="host-text-input"
-                      placeholder="e.g. 200012345678 or PV 00123456"
+                      placeholder="e.g. 1111 or PV 00123456"
                       value={formData.nicBrNumber}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
-                  <span className="field-hint-text">Required for host identity & station verification</span>
+                  <span className="field-hint-text">Required for host identity & business verification</span>
                 </div>
 
-                {/* Row 3: Charging Station / Location Name (Optional) */}
-                <div className="host-field-wrapper">
-                  <label className="host-field-label">Charging Station / Location Name (Optional)</label>
-                  <div className="host-input-group">
-                    <div className="input-prefix-icon">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3DDC97" strokeWidth="2">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                      </svg>
-                    </div>
-                    <input
-                      type="text"
-                      name="stationName"
-                      className="host-text-input"
-                      placeholder="e.g. Colombo 03 Fast Hub or Home Wallbox"
-                      value={formData.stationName}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <span className="field-hint-text">The name displayed to drivers on the EVORA map</span>
-                </div>
-
-                {/* Row 4: Host Email Address */}
+                {/* Row 3: Host Email Address */}
                 <div className="host-field-wrapper">
                   <label className="host-field-label">Email Address</label>
                   <div className="host-input-group">

@@ -5,28 +5,8 @@ const chargerHostSchema = new mongoose.Schema(
   {
     name: {
       type: String,
+      required: [true, 'Please add a name / business name'],
       trim: true,
-      default: '',
-    },
-    fullName: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    company: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    brNo: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    nicPassport: {
-      type: String,
-      trim: true,
-      default: '',
     },
     email: {
       type: String,
@@ -39,11 +19,6 @@ const chargerHostSchema = new mongoose.Schema(
         'Please add a valid email address',
       ],
     },
-    password: {
-      type: String,
-      required: [true, 'Please add a password'],
-      minlength: [6, 'Password must be at least 6 characters'],
-    },
     phone: {
       type: String,
       trim: true,
@@ -52,60 +27,32 @@ const chargerHostSchema = new mongoose.Schema(
     role: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'roles',
-      default: () => new mongoose.Types.ObjectId('6a9974ee7fb2587dd5397d20'), // Standard Host role ID from MongoDB
+      default: () => new mongoose.Types.ObjectId('6a9974ee7fb2587dd5397d20'), // Standard Host role ID
     },
-    roleName: {
-      type: String,
-      default: 'host',
-    },
-    stationName: {
+    brNo: {
       type: String,
       trim: true,
       default: '',
     },
-    stationAddress: {
+    company: {
       type: String,
       trim: true,
       default: '',
     },
-    chargerType: {
+    password: {
       type: String,
-      default: '',
-    },
-    totalSlots: {
-      type: Number,
-      default: 1,
-    },
-    isVerified: {
-      type: Boolean,
-      default: true,
-    },
-    active: {
-      type: Boolean,
-      default: true,
+      required: [true, 'Please add a password'],
+      minlength: [6, 'Password must be at least 6 characters'],
     },
   },
   {
-    timestamps: true,
-    collection: 'chargerhost', // Explicitly points to chargerhost collection in MongoDB Atlas
+    versionKey: false,
+    collection: 'chargerhost', // Exactly maps to chargerhost collection in MongoDB Atlas
   }
 )
 
-// Sync name, fullName, company and encrypt password before saving
+// Encrypt password before saving
 chargerHostSchema.pre('save', async function () {
-  if (!this.name && this.fullName) {
-    this.name = this.fullName
-  }
-  if (!this.fullName && this.name) {
-    this.fullName = this.name
-  }
-  if (!this.company && (this.fullName || this.name)) {
-    this.company = this.fullName || this.name
-  }
-  if (!this.brNo && this.nicPassport) {
-    this.brNo = this.nicPassport
-  }
-
   if (!this.isModified('password')) {
     return
   }

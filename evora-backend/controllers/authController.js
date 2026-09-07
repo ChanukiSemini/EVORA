@@ -48,12 +48,30 @@ const loginUser = async (req, res) => {
     }
 
     // 5. Token expiration duration based on rememberMe
-    const roleString = user.roleName || (typeof user.role === 'string' ? user.role : userType)
+    const roleString = userType === 'host' ? 'host' : (user.role || 'driver')
     const expiresIn = rememberMe ? '30d' : '7d'
     const token = generateToken(user._id, roleString, expiresIn)
 
-    // 6. Send response
-    res.json({
+    // 6. Send response tailored for Host or Driver
+    if (userType === 'host') {
+      return res.json({
+        success: true,
+        message: 'Login successful',
+        token,
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: 'host',
+          phone: user.phone || '',
+          company: user.company || '',
+          brNo: user.brNo || '',
+          createdAt: user.createdAt,
+        },
+      })
+    }
+
+    return res.json({
       success: true,
       message: 'Login successful',
       token,
@@ -62,19 +80,12 @@ const loginUser = async (req, res) => {
         name: user.name || user.fullName,
         fullName: user.fullName || user.name,
         email: user.email,
-        role: roleString,
+        role: 'driver',
         phone: user.phone,
-        company: user.company || '',
-        brNo: user.brNo || user.nicPassport || '',
         vehicleCategory: user.vehicleCategory || '',
         connectorType: user.connectorType || '',
         vehicleModel: user.vehicleModel || '',
         vehicleRegNumber: user.vehicleRegNumber || '',
-        stationName: user.stationName || '',
-        stationAddress: user.stationAddress || '',
-        chargerType: user.chargerType || '',
-        totalSlots: user.totalSlots || 1,
-        isVerified: user.isVerified !== undefined ? user.isVerified : true,
         createdAt: user.createdAt,
       },
     })
@@ -108,10 +119,6 @@ const registerUser = async (req, res) => {
       connectorType,
       vehicleModel,
       vehicleRegNumber,
-      stationName,
-      stationAddress,
-      chargerType,
-      totalSlots,
     } = req.body
 
     // 1. Validation
@@ -144,29 +151,20 @@ const registerUser = async (req, res) => {
       })
     }
 
-    // 3. Create Host in chargerhost collection
+    // 3. Create Host in chargerhost collection (Clean Host Admin Entity)
     if (targetRole === 'host') {
+      const hostName = displayName.trim()
+      const hostCompany = company ? company.trim() : hostName
       const regNumber = brNo || nicPassport || nicBrNumber || ''
-      const hostCompany = company || displayName.trim()
-      const hostStationName = stationName || `${displayName.trim()}'s Station`
 
       const newHost = await ChargerHost.create({
-        name: hostStationName || displayName.trim(),
-        fullName: displayName.trim(),
-        company: hostCompany,
-        brNo: regNumber,
-        nicPassport: regNumber,
+        name: hostName,
         email: normalizedEmail,
-        password,
         phone: phone || '',
-        role: new mongoose.Types.ObjectId('6a9974ee7fb2587dd5397d20'), // Host role ID from MongoDB screenshot
-        roleName: 'host',
-        stationName: hostStationName,
-        stationAddress: stationAddress || '',
-        chargerType: chargerType || '',
-        totalSlots: totalSlots || 1,
-        active: true,
-        isVerified: true,
+        role: new mongoose.Types.ObjectId('6a9974ee7fb2587dd5397d20'), // Host role ID from MongoDB
+        brNo: regNumber,
+        company: hostCompany,
+        password,
       })
 
       const token = generateToken(newHost._id, 'host', '30d')
@@ -178,17 +176,11 @@ const registerUser = async (req, res) => {
         user: {
           _id: newHost._id,
           name: newHost.name,
-          fullName: newHost.fullName,
           email: newHost.email,
           phone: newHost.phone,
           role: 'host',
           brNo: newHost.brNo,
           company: newHost.company,
-          stationName: newHost.stationName,
-          stationAddress: newHost.stationAddress,
-          chargerType: newHost.chargerType,
-          totalSlots: newHost.totalSlots,
-          isVerified: newHost.isVerified,
           createdAt: newHost.createdAt,
         },
       })
@@ -206,10 +198,6 @@ const registerUser = async (req, res) => {
       connectorType: connectorType || '',
       vehicleModel: vehicleModel || '',
       vehicleRegNumber: vehicleRegNumber || '',
-      stationName: stationName || '',
-      stationAddress: stationAddress || '',
-      chargerType: chargerType || '',
-      totalSlots: totalSlots || 1,
       active: true,
     })
 
