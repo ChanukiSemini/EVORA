@@ -11,12 +11,12 @@ const bookingSchema = new mongoose.Schema(
     },
     driver: {
       type: mongoose.Schema.Types.Mixed,
-      ref: 'User',
+      ref: 'EvDriver',
       required: false,
     },
     vehicle: {
       type: mongoose.Schema.Types.Mixed,
-      ref: 'VehicleModel',
+      ref: 'Vehicle',
       required: false,
     },
     station: {
@@ -55,8 +55,16 @@ const bookingSchema = new mongoose.Schema(
     },
     slot: {
       type: String,
-      required: [true, 'Time slot is required'],
       default: '12:00 PM',
+    },
+    timeSlot: {
+      type: mongoose.Schema.Types.Mixed,
+      ref: 'TimeSlot',
+      required: false,
+    },
+    bookeddate: {
+      type: Date,
+      default: Date.now,
     },
     date: {
       type: Date,
@@ -68,18 +76,29 @@ const bookingSchema = new mongoose.Schema(
       required: true,
       default: 60,
     },
+    energyDeliveredKWh: {
+      type: Number,
+      required: false,
+    },
     estimatedTotalcost: {
-      type: String,
-      required: true,
-      default: '0',
+      type: mongoose.Schema.Types.Mixed,
+      default: '2,450',
+    },
+    estimatedTotalCost: {
+      type: mongoose.Schema.Types.Mixed,
+      default: '2,450',
     },
     canModify: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,
       default: 'true',
+    },
+    modify: {
+      type: Boolean,
+      default: true,
     },
     status: {
       type: String,
-      enum: ['confirmed', 'completed', 'cancelled', 'pending'],
+      enum: ['upcoming', 'confirmed', 'completed', 'cancelled', 'pending'],
       default: 'confirmed',
     },
     cancelledDate: {
@@ -97,6 +116,7 @@ const bookingSchema = new mongoose.Schema(
   }
 );
 
-const Booking = mongoose.model('Booking', bookingSchema, 'booking');
+const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema, 'booking');
 
 module.exports = Booking;
+module.exports.default = Booking;

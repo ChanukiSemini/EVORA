@@ -1,14 +1,47 @@
 // ============================================
 // src/pages/MyReservations.jsx
 // EVORA - My Reservations Page
-// Interactive Tabs (All, Upcoming, Completed, Cancelled), 3-Button Card Layout & Responsive Modals
+// Tabs: All / Upcoming / Completed / Cancelled
+// Real booking data from /api/bookings/driver/:id, enriched with
+// resolvedStatus and canReschedule from the backend.
 // ============================================
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import CancelBookingModal from '../components/CancelBookingModal';
-import RescheduleBookingModal from '../components/RescheduleBookingModal';
+
+// ─────────────────────────────────────────────
+// API — kept local (no shared api.js)
+// ─────────────────────────────────────────────
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Helper to resolve the active driver ID from localStorage or fallback
+const getActiveDriverId = () => {
+    try {
+        const userObj = JSON.parse(
+            localStorage.getItem('evora_current_user') ||
+            localStorage.getItem('evora_driver_user') ||
+            '{}'
+        );
+        if (userObj._id || userObj.id) {
+            return userObj._id || userObj.id;
+        }
+    } catch {
+        // ignore
+    }
+    return '6a9ecddc103ad8f044455e39';
+};
+
+/**
+ * Fetch all bookings for a driver, with optional status filter.
+ * The backend attaches `resolvedStatus` and `canReschedule` to each record.
+ */
+async function getDriverBookings(driverId, status = 'all') {
+    const res = await fetch(`${BASE_URL}/api/bookings/driver/${driverId}?status=${status}`);
+    if (!res.ok) throw new Error('Failed to load bookings');
+    return res.json();
+}
 
 /* ---------- SVG Icons ---------- */
 const IconBack = () => (
@@ -72,82 +105,7 @@ const IconStar = () => (
     </svg>
 );
 
-/* ---------- Mock Reservation Data ---------- */
-const INITIAL_RESERVATIONS = {
-    upcoming: [
-        {
-            id: '212456',
-            station: 'Keels Kaduwela Bay 01',
-            type: 'DC Fast Charger · 50kW',
-            date: 'Oct 24, 2026',
-            time: '10:30 AM',
-            duration: '60 min',
-            connector: 'CCS2 (DC Fast)',
-            cost: 'Rs. 2,450',
-            canModify: true,
-            status: 'upcoming',
-        },
-        {
-            id: '212457',
-            station: 'Softlogic Glomark – Delkanda',
-            type: 'AC Type 2 · 22kW',
-            date: 'Oct 26, 2026',
-            time: '02:15 PM',
-            duration: '45 min',
-            connector: 'Type 2 AC',
-            cost: 'Rs. 1,260',
-            canModify: true,
-            status: 'upcoming',
-        },
-        {
-            id: '212458',
-            station: 'Odel Alexandra Place',
-            type: 'DC Fast Charger · 120kW',
-            date: 'Oct 28, 2026',
-            time: '09:00 AM',
-            duration: '60 min',
-            connector: 'CCS2 (DC Fast)',
-            cost: 'Rs. 3,200',
-            canModify: false, // < 1 hr to session start
-            status: 'upcoming',
-        },
-    ],
-    completed: [
-        {
-            id: '212450',
-            station: 'Keels Kaduwela Bay 01',
-            type: 'DC Fast Charger · 50kW',
-            date: 'Sep 18, 2026',
-            time: '09:00 AM',
-            duration: '60 min',
-            cost: 'Rs. 2,450',
-            energy: '28.4 kWh',
-            status: 'completed',
-        },
-        {
-            id: '212449',
-            station: 'Softlogic Glomark – Delkanda',
-            type: 'AC Type 2 · 22kW',
-            date: 'Sep 10, 2026',
-            time: '11:30 AM',
-            duration: '45 min',
-            cost: 'Rs. 1,260',
-            energy: '14.2 kWh',
-            status: 'completed',
-        },
-    ],
-    cancelled: [
-        {
-            id: '212455',
-            station: 'Softlogic Glomark – Delkanda',
-            type: 'AC Type 2 · 22kW',
-            date: 'Oct 26, 2026',
-            time: '02:15 PM',
-            cancelledDate: 'Oct 24, 2026',
-            status: 'cancelled',
-        },
-    ],
-};
+/* ---------- Shared empty state components ---------- */
 
 const CancelledEmptyNotice = () => (
     <div className="res-empty-state res-cancelled-empty-notice">
@@ -163,8 +121,9 @@ const CancelledEmptyNotice = () => (
 );
 
 /* ---------- Upcoming Card Actions ---------- */
-const UpcomingCardActions = ({ booking, onDetails, onCancel, onReschedule }) => {
-    const canModify = booking.canModify !== false;
+// Allows viewing details and cancellation (if > 1 hr to session)
+const UpcomingCardActions = ({ booking, onDetails, onCancel }) => {
+    const canModify = booking.canReschedule !== false;
 
     return (
         <div className="res-upcoming-actions-wrap">
@@ -180,24 +139,15 @@ const UpcomingCardActions = ({ booking, onDetails, onCancel, onReschedule }) => 
                     className={`res-btn-secondary-action res-btn-cancel-sub ${!canModify ? 'disabled' : ''}`}
                     onClick={() => canModify && onCancel(booking)}
                     disabled={!canModify}
-                    title={!canModify ? "Cancellation is only allowed > 1 hr before session start" : "Cancel reservation"}
+                    title={!canModify ? 'Cancellation closes 1 hour before your session' : 'Cancel reservation'}
                 >
                     Cancel
-                </button>
-
-                <button
-                    className={`res-btn-secondary-action res-btn-reschedule-sub ${!canModify ? 'disabled' : ''}`}
-                    onClick={() => canModify && onReschedule(booking)}
-                    disabled={!canModify}
-                    title={!canModify ? "Rescheduling is only allowed > 1 hr before session start" : "Reschedule session"}
-                >
-                    Reschedule
                 </button>
             </div>
 
             {!canModify && (
                 <div className="res-policy-notice">
-                    <IconAlertCircle /> Reschedule / Cancel locked (&lt; 1 hr to session)
+                    <IconAlertCircle /> Cancellation locked (&lt; 1 hr to session)
                 </div>
             )}
         </div>
@@ -206,77 +156,128 @@ const UpcomingCardActions = ({ booking, onDetails, onCancel, onReschedule }) => 
 
 const MyReservations = () => {
     const navigate = useNavigate();
+
     const [activeTab, setActiveTab] = useState('all'); // 'all' | 'upcoming' | 'completed' | 'cancelled'
-    const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
+    /* Fetched bookings — full list so tab counts and category switches are instantaneous */
+    const [allBookings, setAllBookings] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
+
     /* Modal states */
     const [selectedBooking, setSelectedBooking] = useState(null);
-    const [modalType, setModalType] = useState(null); // 'details' | 'cancel' | 'reschedule' | 'receipt'
+    const [modalType, setModalType] = useState(null); // 'details' | 'cancel' | 'receipt'
 
-    /* Calculate total all items */
-    const allReservationsList = useMemo(() => {
-        return [
-            ...reservations.upcoming.map(item => ({ ...item, status: 'upcoming' })),
-            ...reservations.completed.map(item => ({ ...item, status: 'completed' })),
-            ...reservations.cancelled.map(item => ({ ...item, status: 'cancelled' })),
-        ];
-    }, [reservations]);
-
-    /* Cancel handler */
-    const handleCancelBooking = (bookingId) => {
-        const itemToCancel = reservations.upcoming.find(b => b.id === bookingId);
-        if (!itemToCancel) return;
-
-        setReservations(prev => ({
-            ...prev,
-            upcoming: prev.upcoming.filter(b => b.id !== bookingId),
-            cancelled: [
-                {
-                    ...itemToCancel,
-                    status: 'cancelled',
-                    cancelledDate: 'Today',
-                },
-                ...prev.cancelled,
-            ],
-        }));
-        setModalType(null);
+    const fetchBookings = () => {
+        setIsLoading(true);
+        setLoadError(null);
+        const driverId = getActiveDriverId();
+        getDriverBookings(driverId, 'all')
+            .then((data) => {
+                setAllBookings(data);
+                setIsLoading(false);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch bookings in MyReservations:', err);
+                setLoadError(err.message);
+                setIsLoading(false);
+            });
     };
 
-    /* Reschedule handler */
-    const handleRescheduleBooking = (bookingId, newDate, newTime) => {
-        setReservations(prev => ({
-            ...prev,
-            upcoming: prev.upcoming.map(b => (b.id === bookingId ? { ...b, date: newDate, time: newTime } : b)),
-        }));
-        setModalType(null);
-    };
+    /* Fetch bookings on mount and whenever tab changes */
+    useEffect(() => {
+        fetchBookings();
+    }, []);
 
-    /* Items list depending on activeTab */
-    const rawItems = useMemo(() => {
-        if (activeTab === 'all') return allReservationsList;
-        return reservations[activeTab] || [];
-    }, [activeTab, reservations, allReservationsList]);
+    /* Counts per category — derived from allBookings */
+    const counts = useMemo(() => ({
+        all: allBookings.length,
+        upcoming: allBookings.filter(b => b.resolvedStatus === 'upcoming').length,
+        completed: allBookings.filter(b => b.resolvedStatus === 'completed').length,
+        cancelled: allBookings.filter(b => b.resolvedStatus === 'cancelled').length,
+    }), [allBookings]);
 
-    /* Search filter */
+    /* Local search and tab filter on top of the full result */
     const filteredItems = useMemo(() => {
-        return rawItems.filter(item =>
-            item.station.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.id.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }, [rawItems, searchQuery]);
+        const tabList = activeTab === 'all'
+            ? allBookings
+            : allBookings.filter(b => b.resolvedStatus === activeTab);
+
+        if (!searchQuery.trim()) return tabList;
+        const q = searchQuery.toLowerCase();
+        return tabList.filter((b) => {
+            const stationName = b.station?.name || b.stationName || b.charger?.station?.name || '';
+            const bookingNum = b.bookingNumber || b._id || '';
+            return (
+                stationName.toLowerCase().includes(q) ||
+                String(bookingNum).toLowerCase().includes(q)
+            );
+        });
+    }, [allBookings, activeTab, searchQuery]);
+
+    /* Cancel handler — updates status to cancelled and frees slot */
+    const handleCancelBooking = async (bookingId) => {
+        try {
+            const res = await fetch(`${BASE_URL}/api/bookings/${bookingId}/cancel`, {
+                method: 'PATCH',
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to cancel booking');
+            }
+
+            const updatedBooking = await res.json();
+
+            // Update this booking in state to 'cancelled' so it moves to the Cancelled tab
+            setAllBookings(prev =>
+                prev.map(b =>
+                    (b._id === bookingId || b.id === bookingId)
+                        ? {
+                            ...b,
+                            status: 'cancelled',
+                            resolvedStatus: 'cancelled',
+                            cancelledDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                            canReschedule: false,
+                        }
+                        : b
+                )
+            );
+
+            setModalType(null);
+        } catch (error) {
+            console.error('Cancel booking failed:', error.message);
+        }
+    };
 
     /* Card Renderer helper */
     const renderCard = (b) => {
-        const currentStatus = b.status || activeTab;
+        // Use resolvedStatus (real-time, computed by backend) for display.
+        const currentStatus = b.resolvedStatus || b.status;
+
+        // Derive display values from station / booking details
+        const stationName = b.station?.name || b.stationName || b.charger?.station?.name || 'Unknown Station';
+        const connectorLabel = b.connectorType || b.bayName || b.charger?.connector?.label || b.charger?.connector?.specs || (
+            b.charger?.connector?.connectorType
+                ? `${b.charger.connector.connectorType} · ${b.charger.connector.powerKW || b.charger.powerKW || '?'}kW`
+                : b.charger?.connectorType
+                ? `${b.charger.connectorType} · ${b.charger.powerKW || '?'}kW`
+                : 'Charger'
+        );
+        const displayDuration = b.durationMinutes ? `${b.durationMinutes} min` : null;
+        const displayCost = b.estimatedTotalCost
+            ? (typeof b.estimatedTotalCost === 'number' ? `Rs. ${b.estimatedTotalCost.toLocaleString()}` : String(b.estimatedTotalCost))
+            : null;
+        const displayEnergy = b.energyDeliveredKWh != null ? `${b.energyDeliveredKWh} kWh` : null;
+        const displayId = b.bookingNumber || b._id || b.id;
 
         return (
-            <div key={b.id} className="res-card card dt-res-card">
+            <div key={b._id || b.id} className="res-card card dt-res-card">
                 <div className="res-card-header">
                     <div className="res-booking-id-tag">
                         <span className="res-id-label">BOOKING ID</span>
-                        <span className="res-id-value">#{b.id}</span>
+                        <span className="res-id-value">#{displayId}</span>
                     </div>
                     <span className={`res-status-badge ${currentStatus}`}>
                         <span className="res-badge-dot" />
@@ -290,8 +291,8 @@ const MyReservations = () => {
                             <IconMapPin />
                         </span>
                         <div className="res-station-text">
-                            <h3 className="res-station-name">{b.station}</h3>
-                            <p className="res-station-type">{b.type}</p>
+                            <h3 className="res-station-name">{stationName}</h3>
+                            <p className="res-station-type">{connectorLabel}</p>
                         </div>
                     </div>
 
@@ -301,7 +302,7 @@ const MyReservations = () => {
                         </span>
                         <span className="res-datetime-divider">|</span>
                         <span className="res-datetime-item">
-                            <IconClock /> {b.time}
+                            <IconClock /> {b.time || b.timeSlot}
                         </span>
                     </div>
 
@@ -316,9 +317,8 @@ const MyReservations = () => {
                     {currentStatus === 'upcoming' && (
                         <UpcomingCardActions
                             booking={b}
-                            onDetails={(item) => navigate(`/booking-details/${item.id}`)}
+                            onDetails={(item) => navigate(`/booking-details/${item._id || item.id}`)}
                             onCancel={(item) => { setSelectedBooking(item); setModalType('cancel'); }}
-                            onReschedule={(item) => { setSelectedBooking(item); setModalType('reschedule'); }}
                         />
                     )}
 
@@ -326,7 +326,7 @@ const MyReservations = () => {
                         <div className="res-completed-actions-wrap">
                             <button
                                 className="res-btn-primary-green"
-                                onClick={() => navigate('/rate-session', { state: { booking: b } })}
+                                onClick={() => navigate('/review', { state: { bookingId: b._id } })}
                             >
                                 <IconStar /> Rate Session
                             </button>
@@ -341,6 +341,39 @@ const MyReservations = () => {
                 </div>
             </div>
         );
+    };
+
+    /* Shared loading / error / empty states */
+    const renderListBody = () => {
+        if (isLoading) {
+            return (
+                <div className="res-empty-state">
+                    <p style={{ color: 'var(--text-secondary)' }}>Loading reservations…</p>
+                </div>
+            );
+        }
+        if (loadError) {
+            return (
+                <div className="res-empty-state">
+                    <p style={{ color: '#ff6b6b' }}>{loadError}</p>
+                    <button className="res-btn-primary-green" style={{ marginTop: 12 }} onClick={() => window.location.reload()}>
+                        Retry
+                    </button>
+                </div>
+            );
+        }
+        if (filteredItems.length === 0) {
+            return activeTab === 'cancelled'
+                ? <CancelledEmptyNotice />
+                : (
+                    <div className="res-empty-state">
+                        <div className="res-empty-icon"><IconXCircle /></div>
+                        <h3 className="res-empty-title">No {activeTab} bookings</h3>
+                        <p className="res-empty-sub">Your {activeTab} reservations will appear here</p>
+                    </div>
+                );
+        }
+        return filteredItems.map(renderCard);
     };
 
     return (
@@ -370,48 +403,34 @@ const MyReservations = () => {
                         className={`res-tab-pill ${activeTab === 'all' ? 'active' : ''}`}
                         onClick={() => setActiveTab('all')}
                     >
-                        All ({allReservationsList.length})
+                        All{counts.all != null ? ` (${counts.all})` : ''}
                     </button>
                     <button
                         className={`res-tab-pill ${activeTab === 'upcoming' ? 'active' : ''}`}
                         onClick={() => setActiveTab('upcoming')}
                     >
-                        Upcoming ({reservations.upcoming.length})
+                        Upcoming{counts.upcoming != null ? ` (${counts.upcoming})` : ''}
                     </button>
                     <button
                         className={`res-tab-pill ${activeTab === 'completed' ? 'active' : ''}`}
                         onClick={() => setActiveTab('completed')}
                     >
-                        Completed ({reservations.completed.length})
+                        Completed{counts.completed != null ? ` (${counts.completed})` : ''}
                     </button>
                     <button
                         className={`res-tab-pill ${activeTab === 'cancelled' ? 'active' : ''}`}
                         onClick={() => setActiveTab('cancelled')}
                     >
-                        Cancelled ({reservations.cancelled.length})
+                        Cancelled{counts.cancelled != null ? ` (${counts.cancelled})` : ''}
                     </button>
                 </div>
 
                 {/* Cards List */}
                 <div className="res-cards-list">
-                    {filteredItems.length === 0 ? (
-                        activeTab === 'cancelled' ? (
-                            <CancelledEmptyNotice />
-                        ) : (
-                            <div className="res-empty-state">
-                                <div className="res-empty-icon">
-                                    <IconXCircle />
-                                </div>
-                                <h3 className="res-empty-title">No {activeTab} bookings</h3>
-                                <p className="res-empty-sub">Your {activeTab} reservations will appear here</p>
-                            </div>
-                        )
-                    ) : (
-                        filteredItems.map(renderCard)
-                    )}
+                    {renderListBody()}
                 </div>
 
-                {activeTab === 'completed' && reservations.completed.length > 0 && (
+                {activeTab === 'completed' && counts.completed > 0 && (
                     <p className="res-footer-note">Showing all completed bookings</p>
                 )}
 
@@ -469,25 +488,25 @@ const MyReservations = () => {
                                 className={`dt-res-tab ${activeTab === 'all' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('all')}
                             >
-                                All <span className="tab-count">{allReservationsList.length}</span>
+                                All {counts.all != null && <span className="tab-count">{counts.all}</span>}
                             </button>
                             <button
                                 className={`dt-res-tab ${activeTab === 'upcoming' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('upcoming')}
                             >
-                                Upcoming <span className="tab-count">{reservations.upcoming.length}</span>
+                                Upcoming {counts.upcoming != null && <span className="tab-count">{counts.upcoming}</span>}
                             </button>
                             <button
                                 className={`dt-res-tab ${activeTab === 'completed' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('completed')}
                             >
-                                Completed <span className="tab-count">{reservations.completed.length}</span>
+                                Completed {counts.completed != null && <span className="tab-count">{counts.completed}</span>}
                             </button>
                             <button
                                 className={`dt-res-tab ${activeTab === 'cancelled' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('cancelled')}
                             >
-                                Cancelled <span className="tab-count">{reservations.cancelled.length}</span>
+                                Cancelled {counts.cancelled != null && <span className="tab-count">{counts.cancelled}</span>}
                             </button>
                         </div>
 
@@ -495,7 +514,7 @@ const MyReservations = () => {
                             <input
                                 type="text"
                                 className="dt-res-search-input"
-                                placeholder="Search by station or ID..."
+                                placeholder="Search by station or booking ID..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -504,16 +523,23 @@ const MyReservations = () => {
 
                     {/* Cards Grid */}
                     <div className="dt-res-grid">
-                        {filteredItems.length === 0 ? (
+                        {isLoading ? (
+                            <div className="res-empty-state dt-empty-state card" style={{ gridColumn: '1 / -1' }}>
+                                <p style={{ color: 'var(--text-secondary)' }}>Loading reservations…</p>
+                            </div>
+                        ) : loadError ? (
+                            <div className="res-empty-state dt-empty-state card" style={{ gridColumn: '1 / -1' }}>
+                                <p style={{ color: '#ff6b6b' }}>{loadError}</p>
+                                <button className="res-btn-primary-green" style={{ marginTop: 12 }} onClick={() => window.location.reload()}>Retry</button>
+                            </div>
+                        ) : filteredItems.length === 0 ? (
                             activeTab === 'cancelled' ? (
                                 <div className="card dt-empty-state-card" style={{ gridColumn: '1 / -1' }}>
                                     <CancelledEmptyNotice />
                                 </div>
                             ) : (
                                 <div className="res-empty-state dt-empty-state card" style={{ gridColumn: '1 / -1' }}>
-                                    <div className="res-empty-icon">
-                                        <IconXCircle />
-                                    </div>
+                                    <div className="res-empty-icon"><IconXCircle /></div>
                                     <h3 className="res-empty-title">No {activeTab} bookings</h3>
                                     <p className="res-empty-sub">Your {activeTab} reservations will appear here</p>
                                 </div>
@@ -525,115 +551,118 @@ const MyReservations = () => {
                 </main>
             </div>
 
-            {modalType === 'reschedule' && selectedBooking && (
-                <RescheduleBookingModal
-                    booking={selectedBooking}
-                    onClose={() => setModalType(null)}
-                    onConfirmReschedule={handleRescheduleBooking}
-                />
-            )}
-
             {modalType === 'cancel' && selectedBooking && (
                 <CancelBookingModal
                     booking={selectedBooking}
                     onClose={() => setModalType(null)}
-                    onConfirmCancel={() => handleCancelBooking(selectedBooking.id)}
+                    onConfirmCancel={() => handleCancelBooking(selectedBooking._id || selectedBooking.id)}
                 />
             )}
 
-            {modalType && modalType !== 'cancel' && modalType !== 'reschedule' && selectedBooking && (
+            {modalType && modalType !== 'cancel' && selectedBooking && (
                 <div className="bc-modal-backdrop" onClick={() => setModalType(null)}>
                     <div className="bc-modal-card res-modal-card" onClick={(e) => e.stopPropagation()}>
                         <button className="bc-close-btn" onClick={() => setModalType(null)}>✕</button>
 
                         {/* Details Modal */}
-                        {modalType === 'details' && (
-                            <div className="res-modal-body">
-                                <h3 className="res-modal-title">Booking Details</h3>
-                                <p className="res-modal-subtitle">ID #{selectedBooking.id}</p>
+                        {modalType === 'details' && (() => {
+                            const sb = selectedBooking;
+                            const sbStation = sb.charger?.station?.name || 'Unknown Station';
+                            const sbConnector = sb.charger?.connector?.connectorType || sb.charger?.connectorType || 'Charger';
+                            const sbDuration = sb.durationMinutes ? `${sb.durationMinutes} min` : '—';
+                            return (
+                                <div className="res-modal-body">
+                                    <h3 className="res-modal-title">Booking Details</h3>
+                                    <p className="res-modal-subtitle">ID #{sb.bookingNumber || sb._id}</p>
 
-                                <div className="bc-detail-card">
-                                    <div className="bc-detail-row">
-                                        <span className="bc-detail-icon bc-icon-accent"><IconMapPin /></span>
-                                        <div className="bc-detail-text">
-                                            <span className="bc-detail-value">{selectedBooking.station}</span>
-                                            <span className="bc-detail-label">{selectedBooking.type}</span>
+                                    <div className="bc-detail-card">
+                                        <div className="bc-detail-row">
+                                            <span className="bc-detail-icon bc-icon-accent"><IconMapPin /></span>
+                                            <div className="bc-detail-text">
+                                                <span className="bc-detail-value">{sbStation}</span>
+                                                <span className="bc-detail-label">{sbConnector}</span>
+                                            </div>
+                                        </div>
+                                        <div className="bc-detail-divider" />
+                                        <div className="bc-detail-row">
+                                            <span className="bc-detail-icon bc-icon-cyan"><IconCalendar /></span>
+                                            <div className="bc-detail-text">
+                                                <span className="bc-detail-value">{sb.date} · {sb.time || sb.timeSlot}</span>
+                                                <span className="bc-detail-label">Date & Time</span>
+                                            </div>
+                                        </div>
+                                        <div className="bc-detail-divider" />
+                                        <div className="bc-detail-row">
+                                            <span className="bc-detail-icon bc-icon-amber"><IconClock /></span>
+                                            <div className="bc-detail-text">
+                                                <span className="bc-detail-value">{sbDuration}</span>
+                                                <span className="bc-detail-label">Estimated Duration</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="bc-detail-divider" />
-                                    <div className="bc-detail-row">
-                                        <span className="bc-detail-icon bc-icon-cyan"><IconCalendar /></span>
-                                        <div className="bc-detail-text">
-                                            <span className="bc-detail-value">{selectedBooking.date} · {selectedBooking.time}</span>
-                                            <span className="bc-detail-label">Date & Time</span>
-                                        </div>
-                                    </div>
-                                    <div className="bc-detail-divider" />
-                                    <div className="bc-detail-row">
-                                        <span className="bc-detail-icon bc-icon-amber"><IconClock /></span>
-                                        <div className="bc-detail-text">
-                                            <span className="bc-detail-value">{selectedBooking.duration || '60 min'}</span>
-                                            <span className="bc-detail-label">Estimated Duration</span>
-                                        </div>
-                                    </div>
+
+                                    <button className="btn-primary" onClick={() => setModalType(null)} style={{ marginTop: 20 }}>
+                                        Done
+                                    </button>
                                 </div>
-
-                                <button className="btn-primary" onClick={() => setModalType(null)} style={{ marginTop: 20 }}>
-                                    Done
-                                </button>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {/* Receipt Modal */}
-                        {modalType === 'receipt' && (
-                            <div className="res-modal-body">
-                                <div className="res-receipt-icon-wrap">
-                                    <IconReceipt />
-                                </div>
-                                <h3 className="res-modal-title">Charging Receipt</h3>
-                                <p className="res-modal-subtitle">Invoice ID #{selectedBooking.id}</p>
+                        {modalType === 'receipt' && (() => {
+                            const sb = selectedBooking;
+                            const sbStation = sb.charger?.station?.name || 'Unknown Station';
+                            const sbEnergy = sb.energyDeliveredKWh != null ? `${sb.energyDeliveredKWh} kWh` : '—';
+                            const sbDuration = sb.durationMinutes ? `${sb.durationMinutes} min` : '—';
+                            const sbCost = sb.estimatedTotalCost != null ? `Rs. ${sb.estimatedTotalCost.toLocaleString()}` : '—';
+                            return (
+                                <div className="res-modal-body">
+                                    <div className="res-receipt-icon-wrap"><IconReceipt /></div>
+                                    <h3 className="res-modal-title">Charging Receipt</h3>
+                                    <p className="res-modal-subtitle">Booking #{sb.bookingNumber || sb._id}</p>
 
-                                <div className="res-receipt-box">
-                                    <div className="res-receipt-row">
-                                        <span>Station</span>
-                                        <span>{selectedBooking.station}</span>
+                                    <div className="res-receipt-box">
+                                        <div className="res-receipt-row">
+                                            <span>Station</span>
+                                            <span>{sbStation}</span>
+                                        </div>
+                                        <div className="res-receipt-row">
+                                            <span>Date & Time</span>
+                                            <span>{sb.date} {sb.time || sb.timeSlot}</span>
+                                        </div>
+                                        <div className="res-receipt-row">
+                                            <span>Energy Delivered</span>
+                                            <span>{sbEnergy}</span>
+                                        </div>
+                                        <div className="res-receipt-row">
+                                            <span>Duration</span>
+                                            <span>{sbDuration}</span>
+                                        </div>
+                                        <div className="card-divider" />
+                                        <div className="res-receipt-row total">
+                                            <span>Total Paid</span>
+                                            <span className="res-receipt-total-val">{sbCost}</span>
+                                        </div>
                                     </div>
-                                    <div className="res-receipt-row">
-                                        <span>Date & Time</span>
-                                        <span>{selectedBooking.date} {selectedBooking.time}</span>
-                                    </div>
-                                    <div className="res-receipt-row">
-                                        <span>Energy Delivered</span>
-                                        <span>{selectedBooking.energy || '24.5 kWh'}</span>
-                                    </div>
-                                    <div className="res-receipt-row">
-                                        <span>Duration</span>
-                                        <span>{selectedBooking.duration || '45 min'}</span>
-                                    </div>
-                                    <div className="card-divider" />
-                                    <div className="res-receipt-row total">
-                                        <span>Total Paid</span>
-                                        <span className="res-receipt-total-val">{selectedBooking.cost}</span>
-                                    </div>
-                                </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 20 }}>
-                                    <button
-                                        className="btn-primary"
-                                        onClick={() => {
-                                            setModalType(null);
-                                            navigate('/rate-session', { state: { booking: selectedBooking } });
-                                        }}
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                    >
-                                        <IconStar /> Rate Session
-                                    </button>
-                                    <button className="res-btn-receipt" onClick={() => setModalType(null)}>
-                                        Close Receipt
-                                    </button>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 20 }}>
+                                        <button
+                                            className="btn-primary"
+                                            onClick={() => {
+                                                setModalType(null);
+                                                navigate('/rate-session', { state: { bookingId: sb._id } });
+                                            }}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                        >
+                                            <IconStar /> Rate Session
+                                        </button>
+                                        <button className="res-btn-receipt" onClick={() => setModalType(null)}>
+                                            Close Receipt
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
                     </div>
                 </div>
             )}

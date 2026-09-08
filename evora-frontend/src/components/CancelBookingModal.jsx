@@ -5,13 +5,12 @@
 // ============================================
 
 const CancelBookingModal = ({ booking, onClose, onConfirmCancel }) => {
-    // Default fallback mock if opened without specific props
-    const currentBooking = booking || {
-        id: '212457',
-        station: 'Softlogic Glomark - Delkanda',
-        date: 'Oct 26, 2026',
-        time: '02:15 PM',
-    };
+    const currentBooking = booking || {};
+
+    const displayId = String(currentBooking.bookingNumber || currentBooking._id || currentBooking.id || '');
+    const displayStation = (typeof currentBooking.station === 'object' ? currentBooking.station?.name : currentBooking.station) || currentBooking.stationName || currentBooking.charger?.station?.name || currentBooking.location || 'Charging Station';
+    const displayDate = String(currentBooking.date || '');
+    const displayTime = (typeof currentBooking.time === 'string' ? currentBooking.time : (typeof currentBooking.slot === 'string' ? currentBooking.slot : (currentBooking.timeSlot || '')));
 
     return (
         <div className="bc-modal-backdrop cancel-modal-backdrop" onClick={onClose}>
@@ -29,18 +28,18 @@ const CancelBookingModal = ({ booking, onClose, onConfirmCancel }) => {
                 <div className="cancel-summary-box">
                     <div className="cancel-summary-row id-row">
                         <span className="cancel-summary-label">BOOKING ID</span>
-                        <span className="cancel-summary-id">#{currentBooking.id}</span>
+                        <span className="cancel-summary-id">#{displayId}</span>
                     </div>
 
                     <div className="cancel-summary-group">
                         <span className="cancel-summary-label">Location</span>
-                        <span className="cancel-summary-val">{currentBooking.station || currentBooking.location}</span>
+                        <span className="cancel-summary-val">{String(displayStation || 'Charging Station')}</span>
                     </div>
 
                     <div className="cancel-summary-group">
                         <span className="cancel-summary-label">Time Slot</span>
                         <span className="cancel-summary-val">
-                            {currentBooking.date} · {currentBooking.time}
+                            {displayDate} {displayTime ? `· ${displayTime}` : ''}
                         </span>
                     </div>
                 </div>
@@ -53,6 +52,7 @@ const CancelBookingModal = ({ booking, onClose, onConfirmCancel }) => {
                 {/* Action Buttons */}
                 <div className="cancel-modal-actions">
                     <button
+                        type="button"
                         className="cancel-btn-keep"
                         onClick={onClose}
                     >
@@ -60,6 +60,7 @@ const CancelBookingModal = ({ booking, onClose, onConfirmCancel }) => {
                     </button>
 
                     <button
+                        type="button"
                         className="cancel-btn-confirm"
                         onClick={onConfirmCancel}
                     >

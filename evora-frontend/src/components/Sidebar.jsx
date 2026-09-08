@@ -5,6 +5,7 @@
 // NO css import here — everything is in index.css
 // ============================================
 
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { NAV_ITEMS } from './navigation.js';
 import { IconBolt, IconLogout } from './NavigationIcons.jsx';

@@ -155,5 +155,8 @@ const StationSchema = new Schema(
 // Supports search box (name/address)
 StationSchema.index({ name: 'text', address: 'text' });
 
-module.exports = mongoose.model('Station', StationSchema, 'stations');
+const Station = mongoose.models.Station || mongoose.model('Station', StationSchema, 'stations');
+
+module.exports = Station;
+module.exports.default = Station;
 

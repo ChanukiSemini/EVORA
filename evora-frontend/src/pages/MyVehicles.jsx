@@ -3,7 +3,7 @@
 // EVORA - My Vehicles Page
 // ============================================
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
@@ -13,6 +13,12 @@ import CarModel from '../components/CarModel.jsx';
 import Icon from '../components/Icon.jsx';
 
 const DEFAULT_MODEL_PATH = '/models/tesla_model_3.glb';
+
+
+// TEMPORARY: hardcoded driver ID used to simulate a logged-in user
+// until real login/authentication is built. Every page and the
+// Sidebar use this exact same ID so they all reflect the same driver.
+const DRIVER_ID = '6a9925827fb2502dd5392d22';
 
 /* ---------- Mock Data ---------- */
 const VEHICLE_DATABASE = {
@@ -106,12 +112,7 @@ export default function MyVehicles() {
     const [editModel, setEditModel] = useState('');
     const [isEditing, setIsEditing] = useState(false);
 
-    const enableEdit = () => {
-        setEditName(selectedVehicle.name);
-        setEditBrand(selectedVehicle.brand || 'Tesla');
-        setEditModel(selectedVehicle.model || 'Tesla Model 3');
-        setIsEditing(true);
-    };
+    const enableEdit = () => setIsEditing(true);
 
     const saveAndExit = (updatedData) => {
         // TODO: send updated vehicle to backend API
@@ -122,6 +123,14 @@ export default function MyVehicles() {
         }
         setIsEditing(false);
     };
+
+    useEffect(() => {
+        if (isEditing) {
+            setEditName(selectedVehicle.name);
+            setEditBrand(selectedVehicle.brand || 'Tesla');
+            setEditModel(selectedVehicle.model || 'Tesla Model 3');
+        }
+    }, [isEditing, selectedVehicle]);
 
     const activeModelData = useMemo(() => {
         const brand = isEditing ? editBrand : (selectedVehicle?.brand || 'Tesla');
@@ -173,22 +182,27 @@ export default function MyVehicles() {
     const cancelDelete = () => setDeleteTarget(null);
 
     /* ---------- Shared page content ---------- */
-    const vehiclesContent = vehicles.length === 0 ? (
-        <div className="vehicles-page">
-            <div className="empty-state">
-                <div className="empty-state-icon" style={{ borderColor: 'var(--border-accent-low)', color: 'var(--text-secondary)' }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3.5 12.5 4.8 8.2c.2-.7.9-1.2 1.6-1.2h7.2c.7 0 1.4.5 1.6 1.2l1.3 4.3" />
-                        <rect x="2.5" y="12.5" width="15" height="4" rx="1.3" />
-                        <circle cx="6" cy="16.5" r="1.2" /><circle cx="14" cy="16.5" r="1.2" />
-                    </svg>
+    const VehiclesContent = () => {
+        if (vehicles.length === 0) {
+            return (
+                <div className="vehicles-page">
+                    <div className="empty-state">
+                        <div className="empty-state-icon" style={{ borderColor: 'var(--border-accent-low)', color: 'var(--text-secondary)' }}>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3.5 12.5 4.8 8.2c.2-.7.9-1.2 1.6-1.2h7.2c.7 0 1.4.5 1.6 1.2l1.3 4.3" />
+                                <rect x="2.5" y="12.5" width="15" height="4" rx="1.3" />
+                                <circle cx="6" cy="16.5" r="1.2" /><circle cx="14" cy="16.5" r="1.2" />
+                            </svg>
+                        </div>
+                        <p className="empty-state-title">No vehicles yet</p>
+                        <p className="empty-state-text">Add your first EV to get started with smart charging sessions.</p>
+                        <button className="btn-primary" style={{ maxWidth: 240, marginTop: 8 }}>+ Add a Vehicle</button>
+                    </div>
                 </div>
-                <p className="empty-state-title">No vehicles yet</p>
-                <p className="empty-state-text">Add your first EV to get started with smart charging sessions.</p>
-                <button className="btn-primary" style={{ maxWidth: 240, marginTop: 8 }}>+ Add a Vehicle</button>
-            </div>
-        </div>
-    ) : (
+            );
+        }
+
+        return (
             <div className="vehicles-page">
                 {/* ── Hero card: 3D model viewer ── */}
                 <section className="card vehicle-hero-card animate-card">
@@ -382,6 +396,7 @@ export default function MyVehicles() {
                 )}
             </div>
         );
+    };
 
     return (
         <>
@@ -403,7 +418,7 @@ export default function MyVehicles() {
                     </button>
                 </div>
 
-                {vehiclesContent}
+                <VehiclesContent />
 
                 {/* Mobile Navigation Drawer Overlay */}
                 {isMobileMenuOpen && (
@@ -480,7 +495,7 @@ export default function MyVehicles() {
                         </div>
                     </div>
                     <div className="dt-content">
-                        {vehiclesContent}
+                        <VehiclesContent />
                     </div>
                 </main>
             </div>

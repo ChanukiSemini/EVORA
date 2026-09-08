@@ -1,3 +1,17 @@
+// Utility helper functions
+
+/**
+ * Format response data standardized
+ */
+const formatResponse = (success, message, data = null) => {
+  return {
+    success,
+    message,
+    data,
+    timestamp: new Date().toISOString()
+  };
+};
+
 // Standard success envelope used across all controllers
 const sendResponse = (res, statusCode, data, meta = undefined) => {
   const body = { success: true, data };
@@ -42,4 +56,11 @@ const parseCsvParam = (value) => {
   return items.length ? items : undefined;
 };
 
-module.exports = { sendResponse, ApiError, asyncHandler, getPagination, parseCsvParam };
+module.exports = {
+  formatResponse,
+  sendResponse,
+  ApiError,
+  asyncHandler,
+  getPagination,
+  parseCsvParam
+};

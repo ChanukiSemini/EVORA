@@ -79,6 +79,7 @@ function App() {
           </Route>
         </Route>
         <Route path="/rate-session" element={<Review />} />
+        <Route path="/review" element={<Review />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Profile />} />
         <Route path="/vehicles" element={<MyVehicles />} />

@@ -10,7 +10,15 @@ const chargerSchema = new mongoose.Schema(
     connector: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Connector',
-      required: true,
+      required: false,
+    },
+    connectorType: {
+      type: String,
+      required: false,
+    },
+    powerKW: {
+      type: Number,
+      required: false,
     },
     ratePerHour: {
       type: Number,
@@ -19,7 +27,7 @@ const chargerSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Available', 'Occupied', 'Maintenance', 'Unavailable'],
+      enum: ['Available', 'In Use', 'Occupied', 'Maintenance', 'Unavailable', 'Booked'],
       default: 'Available',
     },
   },
@@ -29,6 +37,7 @@ const chargerSchema = new mongoose.Schema(
   }
 );
 
-const Charger = mongoose.model('Charger', chargerSchema, 'charger');
+const Charger = mongoose.models.Charger || mongoose.model('Charger', chargerSchema, 'charger');
 
 module.exports = Charger;
+module.exports.default = Charger;

@@ -10,44 +10,26 @@ import IconSprite from '../components/IconSprite';
 import Icon from '../components/Icon.jsx';
 import chargingStationImg from '../assets/charging-station.png';
 
-/* ---------- Mock Data ---------- */
-const STATION = {
-    name: 'Voltex Supercharge Hub',
-    rating: '4.8',
-    address: '452 Tesla Parkway, Suite 100, Innovation District, Austin, TX 78701',
-    summary: [
-        { label: 'Connector', value: 'CCS Combo 2 (350 kW)' },
-        { label: 'Date & Time', value: 'Jul 10, 2026 • 11:32 AM' },
-        { label: 'Energy Delivered', value: '48.6 kWh' },
-        { label: 'Cost', value: '$21.87' },
-    ],
-};
+// ─────────────────────────────────────────────
+// API base URL — falls back to localhost in development
+// ─────────────────────────────────────────────
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+
+// TEMPORARY: hardcoded driver ID used to simulate a logged-in user
+// until real login/authentication is built.
+const DRIVER_ID = '6a9925827fb2502dd5392d22';
 
 const AVAILABLE_CHIPS = ['Fast Charging', 'Easy to Find', 'Clean Station', 'Friendly Staff', 'Faulty Charger'];
 
 const STATION_IMAGE_FALLBACK_SVG =
     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400"><rect width="800" height="400" fill="%2302141C"/><path d="M400 150 L430 210 L370 210 Z" fill="%233DDC97"/><text x="400" y="260" font-family="sans-serif" font-size="20" fill="%2390AFB7" text-anchor="middle">Station Charger Details</text></svg>';
 
-const USER = { name: 'Sarah Jenkins', email: 'sarah.j@evora-charge.com' };
-
 const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
 export default function Review() {
     const navigate = useNavigate();
     const location = useLocation();
-    const passedBooking = location.state?.booking;
-
-    const currentStation = {
-        name: passedBooking?.station || STATION.name,
-        rating: STATION.rating,
-        address: passedBooking?.address || (passedBooking?.station ? 'Keels Supermarket Complex, Kaduwela Rd' : STATION.address),
-        summary: [
-            { label: 'Connector', value: passedBooking?.connector || passedBooking?.type || STATION.summary[0].value },
-            { label: 'Date & Time', value: passedBooking ? `${passedBooking.date} • ${passedBooking.time}` : STATION.summary[1].value },
-            { label: 'Energy Delivered', value: passedBooking?.energy || STATION.summary[2].value },
-            { label: 'Cost', value: passedBooking?.cost || STATION.summary[3].value },
-        ],
-    };
 
     // ── Layout state ──
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -55,6 +37,11 @@ export default function Review() {
     // ── Station image state ──
     const [imgSrc, setImgSrc] = useState(chargingStationImg);
     const handleImageError = () => setImgSrc(STATION_IMAGE_FALLBACK_SVG);
+
+    // ── Booking details state fetched from backend ──
+    const [bookingData, setBookingData] = useState(null);
+    const [isLoadingBooking, setIsLoadingBooking] = useState(true);
+    const [bookingError, setBookingError] = useState(null);
 
     // ── Review form state ──
     const [rating, setRating] = useState(0);
@@ -64,6 +51,39 @@ export default function Review() {
     const [photos, setPhotos] = useState([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [ratingError, setRatingError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+
+    // Fetch booking & station details on mount.
+    // Reads bookingId from location.state?.bookingId
+    useEffect(() => {
+        const fetchBookingDetails = async () => {
+            const bookingId = location.state?.bookingId;
+            if (!bookingId) {
+                setIsLoadingBooking(false);
+                setBookingError('No booking specified. Please select a completed session from My Reservations to leave a review.');
+                return;
+            }
+
+            setIsLoadingBooking(true);
+            setBookingError(null);
+            try {
+                const response = await fetch(`${BASE_URL}/api/bookings/${bookingId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load booking');
+                }
+                const data = await response.json();
+                setBookingData(data);
+            } catch (err) {
+                console.error('Failed to load booking in Review:', err);
+                setBookingError('Failed to load booking');
+            } finally {
+                setIsLoadingBooking(false);
+            }
+        };
+
+        fetchBookingDetails();
+    }, [location.state?.bookingId]);
 
     // Revoke object URLs on unmount
     useEffect(() => {
@@ -102,27 +122,54 @@ export default function Review() {
         setPhotos((prev) => prev.filter((p) => p.id !== id));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (rating === 0) {
             setRatingError('Please select a star rating before submitting.');
             return;
         }
+
+        const bookingId = location.state?.bookingId || bookingData?._id;
+        const stationId = (bookingData?.station && typeof bookingData.station === 'object' ? bookingData.station._id : bookingData?.station) || bookingData?.charger?.station?._id || bookingData?.charger?.station;
+
+        if (!stationId) {
+            setSubmitError('Unable to identify station for this review.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setSubmitError(null);
+
         const payload = {
+            booking: bookingId,
+            driver: (bookingData?.driver && typeof bookingData.driver === 'object' ? bookingData.driver._id : bookingData?.driver) || DRIVER_ID,
+            station: stationId,
             rating,
+            ratingLabel: RATING_LABELS[rating] || '',
             chips: selectedChips,
             comment: comment.trim(),
-            photoCount: photos.length,
-            photosList: photos.map((p) => ({ filename: p.file.name, sizeBytes: p.file.size, mimeType: p.file.type })),
         };
-        console.log('---------------- REVIEW SUBMISSION PAYLOAD ----------------');
-        console.log('Star Rating: ', payload.rating);
-        console.log('Selected Chips: ', payload.chips);
-        console.log('Comment: ', payload.comment);
-        console.log('Attached Photos Metadata: ', payload.photosList);
-        console.log('Full JSON Payload: ', JSON.stringify(payload, null, 2));
-        console.log('-----------------------------------------------------------');
-        setIsSubmitted(true);
+
+        try {
+            const response = await fetch(`${BASE_URL}/api/reviews`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                setIsSubmitted(true);
+            } else {
+                setSubmitError(data.message || 'Failed to submit review. Please try again.');
+            }
+        } catch (err) {
+            console.error('Failed to submit review:', err);
+            setSubmitError('Unable to connect to backend server. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleReset = () => {
@@ -133,10 +180,25 @@ export default function Review() {
         setComment('');
         setPhotos([]);
         setIsSubmitted(false);
+        setIsSubmitting(false);
         setRatingError(null);
+        setSubmitError(null);
     };
 
     const activeRating = hoverRating || rating;
+
+    // Derived station and summary values from fetched bookingData
+    const stationName = bookingData?.station?.name || bookingData?.stationName || bookingData?.charger?.station?.name || 'Charging Station';
+    const stationRating = bookingData?.station?.rating != null ? bookingData.station.rating : (bookingData?.charger?.station?.rating || '0.0');
+    const stationAddress = bookingData?.station?.address || bookingData?.stationAddress || bookingData?.charger?.station?.address || 'Address unavailable';
+
+    const summaryItems = bookingData ? [
+        { label: 'Connector', value: `${bookingData.connectorType || bookingData.charger?.connector?.connectorType || 'CCS2 (DC Fast)'} (${bookingData.bayName || 'Bay 1'})` },
+        { label: 'Date & Time', value: `${bookingData.date || ''} • ${bookingData.time || bookingData.slot || ''}` },
+        { label: 'Vehicle', value: (bookingData.vehicle && typeof bookingData.vehicle === 'object' ? bookingData.vehicle.name : bookingData.vehicle) || 'EV Vehicle' },
+        { label: 'Energy Delivered', value: `${bookingData.energyDeliveredKWh != null ? bookingData.energyDeliveredKWh + ' kWh' : '14.2 kWh'}` },
+        { label: 'Cost', value: `Rs. ${bookingData.estimatedTotalCost ? (typeof bookingData.estimatedTotalCost === 'number' ? bookingData.estimatedTotalCost.toLocaleString() : bookingData.estimatedTotalCost) : '0'}` },
+    ] : [];
 
     /* ---------- Shared sub-components ---------- */
     const reviewContentBlock = (
@@ -152,24 +214,32 @@ export default function Review() {
                     />
                 </div>
                 <div className="station-details">
-                    <div>
-                        <div className="station-header">
-                            <h2 className="station-name">{currentStation.name}</h2>
-                            <span className="rating-badge">
-                                <Icon name="icon-star-act" size={12} style={{ fill: 'currentColor', verticalAlign: 'middle', marginRight: 3 }} />
-                                {currentStation.rating}
-                            </span>
-                        </div>
-                        <p className="station-address">{currentStation.address}</p>
-                    </div>
-                    <div className="booking-summary-grid">
-                        {currentStation.summary.map((item) => (
-                            <div className="summary-item" key={item.label}>
-                                <span className="summary-label">{item.label}</span>
-                                <span className="summary-value">{item.value}</span>
+                    {isLoadingBooking ? (
+                        <div style={{ padding: '20px', color: 'var(--text-secondary)' }}>Loading booking details...</div>
+                    ) : bookingError ? (
+                        <div style={{ padding: '20px', color: '#ff6b6b' }}>Failed to load booking details</div>
+                    ) : (
+                        <>
+                            <div>
+                                <div className="station-header">
+                                    <h2 className="station-name">{stationName}</h2>
+                                    <span className="rating-badge">
+                                        <Icon name="icon-star-act" size={12} style={{ fill: 'currentColor', verticalAlign: 'middle', marginRight: 3 }} />
+                                        {stationRating}
+                                    </span>
+                                </div>
+                                <p className="station-address">{stationAddress}</p>
                             </div>
-                        ))}
-                    </div>
+                            <div className="booking-summary-grid">
+                                {summaryItems.map((item) => (
+                                    <div className="summary-item" key={item.label}>
+                                        <span className="summary-label">{item.label}</span>
+                                        <span className="summary-value">{item.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             </section>
 
@@ -327,8 +397,22 @@ export default function Review() {
                             </div>
                         </div>
 
-                        <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
-                            Submit Review
+                        {submitError && (
+                            <div className="error-message" role="alert" style={{ marginTop: '12px' }}>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span>{submitError}</span>
+                            </div>
+                        )}
+
+                        <button 
+                            type="submit" 
+                            className="btn-primary" 
+                            style={{ marginTop: '12px' }}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? 'Submitting...' : 'Submit Review'}
                         </button>
                     </form>
                 </div>
@@ -388,10 +472,12 @@ export default function Review() {
                             </nav>
                             <div className="mobile-menu-footer">
                                 <div className="mobile-user-card">
-                                    <div className="mobile-user-avatar" onClick={() => { navigate('/profile'); setIsMobileMenuOpen(false); }} role="button" tabIndex={0}>SJ</div>
+                                    <div className="mobile-user-avatar" onClick={() => { navigate('/profile'); setIsMobileMenuOpen(false); }} role="button" tabIndex={0}>
+                                        EV
+                                    </div>
                                     <div className="mobile-user-info">
-                                        <span className="mobile-user-name">{USER.name}</span>
-                                        <span className="mobile-user-email">{USER.email}</span>
+                                        <span className="mobile-user-name">Guest</span>
+                                        <span className="mobile-user-email"></span>
                                     </div>
                                 </div>
                                 <button className="mobile-logout-btn" onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}>
@@ -413,7 +499,7 @@ export default function Review() {
                         <button className="dt-back-btn" onClick={() => navigate(-1)}>←</button>
                         <div>
                             <h1 className="dt-page-title">Rate Your Charging Session</h1>
-                            <p className="dt-page-subtitle">Share your experience at {STATION.name}</p>
+                            <p className="dt-page-subtitle">Share your experience at {stationName}</p>
                         </div>
                     </div>
                     <div className="dt-content">
