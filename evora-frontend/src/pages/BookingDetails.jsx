@@ -4,12 +4,13 @@
 // Premium responsive layout (Mobile stacked & Desktop 2-column split grid)
 // ============================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import evHero from '../assets/ev-hero.jpg';
 import CancelBookingModal from '../components/CancelBookingModal';
-import RescheduleBookingModal from '../components/RescheduleBookingModal';
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 /* ---------- SVG Icons ---------- */
 const IconBack = () => (
@@ -68,25 +69,6 @@ const IconAlertCircle = () => (
     </svg>
 );
 
-/* ---------- Mock Detailed Booking Data ---------- */
-const DEFAULT_BOOKING = {
-    id: '212456',
-    status: 'UPCOMING',
-    powerTag: 'Ultra-Fast 150kW',
-    plugTag: 'CCS2',
-    station: 'Keels Kaduwela Bay 01',
-    address: 'No. 142, Kaduwela Road, Colombo',
-    date: 'October 24, 2026',
-    time: '10:30 AM',
-    timeSlot: '10:30 AM – 11:30 AM',
-    duration: '60 minutes',
-    connector: 'CCS2 — DC Fast Charger · 50kW',
-    vehicle: 'Tesla Model 3 (WP CAD-8821)',
-    cost: 'Rs. 2,450',
-    costSub: '(60 min · 150kW · Rs. 40/min)',
-    canModify: true,
-};
-
 /* Common Information List Component */
 const BookingInformationList = ({ booking }) => (
     <div className="bd-info-card card">
@@ -97,8 +79,8 @@ const BookingInformationList = ({ booking }) => (
                 <span className="bd-info-icon"><IconMapPin /></span>
                 <div className="bd-info-text">
                     <span className="bd-info-sublabel">Station Location</span>
-                    <span className="bd-info-value">{booking.station}</span>
-                    <span className="bd-info-extra">{booking.address}</span>
+                    <span className="bd-info-value">{booking.stationName}</span>
+                    <span className="bd-info-extra">{booking.stationAddress}</span>
                 </div>
             </div>
 
@@ -114,8 +96,8 @@ const BookingInformationList = ({ booking }) => (
                 <span className="bd-info-icon"><IconClock /></span>
                 <div className="bd-info-text">
                     <span className="bd-info-sublabel">Time</span>
-                    <span className="bd-info-value">{booking.time}</span>
-                    <span className="bd-info-extra">Slot: {booking.timeSlot}</span>
+                    <span className="bd-info-value">{booking.time || booking.slot}</span>
+                    <span className="bd-info-extra">Slot: {booking.slot}</span>
                 </div>
             </div>
 
@@ -123,7 +105,7 @@ const BookingInformationList = ({ booking }) => (
                 <span className="bd-info-icon"><IconHourglass /></span>
                 <div className="bd-info-text">
                     <span className="bd-info-sublabel">Duration</span>
-                    <span className="bd-info-value">{booking.duration}</span>
+                    <span className="bd-info-value">{booking.durationMinutes ? `${booking.durationMinutes} minutes` : '60 minutes'}</span>
                 </div>
             </div>
 
@@ -131,7 +113,7 @@ const BookingInformationList = ({ booking }) => (
                 <span className="bd-info-icon"><IconBolt /></span>
                 <div className="bd-info-text">
                     <span className="bd-info-sublabel">Connector Type</span>
-                    <span className="bd-info-value">{booking.connector}</span>
+                    <span className="bd-info-value">{booking.connectorType || 'CCS2 (DC Fast)'}</span>
                 </div>
             </div>
 
@@ -139,7 +121,7 @@ const BookingInformationList = ({ booking }) => (
                 <span className="bd-info-icon"><IconCar /></span>
                 <div className="bd-info-text">
                     <span className="bd-info-sublabel">Vehicle</span>
-                    <span className="bd-info-value">{booking.vehicle}</span>
+                    <span className="bd-info-value">{(booking.vehicle && typeof booking.vehicle === 'object' ? booking.vehicle.name : booking.vehicle) || 'Tesla Model 3'}</span>
                 </div>
             </div>
         </div>
@@ -162,22 +144,72 @@ const BookingDetails = () => {
     const { id } = useParams();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
-    const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+    const [bookingData, setBookingData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!id) {
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
+        fetch(`${BASE_URL}/api/bookings/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data) {
+                    setBookingData(data);
+                }
+                setIsLoading(false);
+            })
+            .catch(err => {
+                console.error('Failed to load booking details:', err);
+                setIsLoading(false);
+            });
+    }, [id]);
 
     const booking = {
-        ...DEFAULT_BOOKING,
-        id: id || DEFAULT_BOOKING.id,
+        id: bookingData?.bookingNumber || bookingData?._id || id,
+        _id: bookingData?._id || id,
+        status: (bookingData?.status || 'confirmed').toUpperCase(),
+        powerTag: 'Ultra-Fast 150kW',
+        plugTag: bookingData?.bayName || 'Bay 1',
+        stationName: bookingData?.station?.name || bookingData?.stationName || 'EV Charging Station',
+        stationAddress: bookingData?.station?.address || bookingData?.stationAddress || 'Colombo, Sri Lanka',
+        date: bookingData?.date || 'Today',
+        time: bookingData?.time || bookingData?.slot || '12:00 PM',
+        slot: bookingData?.slot || '12:00 PM',
+        durationMinutes: bookingData?.durationMinutes || 60,
+        connectorType: bookingData?.connectorType || 'CCS2 (DC Fast)',
+        vehicle: bookingData?.vehicle || 'EV Vehicle',
+        cost: bookingData?.estimatedTotalCost ? `Rs. ${bookingData.estimatedTotalCost}` : 'Rs. 2,450',
+        costSub: `(${bookingData?.durationMinutes || 60} min · 150kW)`,
+        canModify: bookingData?.status !== 'cancelled',
     };
 
-    const handleCancelConfirm = () => {
-        setShowCancelModal(false);
-        navigate('/bookings');
+    const handleCancelConfirm = async () => {
+        try {
+            await fetch(`${BASE_URL}/api/bookings/${booking._id || id}/cancel`, {
+                method: 'PATCH',
+            });
+            setShowCancelModal(false);
+            navigate('/bookings');
+        } catch (err) {
+            console.error('Failed to cancel booking:', err);
+            setShowCancelModal(false);
+            navigate('/bookings');
+        }
     };
 
-    const handleRescheduleConfirm = () => {
-        setShowRescheduleModal(false);
-        navigate('/bookings');
-    };
+    if (isLoading) {
+        return (
+            <div className="app-shell desktop-only">
+                <Sidebar />
+                <main className="app-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <p style={{ color: 'var(--text-secondary)' }}>Loading booking details...</p>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -207,14 +239,14 @@ const BookingDetails = () => {
                             <span className="bd-id-label">BOOKING ID</span>
                             <h2 className="bd-id-value">#{booking.id}</h2>
                         </div>
-                        <span className="bd-status-badge upcoming">
+                        <span className={`bd-status-badge ${booking.status.toLowerCase()}`}>
                             <span className="bd-badge-dot" /> {booking.status}
                         </span>
                     </div>
 
                     {/* Station Hero Image Banner */}
                     <div className="bd-hero-banner">
-                        <img src={evHero} alt={booking.station} />
+                        <img src={evHero} alt={booking.stationName} />
                         <div className="bd-hero-overlay">
                             <span className="bd-hero-tag-left">{booking.powerTag}</span>
                             <span className="bd-hero-tag-right">⚡ {booking.plugTag}</span>
@@ -235,25 +267,19 @@ const BookingDetails = () => {
 
                     {/* Action Buttons */}
                     <div className="bd-actions-group">
-                        <button
-                            className={`bd-btn-reschedule ${!booking.canModify ? 'disabled' : ''}`}
-                            onClick={() => booking.canModify && setShowRescheduleModal(true)}
-                            disabled={!booking.canModify}
-                        >
-                            Reschedule Booking
-                        </button>
+                        {booking.status !== 'CANCELLED' && (
+                            <button
+                                className={`bd-btn-cancel ${!booking.canModify ? 'disabled' : ''}`}
+                                onClick={() => booking.canModify && setShowCancelModal(true)}
+                                disabled={!booking.canModify}
+                            >
+                                Cancel Booking
+                            </button>
+                        )}
 
-                        <button
-                            className={`bd-btn-cancel ${!booking.canModify ? 'disabled' : ''}`}
-                            onClick={() => booking.canModify && setShowCancelModal(true)}
-                            disabled={!booking.canModify}
-                        >
-                            Cancel Booking
-                        </button>
-
-                        {!booking.canModify && (
+                        {!booking.canModify && booking.status !== 'CANCELLED' && (
                             <div className="res-policy-notice">
-                                <IconAlertCircle /> Reschedule / Cancel locked (&lt; 1 hr to session)
+                                <IconAlertCircle /> Cancellation locked (&lt; 1 hr to session)
                             </div>
                         )}
                     </div>
@@ -309,13 +335,13 @@ const BookingDetails = () => {
                                     <span className="bd-id-label">BOOKING ID</span>
                                     <h2 className="bd-id-value">#{booking.id}</h2>
                                 </div>
-                                <span className="bd-status-badge upcoming">
+                                <span className={`bd-status-badge ${booking.status.toLowerCase()}`}>
                                     <span className="bd-badge-dot" /> {booking.status}
                                 </span>
                             </div>
 
                             <div className="bd-hero-banner dt-bd-hero">
-                                <img src={evHero} alt={booking.station} />
+                                <img src={evHero} alt={booking.stationName} />
                                 <div className="bd-hero-overlay">
                                     <span className="bd-hero-tag-left">{booking.powerTag}</span>
                                     <span className="bd-hero-tag-right">⚡ {booking.plugTag}</span>
@@ -332,25 +358,19 @@ const BookingDetails = () => {
 
                             {/* Action Buttons */}
                             <div className="bd-actions-group">
-                                <button
-                                    className={`bd-btn-reschedule ${!booking.canModify ? 'disabled' : ''}`}
-                                    onClick={() => booking.canModify && setShowRescheduleModal(true)}
-                                    disabled={!booking.canModify}
-                                >
-                                    Reschedule Booking
-                                </button>
+                                {booking.status !== 'CANCELLED' && (
+                                    <button
+                                        className={`bd-btn-cancel ${!booking.canModify ? 'disabled' : ''}`}
+                                        onClick={() => booking.canModify && setShowCancelModal(true)}
+                                        disabled={!booking.canModify}
+                                    >
+                                        Cancel Booking
+                                    </button>
+                                )}
 
-                                <button
-                                    className={`bd-btn-cancel ${!booking.canModify ? 'disabled' : ''}`}
-                                    onClick={() => booking.canModify && setShowCancelModal(true)}
-                                    disabled={!booking.canModify}
-                                >
-                                    Cancel Booking
-                                </button>
-
-                                {!booking.canModify && (
+                                {!booking.canModify && booking.status !== 'CANCELLED' && (
                                     <div className="res-policy-notice">
-                                        <IconAlertCircle /> Reschedule / Cancel locked (&lt; 1 hr to session)
+                                        <IconAlertCircle /> Cancellation locked (&lt; 1 hr to session)
                                     </div>
                                 )}
                             </div>
@@ -370,15 +390,6 @@ const BookingDetails = () => {
                     booking={booking}
                     onClose={() => setShowCancelModal(false)}
                     onConfirmCancel={handleCancelConfirm}
-                />
-            )}
-
-            {/* Reschedule Modal */}
-            {showRescheduleModal && (
-                <RescheduleBookingModal
-                    booking={booking}
-                    onClose={() => setShowRescheduleModal(false)}
-                    onConfirmReschedule={handleRescheduleConfirm}
                 />
             )}
         </>

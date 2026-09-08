@@ -10,7 +10,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import CancelBookingModal from '../components/CancelBookingModal';
-import RescheduleBookingModal from '../components/RescheduleBookingModal';
 
 // ─────────────────────────────────────────────
 // API — kept local (no shared api.js)
@@ -122,9 +121,8 @@ const CancelledEmptyNotice = () => (
 );
 
 /* ---------- Upcoming Card Actions ---------- */
-// Uses `booking.canReschedule` (computed by the backend based on real time)
-// rather than a locally-computed flag, so the lock logic is consistent.
-const UpcomingCardActions = ({ booking, onDetails, onCancel, onReschedule }) => {
+// Allows viewing details and cancellation (if > 1 hr to session)
+const UpcomingCardActions = ({ booking, onDetails, onCancel }) => {
     const canModify = booking.canReschedule !== false;
 
     return (
@@ -145,20 +143,11 @@ const UpcomingCardActions = ({ booking, onDetails, onCancel, onReschedule }) => 
                 >
                     Cancel
                 </button>
-
-                <button
-                    className={`res-btn-secondary-action res-btn-reschedule-sub ${!canModify ? 'disabled' : ''}`}
-                    onClick={() => canModify && onReschedule(booking)}
-                    disabled={!canModify}
-                    title={!canModify ? 'Rescheduling closes 1 hour before your session' : 'Reschedule session'}
-                >
-                    Reschedule
-                </button>
             </div>
 
             {!canModify && (
                 <div className="res-policy-notice">
-                    <IconAlertCircle /> Reschedule / Cancel locked (&lt; 1 hr to session)
+                    <IconAlertCircle /> Cancellation locked (&lt; 1 hr to session)
                 </div>
             )}
         </div>
@@ -172,23 +161,22 @@ const MyReservations = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    /* Fetched bookings — flat list, each has .resolvedStatus and .canReschedule */
-    const [bookings, setBookings] = useState([]);
+    /* Fetched bookings — full list so tab counts and category switches are instantaneous */
+    const [allBookings, setAllBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState(null);
 
     /* Modal states */
     const [selectedBooking, setSelectedBooking] = useState(null);
-    const [modalType, setModalType] = useState(null); // 'details' | 'cancel' | 'reschedule' | 'receipt'
+    const [modalType, setModalType] = useState(null); // 'details' | 'cancel' | 'receipt'
 
-    /* Fetch bookings whenever the active tab changes */
-    useEffect(() => {
+    const fetchBookings = () => {
         setIsLoading(true);
         setLoadError(null);
         const driverId = getActiveDriverId();
-        getDriverBookings(driverId, activeTab)
+        getDriverBookings(driverId, 'all')
             .then((data) => {
-                setBookings(data);
+                setAllBookings(data);
                 setIsLoading(false);
             })
             .catch((err) => {
@@ -196,27 +184,30 @@ const MyReservations = () => {
                 setLoadError(err.message);
                 setIsLoading(false);
             });
-    }, [activeTab]);
+    };
 
-    /* Counts per category — derived from the full 'all' list only when on 'all' tab */
-    const counts = useMemo(() => {
-        if (activeTab === 'all') {
-            return {
-                all: bookings.length,
-                upcoming: bookings.filter(b => b.resolvedStatus === 'upcoming').length,
-                completed: bookings.filter(b => b.resolvedStatus === 'completed').length,
-                cancelled: bookings.filter(b => b.resolvedStatus === 'cancelled').length,
-            };
-        }
-        // When on a filtered tab, only the current count is reliable
-        return { all: null, upcoming: null, completed: null, cancelled: null, [activeTab]: bookings.length };
-    }, [bookings, activeTab]);
+    /* Fetch bookings on mount and whenever tab changes */
+    useEffect(() => {
+        fetchBookings();
+    }, []);
 
-    /* Local search filter on top of the already-filtered API result */
+    /* Counts per category — derived from allBookings */
+    const counts = useMemo(() => ({
+        all: allBookings.length,
+        upcoming: allBookings.filter(b => b.resolvedStatus === 'upcoming').length,
+        completed: allBookings.filter(b => b.resolvedStatus === 'completed').length,
+        cancelled: allBookings.filter(b => b.resolvedStatus === 'cancelled').length,
+    }), [allBookings]);
+
+    /* Local search and tab filter on top of the full result */
     const filteredItems = useMemo(() => {
-        if (!searchQuery.trim()) return bookings;
+        const tabList = activeTab === 'all'
+            ? allBookings
+            : allBookings.filter(b => b.resolvedStatus === activeTab);
+
+        if (!searchQuery.trim()) return tabList;
         const q = searchQuery.toLowerCase();
-        return bookings.filter((b) => {
+        return tabList.filter((b) => {
             const stationName = b.station?.name || b.stationName || b.charger?.station?.name || '';
             const bookingNum = b.bookingNumber || b._id || '';
             return (
@@ -224,9 +215,9 @@ const MyReservations = () => {
                 String(bookingNum).toLowerCase().includes(q)
             );
         });
-    }, [bookings, searchQuery]);
+    }, [allBookings, activeTab, searchQuery]);
 
-    /* Optimistic cancel — updates booking status in local state after modal confirms */
+    /* Cancel handler — updates status to cancelled and frees slot */
     const handleCancelBooking = async (bookingId) => {
         try {
             const res = await fetch(`${BASE_URL}/api/bookings/${bookingId}/cancel`, {
@@ -239,12 +230,17 @@ const MyReservations = () => {
 
             const updatedBooking = await res.json();
 
-            // Update this booking's status in place instead of removing it —
-            // it will now show up under "Cancelled", not disappear
-            setBookings(prev =>
+            // Update this booking in state to 'cancelled' so it moves to the Cancelled tab
+            setAllBookings(prev =>
                 prev.map(b =>
                     (b._id === bookingId || b.id === bookingId)
-                        ? { ...b, status: 'cancelled', resolvedStatus: 'cancelled', cancelledDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }
+                        ? {
+                            ...b,
+                            status: 'cancelled',
+                            resolvedStatus: 'cancelled',
+                            cancelledDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                            canReschedule: false,
+                        }
                         : b
                 )
             );
@@ -253,18 +249,6 @@ const MyReservations = () => {
         } catch (error) {
             console.error('Cancel booking failed:', error.message);
         }
-    };
-
-    /* Optimistic reschedule — updates date/time in local state */
-    const handleRescheduleBooking = (bookingId, newDate, newTime) => {
-        setBookings(prev =>
-            prev.map(b =>
-                (b._id === bookingId || b.id === bookingId)
-                    ? { ...b, date: newDate, time: newTime }
-                    : b
-            )
-        );
-        setModalType(null);
     };
 
     /* Card Renderer helper */
@@ -335,7 +319,6 @@ const MyReservations = () => {
                             booking={b}
                             onDetails={(item) => navigate(`/booking-details/${item._id || item.id}`)}
                             onCancel={(item) => { setSelectedBooking(item); setModalType('cancel'); }}
-                            onReschedule={(item) => { setSelectedBooking(item); setModalType('reschedule'); }}
                         />
                     )}
 
@@ -568,14 +551,6 @@ const MyReservations = () => {
                 </main>
             </div>
 
-            {modalType === 'reschedule' && selectedBooking && (
-                <RescheduleBookingModal
-                    booking={selectedBooking}
-                    onClose={() => setModalType(null)}
-                    onConfirmReschedule={handleRescheduleBooking}
-                />
-            )}
-
             {modalType === 'cancel' && selectedBooking && (
                 <CancelBookingModal
                     booking={selectedBooking}
@@ -584,7 +559,7 @@ const MyReservations = () => {
                 />
             )}
 
-            {modalType && modalType !== 'cancel' && modalType !== 'reschedule' && selectedBooking && (
+            {modalType && modalType !== 'cancel' && selectedBooking && (
                 <div className="bc-modal-backdrop" onClick={() => setModalType(null)}>
                     <div className="bc-modal-card res-modal-card" onClick={(e) => e.stopPropagation()}>
                         <button className="bc-close-btn" onClick={() => setModalType(null)}>✕</button>
