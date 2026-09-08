@@ -204,7 +204,7 @@ const MyReservations = () => {
         if (!searchQuery.trim()) return bookings;
         const q = searchQuery.toLowerCase();
         return bookings.filter((b) => {
-            const stationName = b.charger?.station?.name || '';
+            const stationName = b.station?.name || b.stationName || b.charger?.station?.name || '';
             const bookingNum = b.bookingNumber || b._id || '';
             return (
                 stationName.toLowerCase().includes(q) ||
@@ -213,34 +213,33 @@ const MyReservations = () => {
         });
     }, [bookings, searchQuery]);
 
-    /* Optimistic cancel — removes booking from local state after modal confirms */
+    /* Optimistic cancel — updates booking status in local state after modal confirms */
     const handleCancelBooking = async (bookingId) => {
-    try {
-        const res = await fetch(`${BASE_URL}/api/bookings/${bookingId}/cancel`, {
-            method: 'PATCH',
-        });
+        try {
+            const res = await fetch(`${BASE_URL}/api/bookings/${bookingId}/cancel`, {
+                method: 'PATCH',
+            });
 
-        if (!res.ok) {
-            throw new Error('Failed to cancel booking');
+            if (!res.ok) {
+                throw new Error('Failed to cancel booking');
+            }
+
+            const updatedBooking = await res.json();
+
+            // Update this booking's status in place instead of removing it —
+            // it will now show up under "Cancelled", not disappear
+            setBookings(prev =>
+                prev.map(b =>
+                    (b._id === bookingId || b.id === bookingId)
+                        ? { ...b, status: 'cancelled', resolvedStatus: 'cancelled', cancelledDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }
+                        : b
+                )
+            );
+
+            setModalType(null);
+        } catch (error) {
+            console.error('Cancel booking failed:', error.message);
         }
-
-        const updatedBooking = await res.json();
-
-        // Update this booking's status in place instead of removing it —
-        // it should now show up under "Cancelled", not disappear
-        setBookings(prev =>
-            prev.map(b =>
-                (b._id === bookingId || b.id === bookingId)
-                    ? { ...b, status: updatedBooking.status, resolvedStatus: 'cancelled' }
-                    : b
-            )
-        );
-
-        setModalType(null);
-    } catch (error) {
-        console.error('Cancel booking failed:', error.message);
-        // TODO: show an inline error message to the user here
-    }
     };
 
     /* Optimistic reschedule — updates date/time in local state */
@@ -258,12 +257,11 @@ const MyReservations = () => {
     /* Card Renderer helper */
     const renderCard = (b) => {
         // Use resolvedStatus (real-time, computed by backend) for display.
-        // Falls back to stored status if resolvedStatus is somehow absent.
         const currentStatus = b.resolvedStatus || b.status;
 
-        // Derive display values from the populated charger/station/connector
-        const stationName = b.charger?.station?.name || 'Unknown Station';
-        const connectorLabel = b.charger?.connector?.label || b.charger?.connector?.specs || (
+        // Derive display values from station / booking details
+        const stationName = b.station?.name || b.stationName || b.charger?.station?.name || 'Unknown Station';
+        const connectorLabel = b.connectorType || b.bayName || b.charger?.connector?.label || b.charger?.connector?.specs || (
             b.charger?.connector?.connectorType
                 ? `${b.charger.connector.connectorType} · ${b.charger.connector.powerKW || b.charger.powerKW || '?'}kW`
                 : b.charger?.connectorType
@@ -332,7 +330,7 @@ const MyReservations = () => {
                         <div className="res-completed-actions-wrap">
                             <button
                                 className="res-btn-primary-green"
-                                onClick={() => navigate('/rate-session', { state: { bookingId: b._id } })}
+                                onClick={() => navigate('/review', { state: { bookingId: b._id } })}
                             >
                                 <IconStar /> Rate Session
                             </button>

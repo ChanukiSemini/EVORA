@@ -1,131 +1,110 @@
 const mongoose = require('mongoose');
 const Review = require('../models/Review');
-const EvDriver = require('../models/EvDriver');
 const Station = require('../models/Station');
 
-// @desc    Create a new review
-// @route   POST /api/reviews
-// @access  Public (or Protected)
+/**
+ * POST /api/reviews
+ * Creates a new review and recalculates the station's average rating & review count.
+ */
 const createReview = async (req, res) => {
-  try {
-    const {
-      rating,
-      ratingLabel,
-      chips,
-      comment,
-      driver,
-      station,
-      booking,
-      energyDeliveredKWh,
-      cost
-    } = req.body;
+    try {
+        const {
+            driver,
+            station,
+            booking,
+            rating,
+            ratingLabel,
+            chips,
+            comment,
+        } = req.body;
 
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({
-        success: false,
-        message: 'Rating is required and must be between 1 and 5 stars.'
-      });
+        // Validate station is a syntactically valid ObjectId string
+        if (!station || !mongoose.Types.ObjectId.isValid(station)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or missing station ID. Station must be a valid ObjectId.',
+            });
+        }
+
+        if (!rating || Number(rating) < 1 || Number(rating) > 5) {
+            return res.status(400).json({
+                success: false,
+                message: 'Rating is required and must be between 1 and 5.',
+            });
+        }
+
+        const reviewData = {
+            station,
+            rating: Number(rating),
+            ratingLabel: ratingLabel || '',
+            chips: Array.isArray(chips) ? chips : [],
+            comment: comment ? String(comment).trim() : '',
+        };
+
+        if (driver && mongoose.Types.ObjectId.isValid(driver)) {
+            reviewData.driver = driver;
+        }
+        if (booking && mongoose.Types.ObjectId.isValid(booking)) {
+            reviewData.booking = booking;
+        }
+
+        const savedReview = await Review.create(reviewData);
+
+        // Recalculate station's average rating and review count via aggregation
+        const result = await Review.aggregate([
+            { $match: { station: savedReview.station } },
+            { $group: { _id: '$station', averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
+        ]);
+
+        if (result.length > 0) {
+            await Station.findByIdAndUpdate(station, {
+                rating: Number(result[0].averageRating.toFixed(1)),
+                reviews: result[0].reviewCount,
+            });
+        }
+
+        return res.status(201).json({
+            success: true,
+            data: savedReview,
+            message: 'Review submitted successfully',
+        });
+    } catch (error) {
+        console.error('Error creating review:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to submit review',
+            error: error.message,
+        });
     }
-
-    // Ensure driver ObjectId exists
-    let driverId = driver;
-    if (!driverId || !mongoose.Types.ObjectId.isValid(driverId)) {
-      const existingDriver = await EvDriver.findOne();
-      if (existingDriver) {
-        driverId = existingDriver._id;
-      } else {
-        driverId = new mongoose.Types.ObjectId();
-      }
-    }
-
-    // Ensure station ObjectId exists
-    let stationId = station;
-    if (!stationId || !mongoose.Types.ObjectId.isValid(stationId)) {
-      const existingStation = await Station.findOne();
-      if (existingStation) {
-        stationId = existingStation._id;
-      } else {
-        stationId = new mongoose.Types.ObjectId();
-      }
-    }
-
-    const reviewData = {
-      driver: driverId,
-      station: stationId,
-      rating: Number(rating),
-      ratingLabel: ratingLabel || '',
-      chips: Array.isArray(chips) ? chips : [],
-      comment: comment ? String(comment).trim() : '',
-    };
-
-    if (booking && mongoose.Types.ObjectId.isValid(booking)) {
-      reviewData.booking = booking;
-    }
-    if (energyDeliveredKWh !== undefined) {
-      reviewData.energyDeliveredKWh = Number(energyDeliveredKWh);
-    }
-    if (cost !== undefined) {
-      reviewData.cost = Number(cost);
-    }
-
-    const newReview = await Review.create(reviewData);
-
-    // Update the station's running average rating.
-    // Using $inc keeps this atomic — safe even if multiple
-    // reviews are submitted around the same time.
-    const updatedStation = await Station.findByIdAndUpdate(
-      stationId,
-      {
-        $inc: {
-          totalRatingSum: newReview.rating,
-          numberOfRatings: 1,
-        },
-      },
-      { new: true }
-    );
-
-    // Recalculate and store the actual average rating
-    if (updatedStation && updatedStation.numberOfRatings > 0) {
-      const newAverage = Number((updatedStation.totalRatingSum / updatedStation.numberOfRatings).toFixed(1));
-      await Station.findByIdAndUpdate(stationId, { rating: newAverage });
-    }
-
-    return res.status(201).json({
-      success: true,
-      data: newReview
-    });
-  } catch (error) {
-    console.error('Error creating review:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to submit review',
-      error: error.message
-    });
-  }
 };
 
-// @desc    Get all reviews
-// @route   GET /api/reviews
-// @access  Public
+/**
+ * GET /api/reviews
+ */
 const getReviews = async (req, res) => {
-  try {
-    const reviews = await Review.find().sort({ createdAt: -1 });
-    return res.status(200).json({
-      success: true,
-      count: reviews.length,
-      data: reviews
-    });
-  } catch (error) {
-    console.error('Error fetching reviews:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch reviews',
-      error: error.message
-    });
-  }
+    try {
+        const { stationId } = req.query;
+        const filter = {};
+        if (stationId && mongoose.Types.ObjectId.isValid(stationId)) {
+            filter.station = stationId;
+        }
+        const reviews = await Review.find(filter).sort({ createdAt: -1 });
+        return res.status(200).json({
+            success: true,
+            count: reviews.length,
+            data: reviews,
+        });
+    } catch (error) {
+        console.error('Error fetching reviews:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch reviews',
+            error: error.message,
+        });
+    }
 };
 
 module.exports = {
-  createReview,
-  getReviews
+    createReview,
+    getReviews,
 };

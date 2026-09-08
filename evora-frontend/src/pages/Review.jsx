@@ -17,14 +17,8 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 
 // TEMPORARY: hardcoded driver ID used to simulate a logged-in user
-// until real login/authentication is built. Every page and the
-// Sidebar use this exact same ID so they all reflect the same driver.
+// until real login/authentication is built.
 const DRIVER_ID = '6a9925827fb2502dd5392d22';
-
-// Fallback booking ID used when the Review page is opened directly
-// (not navigated to from My Reservations). Once a real bookingId is
-// passed via location.state, this is not used.
-const TEMP_BOOKING_ID = '65f200000000000000000005';
 
 const AVAILABLE_CHIPS = ['Fast Charging', 'Easy to Find', 'Clean Station', 'Friendly Staff', 'Faulty Charger'];
 
@@ -39,7 +33,6 @@ export default function Review() {
 
     // ── Layout state ──
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
 
     // ── Station image state ──
     const [imgSrc, setImgSrc] = useState(chargingStationImg);
@@ -62,14 +55,19 @@ export default function Review() {
     const [submitError, setSubmitError] = useState(null);
 
     // Fetch booking & station details on mount.
-    // Uses bookingId from navigation state (passed by MyReservations' "Rate Session" button)
-    // and falls back to TEMP_BOOKING_ID when navigating directly to this page.
+    // Reads bookingId from location.state?.bookingId
     useEffect(() => {
         const fetchBookingDetails = async () => {
+            const bookingId = location.state?.bookingId;
+            if (!bookingId) {
+                setIsLoadingBooking(false);
+                setBookingError('No booking specified. Please select a completed session from My Reservations to leave a review.');
+                return;
+            }
+
             setIsLoadingBooking(true);
             setBookingError(null);
             try {
-                const bookingId = location.state?.bookingId || TEMP_BOOKING_ID;
                 const response = await fetch(`${BASE_URL}/api/bookings/${bookingId}`);
                 if (!response.ok) {
                     throw new Error('Failed to load booking');
@@ -130,15 +128,22 @@ export default function Review() {
             setRatingError('Please select a star rating before submitting.');
             return;
         }
+
+        const bookingId = location.state?.bookingId || bookingData?._id;
+        const stationId = (bookingData?.station && typeof bookingData.station === 'object' ? bookingData.station._id : bookingData?.station) || bookingData?.charger?.station?._id || bookingData?.charger?.station;
+
+        if (!stationId) {
+            setSubmitError('Unable to identify station for this review.');
+            return;
+        }
+
         setIsSubmitting(true);
         setSubmitError(null);
 
-        // TODO: image upload not implemented yet — excluded from payload
-        const bookingId = location.state?.bookingId || TEMP_BOOKING_ID;
         const payload = {
             booking: bookingId,
-            driver: bookingData?.driver?._id || bookingData?.driver || DRIVER_ID,
-            station: bookingData?.charger?.station?._id || bookingData?.charger?.station,
+            driver: (bookingData?.driver && typeof bookingData.driver === 'object' ? bookingData.driver._id : bookingData?.driver) || DRIVER_ID,
+            station: stationId,
             rating,
             ratingLabel: RATING_LABELS[rating] || '',
             chips: selectedChips,
@@ -182,17 +187,17 @@ export default function Review() {
 
     const activeRating = hoverRating || rating;
 
-    // Derived station and summary values from fetched bookingData or fallbacks
-    const stationName = bookingData?.charger?.station?.name || 'Charging Station';
-    const stationRating = bookingData?.charger?.station?.rating || '4.8';
-    const stationAddress = bookingData?.charger?.station?.address || 'Address unavailable';
+    // Derived station and summary values from fetched bookingData
+    const stationName = bookingData?.station?.name || bookingData?.stationName || bookingData?.charger?.station?.name || 'Charging Station';
+    const stationRating = bookingData?.station?.rating != null ? bookingData.station.rating : (bookingData?.charger?.station?.rating || '0.0');
+    const stationAddress = bookingData?.station?.address || bookingData?.stationAddress || bookingData?.charger?.station?.address || 'Address unavailable';
 
     const summaryItems = bookingData ? [
-        { label: 'Connector', value: `${bookingData.charger?.connector?.connectorType || 'CCS Combo 2'} (${bookingData.charger?.connector?.powerKW || 150} kW)` },
-        { label: 'Date & Time', value: `${bookingData.date || ''} • ${bookingData.time || ''}` },
-        { label: 'Vehicle', value: bookingData.vehicle?.name || 'EV Vehicle' },
-        { label: 'Energy Delivered', value: `${bookingData.energyDeliveredKWh ? bookingData.energyDeliveredKWh + ' kWh' : '14.2 kWh'}` },
-        { label: 'Cost', value: `Rs. ${bookingData.estimatedTotalCost ? bookingData.estimatedTotalCost.toLocaleString() : '0'}` },
+        { label: 'Connector', value: `${bookingData.connectorType || bookingData.charger?.connector?.connectorType || 'CCS2 (DC Fast)'} (${bookingData.bayName || 'Bay 1'})` },
+        { label: 'Date & Time', value: `${bookingData.date || ''} • ${bookingData.time || bookingData.slot || ''}` },
+        { label: 'Vehicle', value: (bookingData.vehicle && typeof bookingData.vehicle === 'object' ? bookingData.vehicle.name : bookingData.vehicle) || 'EV Vehicle' },
+        { label: 'Energy Delivered', value: `${bookingData.energyDeliveredKWh != null ? bookingData.energyDeliveredKWh + ' kWh' : '14.2 kWh'}` },
+        { label: 'Cost', value: `Rs. ${bookingData.estimatedTotalCost ? (typeof bookingData.estimatedTotalCost === 'number' ? bookingData.estimatedTotalCost.toLocaleString() : bookingData.estimatedTotalCost) : '0'}` },
     ] : [];
 
     /* ---------- Shared sub-components ---------- */
