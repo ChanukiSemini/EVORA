@@ -51,12 +51,12 @@ export default function Login() {
         }
       }
 
-      // Route according to user role
+      // Route according to user role: Admin/Host to /admin, Drivers to /dashboard (Home)
       const userRole = (data.user?.role || '').toLowerCase();
       if (userRole === 'host' || userRole === 'admin') {
         navigate('/admin');
       } else {
-        navigate('/book-charger');
+        navigate('/dashboard');
       }
     } catch (err) {
       setError(err.message || 'Unable to connect to server. Please try again.');

@@ -5,34 +5,39 @@ const chargerSchema = new mongoose.Schema(
     station: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Station',
-      required: true
+      required: true,
     },
     connector: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Connector',
-      required: false
+      required: false,
     },
     connectorType: {
       type: String,
-      required: false
+      required: false,
     },
     powerKW: {
       type: Number,
-      required: false
+      required: false,
     },
     ratePerHour: {
       type: Number,
-      required: true
+      required: true,
+      default: 2450,
     },
     status: {
       type: String,
-      enum: ['Available', 'In Use', 'Maintenance', 'Booked'],
-      default: 'Available'
-    }
+      enum: ['Available', 'In Use', 'Occupied', 'Maintenance', 'Unavailable', 'Booked'],
+      default: 'Available',
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
+    collection: 'charger', // Explicitly maps to the charger collection in MongoDB Atlas
   }
 );
 
-module.exports = mongoose.models.Charger || mongoose.model('Charger', chargerSchema, 'charger');
+const Charger = mongoose.models.Charger || mongoose.model('Charger', chargerSchema, 'charger');
+
+module.exports = Charger;
+module.exports.default = Charger;

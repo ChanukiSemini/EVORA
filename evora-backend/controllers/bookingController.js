@@ -189,7 +189,7 @@ const createBooking = asyncHandler(async (req, res) => {
     }
 
     const existingBooking = await Booking.findOne({
-        status: { $in: ['confirmed', 'upcoming', 'pending'] },
+        status: { $in: ['confirmed', 'upcoming', 'completed', 'pending'] },
         date: { $gte: startOfDay, $lte: endOfDay },
         slot: slot.trim(),
         $and: [
@@ -253,7 +253,7 @@ const getAvailability = asyncHandler(async (req, res) => {
     const { startOfDay, endOfDay } = getDayRange(targetDate);
 
     const filter = {
-        status: { $in: ['confirmed', 'upcoming', 'pending'] },
+        status: { $in: ['confirmed', 'upcoming', 'completed', 'pending'] },
         date: { $gte: startOfDay, $lte: endOfDay },
     };
 

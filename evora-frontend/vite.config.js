@@ -9,9 +9,18 @@ export default defineConfig({
   optimizeDeps: {
     include: ['hls.js', '@react-three/drei']
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
   resolve: {
     alias: {
       'hls.js': fileURLToPath(new URL('./node_modules/hls.js/dist/hls.js', import.meta.url))
     }
   }
 })
+
