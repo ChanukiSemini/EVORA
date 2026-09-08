@@ -705,7 +705,7 @@ const BookCharger = () => {
         setSubmitting(true);
         setErrorMsg('');
 
-        let driverId = undefined;
+        let driverId = DRIVER_ID;
         let token = localStorage.getItem('evora_token');
         try {
             const userObj = JSON.parse(

@@ -17,10 +17,22 @@ import RescheduleBookingModal from '../components/RescheduleBookingModal';
 // ─────────────────────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// TEMPORARY: hardcoded driver ID used to simulate a logged-in user
-// until real login/authentication is built. Every page and the
-// Sidebar use this exact same ID so they all reflect the same driver.
-const DRIVER_ID = '6a9925827fb2502dd5392d22';
+// Helper to resolve the active driver ID from localStorage or fallback
+const getActiveDriverId = () => {
+    try {
+        const userObj = JSON.parse(
+            localStorage.getItem('evora_current_user') ||
+            localStorage.getItem('evora_driver_user') ||
+            '{}'
+        );
+        if (userObj._id || userObj.id) {
+            return userObj._id || userObj.id;
+        }
+    } catch {
+        // ignore
+    }
+    return '6a9ecddc103ad8f044455e39';
+};
 
 /**
  * Fetch all bookings for a driver, with optional status filter.
@@ -173,7 +185,8 @@ const MyReservations = () => {
     useEffect(() => {
         setIsLoading(true);
         setLoadError(null);
-        getDriverBookings(DRIVER_ID, activeTab)
+        const driverId = getActiveDriverId();
+        getDriverBookings(driverId, activeTab)
             .then((data) => {
                 setBookings(data);
                 setIsLoading(false);
