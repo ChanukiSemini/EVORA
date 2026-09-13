@@ -4,27 +4,6 @@
 
 ---
 
-## 📖 Table of Contents
-
-- [About the Project](#-about-the-project)
-- [Key Features](#-key-features)
-  - [For EV Drivers](#-for-ev-drivers)
-  - [For Station Hosts & Network Operators](#-for-station-hosts--network-operators)
-  - [For Administrators](#-for-administrators)
-- [System Architecture](#-system-architecture)
-- [Technologies Used](#-technologies-used)
-- [Getting Started & Installation](#-getting-started--installation)
-  - [Prerequisites](#prerequisites)
-  - [1. Clone the Repository](#1-clone-the-repository)
-  - [2. Backend Setup](#2-backend-setup)
-  - [3. Frontend Setup](#3-frontend-setup)
-- [API Endpoints Overview](#-api-endpoints-overview)
-- [Project Structure](#-project-structure)
-- [Group Members & Contributors](#-group-members--contributors)
-- [License](#-license)
-
----
-
 ## 🚗 About the Project
 
 **EVORA** is an end-to-end smart charging platform built to eliminate range anxiety and streamline the EV charging experience. It bridges the gap between EV drivers and charging network hosts by offering:
@@ -232,6 +211,3 @@ EVORA/
 
 ---
 
-## 📄 License
-
-This project is developed for academic and educational purposes under the **Faculty of Applied Sciences, University of Sri Jayewardenepura**.
