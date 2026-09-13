@@ -220,17 +220,15 @@ EVORA/
 
 ---
 
-## 👥 Group Members & Contributors
+## 👥 Group Members
 
-**Faculty of Applied Sciences, University of Sri Jayewardenepura**
-
-| # | Member Name | Student ID / Reg No | Role / Primary Focus | Email |
-|---|---|---|---|---|
-| 1 | **Chanuki Semini Hettiarachchi** | AS20240975 | Full-Stack Development, Profile & Booking Management | [chanukisemini16@gmail.com](mailto:chanukisemini16@gmail.com) |
-| 2 | **Ganidu Sasmitha Udage** | — | Frontend UI/UX & Component Architecture | [ganiduudage@gmail.com](mailto:ganiduudage@gmail.com) |
-| 3 | **Ladps Wijethunga** | AS20240969 | Backend Integration & Database Design | [as20240969@sci.sjp.ac.lk](mailto:as20240969@sci.sjp.ac.lk) |
-| 4 | **Sahan Sanjaya** | AS20240912 | Frontend Development & State Management | [as20240912@sci.sjp.ac.lk](mailto:as20240912@sci.sjp.ac.lk) |
-| 5 | **Aseka Kasundi** | AS20240975 | UI Design, Verification & Testing | [aseka.kasundi@gmail.com](mailto:aseka.kasundi@gmail.com) |
+| # | Member Name | Student ID / Reg No |
+|---|---|---|
+| 1 | Chanuki Semini Hettiarachchi | AS20240953 |
+| 2 | R.K.D.A. Kasundhi | AS20240980 |
+| 3 | L.A.D.P.S.wijethunga | AS20240969 |
+| 4 | R.A.A.D Morathota | AS20240975 |
+| 5 | M.S.S. Sigera | AS20240912 |
 
 ---
 
